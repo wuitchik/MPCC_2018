@@ -1,0 +1,141 @@
+AA2	970628	mapped
+AA3	574992	mapped
+AA4	595368	mapped
+AB1	1010691	mapped
+AB2	585488	mapped
+AB3	226910	mapped
+AC1	1245649	mapped
+AC3	1535196	mapped
+AD4	834049	mapped
+AD5	269066	mapped
+AD6	1170859	mapped
+AE2	777881	mapped
+AE5	546344	mapped
+AE6	762508	mapped
+AF2	3509	mapped
+AF3	546121	mapped
+AF5	976195	mapped
+AG1	21	mapped
+AG2	1141961	mapped
+AG3	1257027	mapped
+AH1	665266	mapped
+AH2	340981	mapped
+AH3	609247	mapped
+AI1	1009054	mapped
+AI2	318267	mapped
+AI5	487477	mapped
+AJ2	689278	mapped
+AJ3	557771	mapped
+AJ4	613723	mapped
+AK2	38	mapped
+AK3	511510	mapped
+AK5	768666	mapped
+AL1	665532	mapped
+AL2	434299	mapped
+AL3	8522	mapped
+AM1	374660	mapped
+AM2	748704	mapped
+AM3	866928	mapped
+AN1	851746	mapped
+AN2	1020334	mapped
+AN3	555903	mapped
+AP1	882049	mapped
+AP2	482611	mapped
+AP4	569111	mapped
+AS1	16	mapped
+AS3	291188	mapped
+AS5	475513	mapped
+AA2	5057078awCounts
+AA3	3740666awCounts
+AA4	2780124awCounts
+AB1	5130310awCounts
+AB2	5607990awCounts
+AB3	810976awCounts
+AC1	6186284awCounts
+AC3	8772244awCounts
+AD4	5621719awCounts
+AD5	2609448awCounts
+AD6	6092666awCounts
+AE2	3056318awCounts
+AE5	4528236awCounts
+AE6	5024737awCounts
+AF2	8447awCounts
+AF3	3844256awCounts
+AF5	5017655awCounts
+AG1	51awCounts
+AG2	5632433awCounts
+AG3	6128832awCounts
+AH1	4562147awCounts
+AH2	2653474awCounts
+AH3	2471788awCounts
+AI1	4720194awCounts
+AI2	1101842awCounts
+AI5	1655390awCounts
+AJ2	2983572awCounts
+AJ3	2565084awCounts
+AJ4	4827011awCounts
+AK2	107awCounts
+AK3	3009774awCounts
+AK5	3280922awCounts
+AL1	3298436awCounts
+AL2	4785674awCounts
+AL3	27109awCounts
+AM1	2797047awCounts
+AM2	3510007awCounts
+AM3	5028286awCounts
+AN1	3444755awCounts
+AN2	4278155awCounts
+AN3	3587592awCounts
+AP1	4284600awCounts
+AP2	1997983awCounts
+AP4	2456638awCounts
+AS1	37awCounts
+AS3	4066912awCounts
+AS5	2041873awCounts
+AA2	1389360	trimmedCounts
+AA3	876102	trimmedCounts
+AA4	837632	trimmedCounts
+AB1	1399027	trimmedCounts
+AB2	1568156	trimmedCounts
+AB3	301017	trimmedCounts
+AC1	1808120	trimmedCounts
+AC3	2254587	trimmedCounts
+AD4	1178831	trimmedCounts
+AD5	702086	trimmedCounts
+AD6	1545354	trimmedCounts
+AE2	1042104	trimmedCounts
+AE5	1193039	trimmedCounts
+AE6	1294243	trimmedCounts
+AF2	4222	trimmedCounts
+AF3	949292	trimmedCounts
+AF5	1394088	trimmedCounts
+AG1	28	trimmedCounts
+AG2	1586345	trimmedCounts
+AG3	1645995	trimmedCounts
+AH1	940299	trimmedCounts
+AH2	454304	trimmedCounts
+AH3	790449	trimmedCounts
+AI1	1334265	trimmedCounts
+AI2	431060	trimmedCounts
+AI5	630365	trimmedCounts
+AJ2	955180	trimmedCounts
+AJ3	775431	trimmedCounts
+AJ4	940906	trimmedCounts
+AK2	70	trimmedCounts
+AK3	690136	trimmedCounts
+AK5	1012242	trimmedCounts
+AL1	979125	trimmedCounts
+AL2	569249	trimmedCounts
+AL3	10644	trimmedCounts
+AM1	609399	trimmedCounts
+AM2	1041855	trimmedCounts
+AM3	1193612	trimmedCounts
+AN1	1130026	trimmedCounts
+AN2	1368617	trimmedCounts
+AN3	847269	trimmedCounts
+AP1	1339960	trimmedCounts
+AP2	626374	trimmedCounts
+AP4	805254	trimmedCounts
+AS1	24	trimmedCounts
+AS3	417483	trimmedCounts
+AS5	668257	trimmedCounts

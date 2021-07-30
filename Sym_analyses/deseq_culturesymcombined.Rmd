@@ -1,0 +1,1382 @@
+---
+title: "Breviolum Symbiont Combined deseq Analylses"
+author: "Hannah Aichelman"
+date: "7/12/2021"
+output: 
+  html_document:
+    toc: true
+    theme: united
+---
+
+### Install and libray packages
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# This code is from Colleen, lets us library the old version of DESeq (to do array quality metrics) even running versions of R after 3.6
+
+## get Bioconductor packages
+if (!requireNamespace("BiocManager"))
+install.packages("BiocManager")
+BiocManager::install("DESeq2")
+
+## installing WGCNA:
+#source("http://bioconductor.org/biocLite.R")
+BiocManager::install(c("AnnotationDbi", "impute", "GO.db", "preprocessCore"))
+BiocManager::install("WGCNA", dependencies=TRUE)
+BiocManager::install("arrayQualityMetrics", dependencies=TRUE) # use this arrayQualityMetrics install if using later versions of R (3.6.3 works)
+#repos="http://cran.us.r-project.org"
+## R version 3.6 is funky with arrayQualityMetrics and DESeq so need this work around:
+install.packages("ape", lib = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+library(ape, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+install.packages("magick", lib = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library", dependencies = FALSE)
+library(magick, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+BiocManager::install("arrayQualityMetrics", type = "source", checkBuilt = TRUE, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+BiocManager::install("DESeq", type = "source", checkBuilt = TRUE, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+```
+
+```{r message=FALSE, warning=FALSE}
+library(arrayQualityMetrics)
+library(DESeq)
+library(DESeq2)
+library(WGCNA)
+
+library(sva) # batch effects
+library(tidyr)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(genefilter)
+library(cowplot)
+library(readr)
+library(RColorBrewer)
+library(gplots)
+library(knitr)
+library(plotly)
+library(vegan)
+library(kableExtra)
+library(reshape2)
+library(prettydoc)
+library(VennDiagram)
+library(tidyverse)
+library(gridExtra)
+library(adegenet)
+```
+
+### Read in and format data
+
+Read in Oculina symbiont counts files, in host and in culture. The file for the symbiont only include brown hosts in creating counts file. 
+```{r,cache=TRUE, echo=FALSE}
+
+#countDataHost <- read.table("/Users/hannahaichelman/Documents/BU/MPCC_TagSeq/deseq/Oculina/CountsFiles/Oculina_counts_brownhost.txt")
+countDataSym <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/CountsFiles/mapping_hannynewref/Oculina_Counts_newref_sym.txt")
+
+countDataCulture <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/Huzar_Github_Symbiont-Thermal-Stress-main/B_psygmophilum_counts.txt")
+```
+
+Read in counts files in a way so that we can merge them, don't want the contig names to be rows here, but a column that we can merge on.
+```{r,cache=TRUE, echo=FALSE}
+countDataSym_tomerge <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/CountsFiles/mapping_hannynewref/Oculina_Counts_newref_sym.txt", row.names = NULL)
+colnames(countDataSym_tomerge)[1] = "contig"
+
+countDataCulture_tomerge <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/Huzar_Github_Symbiont-Thermal-Stress-main/B_psygmophilum_counts.txt", row.names = NULL)
+colnames(countDataCulture_tomerge)[1] = "contig"
+
+# create a combined counts file for the symbionts in hospite and the culture
+countDataCombined = merge(countDataSym_tomerge, countDataCulture_tomerge, by = "contig", all = TRUE)
+
+# replace NA's with 0's and convert contig back to rownames
+countDataCombined = countDataCombined %>%
+  mutate_all(~replace(., is.na(.), 0)) %>%
+  column_to_rownames(var = "contig")
+
+```
+
+
+Set up experimental design matrix
+```{r,cache=TRUE}
+# rename columns for individual culture and in hospite data frames
+names(countDataSym) = c("OA4", "OA5", "OA6", 
+                        "OC4_F_B",	"OC5_H_B",	"OC9_C_B",	
+                        "OD4_C_B",	"OD5_F_B",	"OD6_H_B",
+                        "OE10", "OE11", "OE3",
+                        "OF7_C_B",	"OF8_F_B",	"OF9_H_B",
+                        "OH11", "OH15", "OH1",
+                        "OI1_C_B",	"OI2_F_B",	"OI3_H_B",	
+                        "OJ13_C_B",	"OJ14_F_B",	"OJ15_H_B",	
+                        "OK1", "OK2", "OK3",
+                        "OL6_C_B",	"OL7_F_B",	"OL8_H_B",	
+                        "OM1_C_B",	"OM2_F_B",	"OM3_H_B",
+                        "ON4", "ON5", "ON6",
+                        "OO1", "OO2",
+                        "OP1", "OP2", "OP3",
+                        "OQ11", "OQ1", "OQ4",
+                        "OR7_C_B",	"OR8_F_B",	"OR9_H_B")
+
+names(countDataCulture) = c("Control_1.1", "Control_1", "Control_2.1", "Control_2", "Control_3.1", "Control_3", "Control_4.1", "Control_4", 
+                        "Cool_1", "Cool_2", "Cool_3", "Cool_4",
+                        "Heat_1.1", "Heat_1", "Heat_2.1", "Heat_2", "Heat_3.1", "Heat_3", "Heat_4.1", "Heat_4")
+
+# rename columns for combined data frame
+names(countDataCombined) = c("OA4", "OA5", "OA6", 
+                        "OC4_F_B",	"OC5_H_B",	"OC9_C_B",	
+                        "OD4_C_B",	"OD5_F_B",	"OD6_H_B",
+                        "OE10", "OE11", "OE3",
+                        "OF7_C_B",	"OF8_F_B",	"OF9_H_B",
+                        "OH11", "OH15", "OH1",
+                        "OI1_C_B",	"OI2_F_B",	"OI3_H_B",	
+                        "OJ13_C_B",	"OJ14_F_B",	"OJ15_H_B",	
+                        "OK1", "OK2", "OK3",
+                        "OL6_C_B",	"OL7_F_B",	"OL8_H_B",	
+                        "OM1_C_B",	"OM2_F_B",	"OM3_H_B",
+                        "ON4", "ON5", "ON6",
+                        "OO1", "OO2",
+                        "OP1", "OP2", "OP3",
+                        "OQ11", "OQ1", "OQ4",
+                        "OR7_C_B",	"OR8_F_B",	"OR9_H_B",
+                        "Control_1.1", "Control_1", "Control_2.1", "Control_2", "Control_3.1", "Control_3", "Control_4.1", "Control_4", 
+                        "Cool_1", "Cool_2", "Cool_3", "Cool_4",
+                        "Heat_1.1", "Heat_1", "Heat_2.1", "Heat_2", "Heat_3.1", "Heat_3", "Heat_4.1", "Heat_4")
+
+# remove aposymbiotic individual columns from  the in host data and the combined data
+countDataSym_brown = countDataSym %>%
+  select(-c(OA4, OA5, OA6, OE10, OE11, OE3, OH11, OH15, OH1, OK1, OK2, OK3, ON4, ON5, ON6, OO1, OO2, OP1, OP2, OP3, OQ11, OQ1, OQ4))
+
+countDataCombined_brown = countDataCombined %>%
+  select(-c(OA4, OA5, OA6, OE10, OE11, OE3, OH11, OH15, OH1, OK1, OK2, OK3, ON4, ON5, ON6, OO1, OO2, OP1, OP2, OP3, OQ11, OQ1, OQ4))
+
+# assign treatments for the culture experiment
+treatmentCulture = as.factor(sapply(strsplit(colnames(countDataCulture), split = "_"), "[[", 1)) %>%
+  revalue(c("Control" = "control", "Cool" = "freezing", "Heat" = "hot"))
+
+# assign treatments for the symbionts in hospite
+treatmentSym = as.factor(sapply(strsplit(colnames(countDataSym_brown), split = "_"), "[[", 2)) %>%
+  revalue(c("C" = "control", "F" = "freezing", "H" = "hot"))
+
+genotypeSym  = as.factor(sapply(strsplit(colnames(countDataSym_brown), split = ""), "[[", 2))
+
+# create experimental design dataframe for symbiont in culture
+expDesign_Culture = data.frame(colnames(countDataCulture), treatmentCulture)
+expDesign_Culture$type = "culture"
+expDesign_Culture$treat_type = paste(expDesign_Culture$treatmentCulture,expDesign_Culture$type, sep = "_")
+names(expDesign_Culture) = c("sample", "treatment", "type", "treat_type")
+
+# create experimental design dataframe for symbiont in hospite
+expDesign_Sym = data.frame(colnames(countDataSym_brown), treatmentSym)
+expDesign_Sym$type = "inhost"
+expDesign_Sym$treat_type = paste(expDesign_Sym$treatmentSym,expDesign_Sym$type, sep = "_")
+names(expDesign_Sym) = c("sample", "treatment", "type", "treat_type")
+
+# combine experimental design data frames into one  
+expDesign = rbind(expDesign_Sym, expDesign_Culture) 
+expDesign$type = as.factor(expDesign$type)
+expDesign$treat_type = as.factor(expDesign$treat_type)
+str(expDesign)
+```
+
+Experimental Design key with sample names 
+```{r,cache=TRUE, echo=FALSE}
+kable(expDesign) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+Descriptive Summary stats of the mapped reads. 
+
+```{r echo=FALSE}
+stats.per.sample = data.frame(t(do.call(cbind, lapply(countDataCombined_brown, summary))))
+      stats.per.sample$libsum = apply(countDataCombined_brown, 2, sum) ## libsum
+      stats.per.sample$perc05 = apply(countDataCombined_brown, 2, quantile, 0.05)
+      stats.per.sample$perc10 = apply(countDataCombined_brown, 2, quantile, 0.10)
+      stats.per.sample$perc90 = apply(countDataCombined_brown, 2, quantile, 0.90)
+      stats.per.sample$perc95 = apply(countDataCombined_brown, 2, quantile, 0.95)
+      stats.per.sample$zeros = apply(countDataCombined_brown==0, 2, sum)
+      stats.per.sample$percent.zeros = 100*stats.per.sample$zeros/nrow(countDataCombined_brown)
+      #write.csv(stats.per.sample, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/sym_culture_summary_table.csv", quote = FALSE)
+      
+kable(stats.per.sample) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+### Outlier Detection
+
+
+Conduct array quality metrics to identify outliers  
+
+```{r, cache=TRUE}
+real=newCountDataSet(countDataCombined_brown,expDesign) 
+real=estimateSizeFactors(real)
+```
+
+```{r, fig.align='center', cache=TRUE}
+plot(sort(sizeFactors(real)), main = "Oculina Symbiont Size Factors") 
+```
+<br>
+Size factors of each sample used to normalize between libraries. There is an obvious difference between the high counts of the culture samples (right) and the lower counts of the symbionts in the host (left).
+<br> 
+<br> 
+Create a directory with a bunch of output figures from arrayQualityMetrics() for you to explore if their are outliers. 
+
+```{r message=FALSE, warning=FALSE, eval = FALSE}
+cds=DESeq::estimateDispersions(real,method="blind")
+vsdBlind=DESeq::varianceStabilizingTransformation(cds)
+arrayQualityMetrics(vsdBlind,intgroup="treat_type", force=TRUE, outdir = "/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/sym_combined_arrayqualitymetrics") # this makes a directory "arrayQualityMetrics" and outputs various reports on outliers
+
+# detach original DESeq package since we won't need it anymore
+detach(package:DESeq, unload = TRUE)
+```
+
+Look at total counts across symbiont samples in the host and in culture
+```{r, fig.align='center', cache=TRUE}
+totalCounts=colSums(countDataCombined_brown)
+barplot(totalCounts, col=expDesign$treat_type, ylab="raw counts", main = "Oculina total counts")
+
+min(totalCounts) 
+max(totalCounts) 
+
+```
+### Outlier Conclusisons
+
+Do not need to remove outliers at this point, but I think that I need to do some kind of batch effect correction. The best way to do this seems to be using ComBat-Seq:
+https://rnabio.org/module-03-expression/0003/05/01/Batch-Correction/
+https://github.com/zhangyuqing/ComBat-seq
+
+Dan has used Limma before, but I think the above method is the way to go.
+https://rdrr.io/bioc/limma/man/removeBatchEffect.html
+
+***
+
+### Differential Expression - Not Batch Corrected Data
+
+***
+
+```{r warning=FALSE, fig.align='center', cache=TRUE}
+dds<-DESeqDataSetFromMatrix(countData=countDataCombined_brown, colData=expDesign, design=~treat_type) #can only test for the main effects of treatment
+# pre-filtering to remove low count genes
+keep = rowSums(counts(dds) >= 5) >= 40 # at least 40 samples with a count of 5 or higher
+dds = dds[keep,]
+
+dds = DESeq2::DESeq(dds)
+results = results(dds)
+summary(results)
+plotDispEsts(dds)
+```
+
+
+Let's check to see if we set up our contrast correctly. We should have the treatment condition first and the control second in the log2 fold change (MLE) output. 
+
+```{r, cache=TRUE}
+head(results)
+```
+
+```{r echo=FALSE, fig.align = 'center', cache=TRUE}
+norm.counts = counts(dds, normalized = TRUE) # these are the counts DESeq uses
+
+#write.csv(norm.counts,"/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/normalized_counts_combined.csv") #these are all counts, not considering treatment comparisons
+              
+norm.counts.stats = data.frame(
+  min = apply(norm.counts, 2, min),
+  mean = apply(norm.counts, 2, mean),
+  median = apply(norm.counts, 2, median), 
+  max = apply(norm.counts, 2, max),
+  zeros = apply(norm.counts == 0, 2, sum), 
+  percent.zeros = 100* apply(norm.counts == 0, 2, sum) / nrow(norm.counts) 
+)
+
+kable(norm.counts.stats) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+norm.counts.sum = colSums(norm.counts)
+barplot(norm.counts.sum, col=expDesign$treat_type, ylab="raw counts", main = "Oculina Normalized Counts - Not Batch Corrected")
+```
+
+Lets do a rlogged transformation, and a vst transformation, which is useful various unsupervised clustering analyses. Be sure the include blind = TRUE as it doesn't normalize the data with any priors from our experimental design. 
+Both vst and rlog produce data on the log2 scale which has been normalized with respect to library size or other normalization factors. 
+
+```{r, warning = FALSE, cache=TRUE}
+rlogged = rlog(dds, blind = TRUE)
+vst = varianceStabilizingTransformation(dds, blind = TRUE)
+```
+
+Hot versus control expression comparison in culture
+```{r}
+##second term is the "control"
+res_hot_culture <- results(dds, contrast=c("treat_type","hot_culture","control_culture"))
+head(res_hot_culture)
+#how many FDR < 10%?
+table(res_hot_culture$padj<0.01)
+# 0.1=5845
+# 0.05=4884
+# 0.01=3337
+summary(res_hot_culture)
+write.table(res_hot_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/culture_hot_results.txt", quote=F, sep="\t")
+```
+
+MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
+
+```{r, cache=TRUE, fig.align='center'}
+DESeq2::plotMA(res_hot_culture, main = "Hot vs Control, Culture")
+```
+
+
+Hot versus control expression comparison in the host
+```{r}
+##second term is the "control"
+res_hot_inhost <- results(dds, contrast=c("treat_type","hot_inhost","control_inhost"))
+head(res_hot_inhost)
+#how many FDR < 10%?
+table(res_hot_inhost$padj<0.01)
+# 0.1=234
+# 0.05=135
+# 0.01=65
+summary(res_hot_inhost)
+write.table(res_hot_inhost, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/inhost_hot_results.txt", quote=F, sep="\t")
+```
+
+MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
+
+```{r, cache=TRUE, fig.align='center'}
+DESeq2::plotMA(res_hot_inhost, main = "Hot vs Control, Culture")
+```
+
+Cold versus control expression comparison in culture
+```{r}
+##second term is the "control"
+res_cold_culture <- results(dds, contrast=c("treat_type","freezing_culture","control_culture"))
+head(res_cold_culture)
+#how many FDR < 10%?
+table(res_cold_culture$padj<0.01)
+# 0.1=8281
+# 0.05=7270
+# 0.01=5532
+summary(res_cold_culture)
+write.table(res_cold_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/culture_cold_results.txt", quote=F, sep="\t")
+```
+
+MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
+
+```{r, cache=TRUE, fig.align='center'}
+DESeq2::plotMA(res_cold_culture, main = "Freezing vs Control, Culture")
+```
+
+Cold versus control expression comparison in host
+```{r}
+##second term is the "control"
+res_cold_inhost <- results(dds, contrast=c("treat_type","freezing_inhost","control_inhost"))
+head(res_cold_inhost)
+#how many FDR < 10%?
+table(res_cold_inhost$padj<0.01)
+# 0.1=65
+# 0.05=22
+# 0.01=14
+summary(res_cold_inhost)
+write.table(res_cold_inhost, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/inhost_cold_results.txt", quote=F, sep="\t")
+```
+
+MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
+
+```{r, cache=TRUE, fig.align='center'}
+DESeq2::plotMA(res_cold_inhost, main = "Freezing vs Control, Culture")
+```
+
+### Batch Effects
+
+```{r warning=FALSE, cache=TRUE}
+# Use ComBat_seq to perform batch correction
+# counts is the matrix of gene expression raw counts, converting to a matrix here using as.matrix()
+# batch is the batch effect you are worried about (here, whether in culture or in host, because this corresponds to samples being sequenced at different times on different platforms, and with different library prep methods)
+# group is the biological treatment of interest(here, temperature treatment)
+
+# ComBat-seq needs raw, unnormalized, unlogged counts as an input. Do not apply any rarification before running the batch effects. 
+
+corrected_data = ComBat_seq(counts = as.matrix(countDataCombined_brown), batch = expDesign$type, group = expDesign$treatment)
+```
+
+Look at total counts across symbiont samples in the host and in culture
+```{r, fig.align='center', cache=TRUE}
+totalCounts.corr=colSums(corrected_data)
+barplot(totalCounts.corr, col=expDesign$treat_type, ylab="raw counts", main = "Oculina total counts - Batch corrected")
+
+min(totalCounts.corr)
+max(totalCounts.corr) 
+```
+
+
+### Differential Expression - Batch Corrected Data
+
+***
+
+```{r warning=FALSE, cache=TRUE}
+dds.corr<-DESeqDataSetFromMatrix(countData=corrected_data, colData=expDesign, design=~treat_type) #can only test for the main effects of treatment
+# pre-filtering to remove low count genes
+keep.corr = rowSums(counts(dds.corr) >= 5) >= 40 # at least 40 samples with a count of 5 or higher
+dds.corr = dds.corr[keep.corr,]
+
+dds.corr = DESeq2::DESeq(dds.corr)
+results.corr = results(dds.corr)
+summary(results.corr)
+
+plotDispEsts(dds.corr)
+```
+
+
+Let's check to see if we set up our contrast correctly. We should have the treatment condition first and the control second in the log2 fold change (MLE) output. 
+
+```{r cache=TRUE}
+head(results.corr)
+summary(results.corr)
+```
+
+```{r echo=FALSE, cache=TRUE}
+norm.counts.corr = counts(dds.corr, normalized = TRUE) # these are the counts DESeq uses
+write.csv(norm.counts.corr,"/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/normalized_counts_combined_batchcorr.csv") #these are all counts, not considering treatment comparisons
+              
+norm.counts.corr.stats = data.frame(
+  min = apply(norm.counts.corr, 2, min),
+  mean = apply(norm.counts.corr, 2, mean),
+  median = apply(norm.counts.corr, 2, median), 
+  max = apply(norm.counts.corr, 2, max),
+  zeros = apply(norm.counts.corr == 0, 2, sum), 
+  percent.zeros = 100* apply(norm.counts.corr == 0, 2, sum) / nrow(norm.counts.corr) 
+)
+
+kable(norm.counts.corr.stats) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+norm.counts.corr.sum = colSums(norm.counts.corr)
+barplot(norm.counts.corr.sum, col=expDesign$treat_type, ylab="counts", main = "Oculina Normalized Counts - Batch Corrected")
+# blue is freezing, hot pink is hot, and salmon is control.
+```
+
+In this barplot, blue is freezing, hot pink is hot, and salmon is control for the samples in the coral.
+
+Lets do a rlogged transformation, which is useful various unsupervised clustering analyses. Be sure the include blind = TRUE as it doesn't normalize the data with any priors from our experimental design. 
+Both vst and rlog produce data on the log2 scale which has been normalized with respect to library size or other normalization factors. 
+
+```{r, warning = FALSE, cache=TRUE}
+rlogged.corr = rlog(dds.corr, blind = TRUE)
+vst.corr = varianceStabilizingTransformation(dds.corr, blind = TRUE)
+```
+
+Hot versus control expression comparison in culture
+```{r}
+##second term is the "control"
+res_hot_culture_corr <- results(dds.corr, contrast=c("treat_type","hot_culture","control_culture"))
+head(res_hot_culture_corr)
+#how many FDR < 10%?
+table(res_hot_culture_corr$padj<0.1)
+# 0.1=138
+# 0.05=122
+# 0.01=85
+summary(res_hot_culture_corr)
+write.table(res_hot_culture_corr, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/culture_hot_corr_results.txt", quote=F, sep="\t")
+```
+
+MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
+
+```{r, cache=TRUE, fig.align='center'}
+DESeq2::plotMA(res_hot_culture_corr, main = "Hot vs Control, Culture, Batch Corrected")
+```
+
+
+Hot versus control expression comparison in the host
+```{r}
+##second term is the "control"
+res_hot_inhost_corr <- results(dds.corr, contrast=c("treat_type","hot_inhost","control_inhost"))
+head(res_hot_inhost_corr)
+#how many FDR < 10%?
+table(res_hot_inhost_corr$padj<0.1)
+# 0.1=53
+# 0.05=39
+# 0.01=25
+summary(res_hot_inhost_corr)
+write.table(res_hot_inhost_corr, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/inhost_hot_corr_results.txt", quote=F, sep="\t")
+```
+
+MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
+
+```{r, cache=TRUE, fig.align='center'}
+DESeq2::plotMA(res_hot_inhost_corr, main = "Hot vs Control, Culture, Batch Corrected")
+```
+
+Cold versus control expression comparison in culture
+```{r}
+##second term is the "control"
+res_cold_culture_corr <- results(dds.corr, contrast=c("treat_type","freezing_culture","control_culture"))
+head(res_cold_culture_corr)
+#how many FDR < 10%?
+table(res_cold_culture_corr$padj<0.1)
+# 0.1=138
+# 0.05=111
+# 0.01=78
+summary(res_cold_culture_corr)
+write.table(res_cold_culture_corr, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/culture_cold_corr_results.txt", quote=F, sep="\t")
+```
+
+MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
+
+```{r, cache=TRUE, fig.align='center'}
+DESeq2::plotMA(res_cold_culture_corr, main = "Freezing vs Control, Culture, Batch Corrected")
+```
+
+Cold versus control expression comparison in host
+```{r}
+##second term is the "control"
+res_cold_inhost_corr <- results(dds.corr, contrast=c("treat_type","freezing_inhost","control_inhost"))
+head(res_cold_inhost_corr)
+#how many FDR < 10%?
+table(res_cold_inhost_corr$padj<0.1)
+# 0.1=1
+# 0.05=1
+# 0.01=1
+summary(res_cold_inhost_corr)
+write.table(res_cold_inhost_corr, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/inhost_cold_corr_results.txt", quote=F, sep="\t")
+```
+
+MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
+
+```{r, cache=TRUE, fig.align='center'}
+DESeq2::plotMA(res_cold_inhost_corr, main = "Freezing vs Control, In Host, Batch Corrected")
+```
+
+Plot row standard deviations vs. row means to compare rlog and vst transformations.
+```{r echo=FALSE, fig.align = 'center'}
+meanSdPlot(as.matrix(assay(rlogged.corr)))
+meanSdPlot(as.matrix(assay(vst.corr)))
+```
+
+Moving forward with batch corrected (using ComBat-seq) and rlog-transformed data. 
+
+### Principal Component Analyses - Batch Corrected
+
+<br>
+First we create a PCA data frame and calculate the variance estimated by PC1 and PC2
+Using rlog transformation first
+```{r cache=TRUE, fig.align="center"}
+pcadata.corr.rlog = DESeq2::plotPCA(rlogged.corr, intgroup = "treat_type", returnData = TRUE)
+percentVar.corr.rlog = round(100 * attr(pcadata.corr.rlog, "percentVar"))
+pca.corr.rlog = prcomp(t(assay(rlogged.corr)), center = TRUE, scale. = FALSE)
+```
+<br><br>
+
+Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
+```{r cache=TRUE}
+adonis(pca.corr.rlog$x ~ treat_type, data = pcadata.corr.rlog, method = 'eu', na.rm = TRUE)
+```
+<br><br>
+Significant effect of treatment_type combo factor (p = 0.001)
+
+Principal component analyses highlighting treatment groups. Treatment has a significant affect (p < 0.001) on overall expression
+
+<br><br>
+
+```{r cache=TRUE, fig.align="center"}
+cols = c("grey46", "grey80", "#2166ac", "#67a9cf", "#b2182b", "#ef8a62")
+# takes top 500 genes (different from prcomp)
+
+plotPCA_rlog_batchcorr = DESeq2::plotPCA(rlogged.corr, returnData = TRUE, intgroup = c("treat_type", "type")) %>% 
+      ggplot(aes(x = PC1, y = PC2)) +
+      geom_point(aes(colour = treat_type, shape = type), size = 3) +
+      scale_color_manual(values = cols) +
+      stat_ellipse(geom = "polygon", alpha = 0.4, aes(fill = treat_type)) +
+      scale_fill_manual(values = cols) +
+      xlab(paste0("PC1: ",percentVar.corr.rlog[1],"% variance")) +
+      ylab(paste0("PC2: ",percentVar.corr.rlog[2],"% variance")) +
+      labs(title = "rlog, batch corr, plotPCA")+
+      theme_cowplot() 
+plotPCA_rlog_batchcorr
+#ggsave(plot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/PCA_treatment_type_batchcorr.pdf", width=8, height=5, units=c("in"), useDingbats=FALSE)
+
+```
+
+Plot the same PCA but using prcomp, which uses all genes, instead of DESeq's built-in package.
+Rlogged data:
+```{r, cache = TRUE}
+# pca.corr.rlog from above code
+# pca.corr.rlog = prcomp(t(assay(rlogged.corr)), center = TRUE, scale. = FALSE)
+
+li.corr.rlog <- pca.corr.rlog$sdev^2 / sum(pca.corr.rlog$sdev^2)
+pc1v.corr.rlog <- round(li.corr.rlog[1] * 100, 1)
+pc2v.corr.rlog <- round(li.corr.rlog[2] * 100, 1)
+pca_s.corr.rlog <- as.data.frame(pca.corr.rlog$x)
+
+pca_s.corr.rlog <- pca_s.corr.rlog[,c(1,2)]
+pca_s.corr.rlog$Samples = row.names(pca_s.corr.rlog)
+pca_s.corr.rlog$treat_type = expDesign$treat_type
+pca_s.corr.rlog$type = expDesign$type
+
+
+prcomp_rlog_batchcorr = ggplot(pca_s.corr.rlog, aes(PC1, PC2, color = treat_type, pch = type)) +
+  geom_point(aes(colour = treat_type, shape = type), size = 3) +
+  scale_color_manual(values = cols) +
+  stat_ellipse(geom = "polygon", alpha = 0.4, aes(fill = treat_type)) +
+  scale_fill_manual(values = cols) +
+  #geom_polygon(alpha=.2) +
+  xlab(paste0("PC1: ",pc1v.corr.rlog,"% variance")) +
+  ylab(paste0("PC2: ",pc2v.corr.rlog,"% variance")) +
+  labs(title = "rlog, batch corr, prcomp")+
+  theme_cowplot() +
+  theme(legend.position = "none")
+
+prcomp_rlog_batchcorr
+```
+
+Now with vst transformation 
+```{r cache=TRUE, fig.align="center"}
+pcadata.corr.vst = DESeq2::plotPCA(vst.corr, intgroup = "treat_type", returnData = TRUE)
+percentVar.corr.vst = round(100 * attr(pcadata.corr.vst, "percentVar"))
+pca.corr.vst = prcomp(t(assay(rlogged.corr)), center = TRUE, scale. = FALSE)
+```
+<br><br>
+
+Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
+```{r cache=TRUE}
+adonis(pca.corr.vst$x ~ treat_type, data = pcadata.corr.vst, method = 'eu', na.rm = TRUE)
+```
+
+<br><br>
+Significant effect of treatment_type combo factor (p = 0.001)
+
+Principal component analyses highlighting treatment groups. Treatment has a significant affect (p < 0.001) on overall expression
+
+<br><br>
+
+```{r cache=TRUE, fig.align="center"}
+# takes top 500 genes (different from prcomp)
+
+plotPCA_vst_batchcorr = DESeq2::plotPCA(vst.corr, returnData = TRUE, intgroup = c("treat_type", "type")) %>% 
+      ggplot(aes(x = PC1, y = PC2)) +
+      geom_point(aes(colour = treat_type, shape = type), size = 3) +
+      scale_color_manual(values = cols) +
+      stat_ellipse(geom = "polygon", alpha = 0.4, aes(fill = treat_type)) +
+      scale_fill_manual(values = cols) +
+      xlab(paste0("PC1: ",percentVar.corr.vst[1],"% variance")) +
+      ylab(paste0("PC2: ",percentVar.corr.vst[2],"% variance")) +
+      labs(title = "vst, batch corr, plotPCA")+
+      theme_cowplot() +
+      theme(legend.position = "none")
+plotPCA_vst_batchcorr
+#ggsave(plot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/PCA_treatment_type_batchcorr.pdf", width=8, height=5, units=c("in"), useDingbats=FALSE)
+
+```
+
+
+Plot the same PCA but using prcomp, which uses all genes, instead of DESeq's built-in package.
+Rlogged data:
+```{r, cache = TRUE}
+# pca.corr.vst from above code
+# pca.corr.vst = prcomp(t(assay(rlogged.corr)), center = TRUE, scale. = FALSE)
+
+li.corr.vst <- pca.corr.vst$sdev^2 / sum(pca.corr.vst$sdev^2)
+pc1v.corr.vst <- round(li.corr.vst[1] * 100, 1)
+pc2v.corr.vst <- round(li.corr.vst[2] * 100, 1)
+pca_s.corr.vst <- as.data.frame(pca.corr.vst$x)
+
+pca_s.corr.vst <- pca_s.corr.vst[,c(1,2)]
+pca_s.corr.vst$Samples = row.names(pca_s.corr.vst)
+pca_s.corr.vst$treat_type = expDesign$treat_type
+pca_s.corr.vst$type = expDesign$type
+
+
+prcomp_vst_batchcorr = ggplot(pca_s.corr.vst, aes(PC1, PC2, color = treat_type, pch = type)) +
+  geom_point(aes(colour = treat_type, shape = type), size = 3) +
+  scale_color_manual(values = cols) +
+  stat_ellipse(geom = "polygon", alpha = 0.4, aes(fill = treat_type)) +
+  scale_fill_manual(values = cols) +
+  #geom_polygon(alpha=.2) +
+  xlab(paste0("PC1: ",pc1v.corr.vst,"% variance")) +
+  ylab(paste0("PC2: ",pc2v.corr.vst,"% variance")) +
+  labs(title = "vst, batch corr, prcomp")+
+  theme_cowplot() 
+
+prcomp_vst_batchcorr
+```
+
+Look at all batch corrected pca options together
+
+```{r, warning = FALSE, cache = TRUE, fig.align = "center"}
+all_batchcorr_pcas = grid.arrange(plotPCA_rlog_batchcorr, prcomp_rlog_batchcorr, plotPCA_vst_batchcorr, prcomp_vst_batchcorr, nrow = 2)
+ggsave(all_batchcorr_pcas, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/All_PCAs_batchcorr.pdf", width=12, height=6, units=c("in"), useDingbats=FALSE)
+```
+
+### Transformation Info
+According to Mike Love:
+I prefer VST when there are many samples. The rlog seemed to outperform
+(according to our simulations performed in the DESeq2 paper) when there
+were very large differences in size factor (e.g. spanning an order of
+magnitude from low to high seq depth). (https://support.bioconductor.org/p/98473/)
+
+The above info seems to suggest that it would be most appropriate to use rlog here, since we have large differences in size factors.
+
+
+This is corroborated here: https://compbiocore.github.io/deseq-workshop-1/assets/deseq_workshop_1.html
+
+Which transformation to choose? The rlog tends to work well on small datasets (n < 30), sometimes outperforming the VST when there is a large range of sequencing depth across samples (an order of magnitude difference). The VST is much faster to compute and is less sensitive to high count outliers than the rlog. We therefore recommend the VST for large datasets (hundreds of samples). You can perform both transformations and compare the meanSdPlot or PCA plots generated, as described below.
+
+### Principal Component Analyses - Not Batch Corrected
+
+<br>
+First we create a PCA data frame and calculate the variance estimated by PC1 and PC2
+Using rlogged transformation first
+```{r cache=TRUE, fig.align="center"}
+pcadata.rlog = DESeq2::plotPCA(rlogged, intgroup = "treat_type", returnData = TRUE) # this is the built in deseq pca fxn
+percentVar.rlog = round(100 * attr(pcadata.rlog, "percentVar"))
+pca.rlog = prcomp(t(assay(rlogged)), center = TRUE, scale. = FALSE) # we will use this for prcomp pca later
+```
+<br><br>
+
+Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
+```{r cache=TRUE}
+adonis(pca.rlog$x ~ treat_type, data = pcadata.rlog, method = 'eu', na.rm = TRUE)
+```
+<br><br>
+Significant effect of treatment_type combo factor (p = 0.001)
+
+Principal component analyses highlighting treatment groups. Treatment has a significant affect (p < 0.001) on overall expression
+
+<br><br>
+
+PCA using DESeq's built in plotPCA. This function by default uses the top 500 most variables genes prior to calling prcomp. 
+```{r cache=TRUE, fig.align="center"}
+cols = c("grey46", "grey80", "#2166ac", "#67a9cf", "#b2182b", "#ef8a62")
+plotPCA_rlog_nobatch = DESeq2::plotPCA(rlogged, returnData = TRUE, intgroup = c("treat_type", "type")) %>% 
+      ggplot(aes(x = PC1, y = PC2)) +
+      geom_point(aes(colour = treat_type, shape = type), size = 3) +
+      scale_color_manual(values = cols) +
+      stat_ellipse(geom = "polygon", alpha = 0.4, aes(fill = treat_type)) +
+      scale_fill_manual(values = cols) +
+      xlab(paste0("PC1: ",percentVar.rlog[1],"% variance")) +
+      ylab(paste0("PC2: ",percentVar.rlog[2],"% variance")) +
+      labs(title = "rlog, no batch, plotPCA")+
+      theme_cowplot() +
+      theme(legend.position = "none")
+
+plotPCA_rlog_nobatch
+#ggsave(plot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/PCA_treatment_type.pdf", width=8, height=5, units=c("in"), useDingbats=FALSE)
+
+```
+Principal component analyses highlighting treatment and type of experiment on Breviolum psygmophilum. 
+
+
+Plot the same PCA but using prcomp, which uses all genes, instead of DESeq's built-in package.
+Rlogged data:
+```{r, cache = TRUE}
+# pca.rlog from above code
+# pca.rlog = prcomp(t(assay(rlogged)), center = TRUE, scale. = FALSE) # we will use this for prcomp pca later
+
+li <- pca.rlog$sdev^2 / sum(pca.rlog$sdev^2)
+pc1v <- round(li[1] * 100, 1)
+pc2v <- round(li[2] * 100, 1)
+pca_s <- as.data.frame(pca.rlog$x)
+
+pca_s <- pca_s[,c(1,2)]
+pca_s$Samples = row.names(pca_s)
+pca_s$treat_type = expDesign$treat_type
+pca_s$type = expDesign$type
+
+
+prcomp_rlog_nobatch = ggplot(pca_s, aes(PC1, PC2, color = treat_type, pch = type)) +
+  geom_point(aes(colour = treat_type, shape = type), size = 3) +
+  scale_color_manual(values = cols) +
+  stat_ellipse(geom = "polygon", alpha = 0.4, aes(fill = treat_type)) +
+  scale_fill_manual(values = cols) +
+  #geom_polygon(alpha=.2) +
+  xlab(paste0("PC1: ",pc1v,"% variance")) +
+  ylab(paste0("PC2: ",pc2v,"% variance")) +
+  labs(title = "rlog, no batch, prcomp")+
+  theme_cowplot() +
+  theme(legend.position = "none")
+
+prcomp_rlog_nobatch
+```
+
+
+Using vst transformation now, still for non batch corrected data
+```{r cache=TRUE, fig.align="center"}
+pcadata.vst = DESeq2::plotPCA(vst, intgroup = "treat_type", returnData = TRUE)
+percentVar.vst = round(100 * attr(pcadata.vst, "percentVar"))
+pca.vst = prcomp(t(assay(vst)), center = TRUE, scale. = FALSE)
+```
+<br><br>
+
+Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
+```{r cache=TRUE}
+adonis(pca.vst$x ~ treat_type, data = pcadata.vst, method = 'eu', na.rm = TRUE)
+```
+
+
+<br><br>
+Still have significant effect of treatment_type combo factor (p = 0.001)
+
+Principal component analyses highlighting treatment groups. Treatment has a significant affect (p < 0.001) on overall expression
+
+<br><br>
+
+```{r cache=TRUE, fig.align="center"}
+#cols = c("grey46", "grey80", "#2166ac", "#67a9cf", "#b2182b", "#ef8a62")
+plotPCA_vst_nobatch = DESeq2::plotPCA(vst, returnData = TRUE, intgroup = c("treat_type", "type")) %>% 
+      ggplot(aes(x = PC1, y = PC2)) +
+      geom_point(aes(colour = treat_type, shape = type), size = 3) +
+      scale_color_manual(values = cols) +
+      stat_ellipse(geom = "polygon", alpha = 0.4, aes(fill = treat_type)) +
+      scale_fill_manual(values = cols) +
+      xlab(paste0("PC1: ",percentVar.vst[1],"% variance")) +
+      ylab(paste0("PC2: ",percentVar.vst[2],"% variance")) +
+      labs(title = "vst, no batch, plotPCA")+
+      theme_cowplot()+
+      theme(legend.position = "none")
+
+plotPCA_vst_nobatch
+#ggsave(plot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/PCA_treatment_type.pdf", width=8, height=5, units=c("in"), useDingbats=FALSE)
+
+```
+
+
+Plot the same PCA but using prcomp, which uses all genes, instead of DESeq's built-in package.
+VST data:
+```{r, cache = TRUE}
+# pca.vst from above code
+# pca.vst = prcomp(t(assay(vst)), center = TRUE, scale. = FALSE)
+
+li_vst <- pca.vst$sdev^2 / sum(pca.vst$sdev^2)
+pc1v_vst <- round(li_vst[1] * 100, 1)
+pc2v_vst <- round(li_vst[2] * 100, 1)
+pca_s_vst <- as.data.frame(pca.vst$x)
+
+pca_s_vst <- pca_s_vst[,c(1,2)]
+pca_s_vst$Samples = row.names(pca_s_vst)
+pca_s_vst$treat_type=expDesign$treat_type
+pca_s_vst$type=expDesign$type
+
+
+prcomp_vst_nobatch = ggplot(pca_s_vst, aes(PC1, PC2, color = treat_type, pch = type)) +
+  geom_point(aes(colour = treat_type, shape = type), size = 3) +
+  scale_color_manual(values = cols) +
+  stat_ellipse(geom = "polygon", alpha = 0.4, aes(fill = treat_type)) +
+  scale_fill_manual(values = cols) +
+  #geom_polygon(alpha=.2) +
+  xlab(paste0("PC1: ",pc1v_vst,"% variance")) +
+  ylab(paste0("PC2: ",pc2v_vst,"% variance")) +
+  labs(title = "vst, no batch, prcomp")+
+  theme_cowplot() 
+
+prcomp_vst_nobatch
+```
+
+
+Look at all non batch corrected pca options together
+
+```{r, warning = FALSE, cache = TRUE, fig.align = "center"}
+all_nobatch_pcas = grid.arrange(plotPCA_rlog_nobatch, prcomp_rlog_nobatch, plotPCA_vst_nobatch, prcomp_vst_nobatch, nrow = 2)
+ggsave(all_nobatch_pcas, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/All_PCAs_nobatchcorr.pdf", width=12, height=6, units=c("in"), useDingbats=FALSE)
+```
+
+### Heatmaps
+***
+<br> <br> 
+
+Overall expression, sample by distance. 
+
+```{r fig.align="center", cache=TRUE}
+sampleDists <- as.matrix(dist(t(assay(rlogged))))
+heatmap.2(as.matrix(sampleDists), key=F, trace="none",
+          col=colorpanel(100, "black", "white"),
+          margin=c(10, 10))
+```
+
+<br><br>
+<b>Individual genes heatmap </b> 
+<br> 
+Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this. Upregulation indicated by warmer colors, downregulation indicated by cooler colors.
+
+First for heat vs. control comparison in culture
+```{r, cache=TRUE, fig.align='center'}
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/normalized_counts_combined.csv") 
+
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/culture_hot_results.txt", header=TRUE) %>%
+  rownames_to_column("X") %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts, by.x = "X", by.y = "X") %>% # turn into a countdatafile
+  column_to_rownames(var = "X")
+
+## Turning into z-score table
+hm.z = data.matrix(hm)
+hm.z = sweep(hm.z, 1L, rowMeans(hm.z), check.margin = FALSE)
+hm.z.sx = apply(hm.z, 1L, sd)
+hm.z = sweep(hm.z, 1L, hm.z.sx, "/", check.margin = FALSE)
+hm.z = data.matrix(hm.z)
+
+colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
+```
+
+Now for cold vs. control comparison in culture
+```{r, cache=TRUE, fig.align='center'}
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/normalized_counts_combined.csv") 
+
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/culture_cold_results.txt", header=TRUE) %>%
+  rownames_to_column("X") %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts, by.x = "X", by.y = "X") %>% # turn into a countdatafile
+  column_to_rownames(var = "X")
+
+## Turning into z-score table
+hm.z = data.matrix(hm)
+hm.z = sweep(hm.z, 1L, rowMeans(hm.z), check.margin = FALSE)
+hm.z.sx = apply(hm.z, 1L, sd)
+hm.z = sweep(hm.z, 1L, hm.z.sx, "/", check.margin = FALSE)
+hm.z = data.matrix(hm.z)
+
+colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
+```
+### Log2 Fold Change Density Plots
+
+```{r}
+culture_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/culture_cold_corr_results.txt", header=TRUE) %>%
+  mutate(type = "culture_cold")
+culture_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/culture_hot_corr_results.txt", header=TRUE) %>%
+  mutate(type = "culture_hot")
+host_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/inhost_cold_corr_results.txt", header=TRUE) %>%
+  mutate(type = "host_cold")
+host_hot_res= read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/inhost_hot_corr_results.txt", header=TRUE) %>%
+  mutate(type = "host_hot")
+
+# all types combined
+res_combined = rbind(culture_cold_res, culture_hot_res, host_cold_res, host_hot_res) %>%
+  mutate(abs_log2foldchange = abs(log2FoldChange))
+res_combined$type = as.factor(res_combined$type)
+
+res_cols = c("#2166ac", "#b2182b", "#67a9cf", "#ef8a62")
+
+# plot the absolute value of log 2 fold change as a density plot, color by group
+ggplot(res_combined, aes(x = abs(log2FoldChange), group = type, color = type))+
+  geom_density(lwd = 1.5) +
+  scale_color_manual(values = res_cols) +
+  xlab("|log-fold change relative to control|") +
+  theme_cowplot()
+
+# hot treatments separate
+res_combined_hot = rbind(culture_hot_res, host_hot_res)
+res_combined_hot$type = as.factor(res_combined_hot$type)
+
+res_cols_hot = c("#b2182b", "#ef8a62")
+
+ggplot(res_combined_hot, aes(x = abs(log2FoldChange), group = type, color = type))+
+  geom_density(lwd = 1.5) +
+  scale_color_manual(values = res_cols_hot) +
+  xlab("|log-fold change relative to control|") +
+  theme_cowplot()
+
+# cold treatments separate
+res_combined_cold = rbind(culture_cold_res, host_cold_res)
+res_combined_cold$type = as.factor(res_combined_cold$type)
+
+res_cols_cold = c("#2166ac", "#67a9cf")
+
+ggplot(res_combined_cold, aes(x = abs(log2FoldChange), group = type, color = type))+
+  geom_density(lwd = 1.5) +
+  scale_color_manual(values = res_cols_cold) +
+  xlab("|log-fold change relative to control|") +
+  theme_cowplot()
+
+
+# do stats on the absolute value of log2fold change
+summarySE(res_combined)
+
+aov1 = aov(abs_log2foldchange~type, data=res_combined)
+summary(aov1)
+TukeyHSD(aov1)
+
+lm1 = lm(abs_log2foldchange~type, data=res_combined)
+summary(lm1)
+```
+
+### PCA Plasticity 
+
+PCA plasticity functions written by C. Bove.
+
+This function allows you to save all principal components 
+```{r}
+plotPCA_allPCs <- function (object, intgroup = "condition", ntop = 500, returnData = FALSE)
+{
+  rv <- rowVars(assay(object)) # Variance estimates for each row (column) in a matrix.
+  select <- order(rv, decreasing = TRUE)[seq_len(min(ntop, length(rv)))] # orders genes from largest -> smallest and pulls ntop (default 500) genes
+  pca <- prcomp(t(assay(object)[select, ]), center = TRUE, scale. = FALSE) # performs PCA on ntop (default 500) from dataset
+  percentVar <- pca$sdev^2/sum(pca$sdev^2)
+  if (!all(intgroup %in% names(colData(object)))) {
+    stop("the argument 'intgroup' should specify columns of colData(dds)")
+  }
+  intgroup.df <- as.data.frame(colData(object)[, intgroup, drop = FALSE])
+  group <- if (length(intgroup) > 1) {
+    factor(apply(intgroup.df, 1, paste, collapse = ":"))
+  }
+  else {
+    colData(object)[[intgroup]]
+  }
+  d <- data.frame(group = group, intgroup.df, name = colnames(object), pca$x)
+  if (returnData) {
+    attr(d, "percentVar") <- percentVar[1:2]
+    return(d)
+  }
+  ggplot(data = d, aes_string(x = "PC1", y = "PC2", color = "group")) +
+    geom_point(size = 3) + xlab(paste0("PC1: ", round(percentVar[1] *
+                                                        100), "% variance")) + ylab(paste0("PC2: ", round(percentVar[2] *
+                                                                                                            100), "% variance")) + coord_fixed()
+}
+```
+
+```{r eval=FALSE, include=FALSE}
+# source the script Colleen wrote with the different functions to calculate plasticity
+source("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/PlasticityCustomFunctions_means.R")
+
+# use modified plotPCA function to give you all PCs
+pcadata.plast = plotPCA_allPCs(rlogged.corr, intgroup = c("treat_type", "type"), returnData = TRUE)
+
+pcadata.inhost.plast = pcadata.plast %>%
+  filter(type == "inhost")
+
+pcadata.culture.plast = pcadata.plast %>%
+  filter(type == "culture")
+
+
+pca_plast_host <-  PCAplast(pca = pcadata.inhost.plast[,c(5:ncol(pcadata.inhost.plast))], # PCA dataframe containing the PCA eigenvalues
+                data = pcadata.inhost.plast[,c(1:4)], # condition/treatment data 
+                sample_ID = "name", # name of column with unique ID per sample (if blank, will pull rownames for this)
+                num_pca = "2", # number of PCs to include in measure (default is 'all' if left blank)
+                control_col = "treat_type", # name of 'treatment' column
+                control_lvl = "control_inhost") # control level of the treatment 
+
+pca_plast_culture <-  PCAplast(pca = pcadata.culture.plast[,c(5:ncol(pcadata.culture.plast))], # PCA dataframe containing the PCA eigenvalues
+                data = pcadata.culture.plast[,c(1:4)], # condition/treatment data 
+                sample_ID = "name", # name of column with unique ID per sample (if blank, will pull rownames for this)
+                num_pca = "2", # number of PCs to include in measure (default is 'all' if left blank)
+                control_col = "treat_type", # name of 'treatment' column
+                control_lvl = "control_culture") # control level of the treatment 
+
+```
+Now plot PCA plasticity, separately for host and symbiont
+```{r}
+all_plast = rbind(pca_plast_host, pca_plast_culture) # re-combine host and symbiont plasticity for plotting
+
+cols = c("grey46", "grey80", "#2166ac", "#67a9cf", "#b2182b", "#ef8a62")
+
+dist_summ = summarySE(data = all_plast, measurevar = "dist", groupvars = c("treat_type","type"))
+
+# in host plasticity
+plast_plot = ggplot(dist_summ, aes(x = treat_type, y = dist)) +
+      geom_point(aes(colour = treat_type, shape = type), size = 4) +
+      geom_errorbar(aes(x = treat_type, ymin = dist - sd, ymax = dist + sd, colour = treat_type), width = 0.2) +
+      scale_color_manual(values = cols) +
+      scale_fill_manual(values = cols) +
+      xlab("Treatment") +
+      ylab("Plasticity") +
+      labs(title = "Gene Expression Plasticity") +
+      theme_cowplot() +
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), legend.position = "none")
+       
+  
+plast_plot
+ggsave(plast_plot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/PCA_plasticity_2PCs.pdf", width=6, height=5, units=c("in"), useDingbats=FALSE)
+
+
+```
+
+### DAPC
+So looking at that, you will probably only want to run your DAPC with like 3ish PC (if that many) just a heads up.  If you just run:
+dapc(ge_matrix, grp_pca$symb_reef)
+then it will prompt you to select your number of PCs (from a plot) and you can type the number there. Then it will do the same for DAs
+YOu may use more, but just make sure when you run it first, you don’t specify the PC or DA numbers like it did. But you can specify them once you select!
+
+```{r eval=FALSE, include=FALSE}
+
+## convert vsd to matrix
+rlog.corr.ge.matrix <- t(assay(rlogged.corr)) 
+
+## grouping variable:
+grp_pca <- DESeq2::plotPCA(rlogged.corr, intgroup = c("treat_type", "type"), returnData = TRUE)
+
+## 
+dapc1 = dapc(rlog.corr.ge.matrix, grp_pca$treat_type)
+scatter(dapc1)
+scatter(dapc1,1,1)
+
+find.clusters(rlog.corr.ge.matrix, max.n.clust=40)
+
+## Run the treatment and type DAPC with 43 PCs and 6 DAs
+dapc2 <- dapc(rlog.corr.ge.matrix, grp_pca$treat_type, n.pca = 3, n.da = 6)
+dapc2
+summary(dapc2)
+scatter(dapc2)
+
+scatter(dapc2,1,1, cols = cols, bg = "white", scree.da = FALSE, legend = TRUE, solid = 0.6)
+```
+
+
+
+
+### Venn Diagrams
+
+Read in our result tables and isolate gene lists that are significant in each experiment. 
+
+```{r eval=FALSE, cache=TRUE, include=FALSE}
+hot = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_hot_results_sym.txt", header = TRUE)
+hot = row.names(hot[hot$padj<0.05 & !is.na(hot$padj),])
+
+freezing = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_cold_results_sym.txt", header = TRUE)
+freezing = row.names(freezing[freezing$padj<0.05 & !is.na(freezing$padj),])
+```
+<br><br>
+
+Set up a venn diagram looking for similar genes in each experiment. 
+```{r eval=FALSE, cache=TRUE, include=FALSE}
+all_shared = list("Hot" = hot, "Freezing" = freezing)
+prettyvenn=venn.diagram(
+      x = all_shared,
+      filename=NULL,
+      col = "transparent",
+      fill = c("#ea6227", "#68a2ff"),
+      alpha = 0.5,
+      # label.col = c("darkred", "white", "darkgreen", "white", "white", "white", "blue4"),
+      cex = 2.5,
+      fontfamily = "sans",
+      fontface = "bold",
+      cat.default.pos = "text",
+      cat.col = "black",
+      cat.cex = 2.5,
+      cat.fontfamily = "sans",
+      cat.dist = c(0.08, 0.08),
+      cat.pos = 1
+    );
+grid.draw(prettyvenn)
+```
+
+
+
+### Gene Ontology
+Make Gene Ontology input table for MWU for hot treatment
+```{r message=FALSE, warning=FALSE, eval = FALSE}
+oc_hot_res = read.table("tables/oculina_hot_results_sym.txt")
+head(oc_hot_res)
+oc_hot_res$isogroup=row.names(oc_hot_res)
+
+go_input_hot_oculina = oc_hot_res %>%
+  mutate(mutated_p = -log(pvalue)) %>%
+  mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
+  select(isogroup, mutated_p_updown) %>%
+  na.omit()
+
+nrow(go_input_hot_oculina)
+head(go_input_hot_oculina)
+colnames(go_input_hot_oculina) <- c("gene", "pval")
+head(go_input_hot_oculina)
+write.csv(go_input_hot_oculina, file="tables/hot_oculina_sym_GO.csv", quote=F, row.names=FALSE)
+
+```
+
+Make Gene Ontology input table for MWU for Oculina cold treatment
+```{r message=FALSE, warning=FALSE, eval = FALSE}
+oc_cold_res = read.table("tables/oculina_cold_results_sym.txt")
+head(oc_cold_res)
+oc_cold_res$isogroup=row.names(oc_cold_res)
+
+go_input_cold_oculina = oc_cold_res %>%
+  mutate(mutated_p = -log(pvalue)) %>%
+  mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
+  select(isogroup, mutated_p_updown) %>%
+  na.omit()
+
+nrow(go_input_cold_oculina)
+head(go_input_cold_oculina)
+colnames(go_input_cold_oculina) <- c("gene", "pval")
+head(go_input_cold_oculina)
+write.csv(go_input_cold_oculina, file="tables/cold_oculina_sym_GO.csv", quote=F, row.names=FALSE)
+```
+
+
+### Cellular Components
+Hot vs. control comparison first
+```{r, cache=TRUE, eval = FALSE}
+input="hot_oculina_sym_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+goAnnotations="Brevolium_psyg_iso2go.tab" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
+goDatabase="go.obo" # download from http://www.geneontology.org/GO.downloads.ontology.shtml
+goDivision="CC" # either MF, or BP, or CC
+source("gomwu.functions.R")
+```
+
+```{r cache=TRUE, eval = FALSE}
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+	perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
+	largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
+	smallest=5,   # a GO category should contain at least this many genes to be considered
+	clusterCutHeight=0.25) # threshold for merging similar (gene-sharing) terms. See README for details.
+#	Alternative="g" # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead. 
+#	Module=TRUE,Alternative="g" # un-remark this if you are analyzing a SIGNED WGCNA module (values: 0 for not in module genes, kME for in-module genes). In the call to gomwuPlot below, specify absValue=0.001 (count number of "good genes" that fall into the module)
+#	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
+
+# do not continue if the printout shows that no GO terms pass 10% FDR.
+
+```
+0 GO terms pass 10% FDR for CC, so not continuing to plot.
+
+
+### Molecular Functions
+
+```{r cache=TRUE, eval = FALSE}
+goDivision="MF" 
+```
+
+```{r cache=TRUE, eval = FALSE}
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+	perlPath="perl", 
+	largest=0.1, 
+	smallest=5,   
+	clusterCutHeight=0.25 
+)
+```
+
+```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
+pdf("mf_oculina_sym_hot_results.pdf")
+mf_oculina_hot_results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=1,
+	level1=0.1, 
+	level2=0.05, 
+	level3=0.01, 
+	txtsize=1.2,    
+	treeHeight=0.5, 
+  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") 
+)
+dev.off()
+write.csv(mf_oculina_hot_results, "mf_oculina_hot_sym.csv")
+```
+
+### Biological process
+```{r cache=TRUE, eval = FALSE}
+goDivision="BP"
+```
+
+```{r cache=TRUE, eval = FALSE}
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+	perlPath="perl", 
+	largest=0.1,  
+	smallest=5,   
+	clusterCutHeight=0.25 
+)
+```
+
+```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
+pdf("bp_oculina_sym_hot_results.pdf")
+bp_oculina_hot_results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=1,
+	level1=0.1, 
+	level2=0.05, 
+	level3=0.01, 
+	txtsize=1.2,    
+	treeHeight=0.5, 
+  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") 
+)
+dev.off()
+write.csv(bp_oculina_hot_results, "bp_oculina_hot_sym.csv")
+```
+
+
+Now cold vs. control comparison 
+```{r, cache=TRUE, eval = FALSE}
+input="cold_oculina_sym_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+goAnnotations="Brevolium_psyg_iso2go.tab" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
+goDatabase="go.obo" # download from http://www.geneontology.org/GO.downloads.ontology.shtml
+goDivision="CC" # either MF, or BP, or CC
+source("gomwu.functions.R")
+```
+
+```{r cache=TRUE, eval = FALSE}
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+	perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
+	largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
+	smallest=5,   # a GO category should contain at least this many genes to be considered
+	clusterCutHeight=0.25) # threshold for merging similar (gene-sharing) terms. See README for details.
+#	Alternative="g" # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead. 
+#	Module=TRUE,Alternative="g" # un-remark this if you are analyzing a SIGNED WGCNA module (values: 0 for not in module genes, kME for in-module genes). In the call to gomwuPlot below, specify absValue=0.001 (count number of "good genes" that fall into the module)
+#	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
+
+# do not continue if the printout shows that no GO terms pass 10% FDR.
+
+```
+
+```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
+pdf("cc_oculina_cold_sym_results.pdf")
+cc_oculina_cold_results=gomwuPlot(input,goAnnotations,goDivision,
+#	absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+	absValue=1,
+	level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+	level2=0.05, # FDR cutoff to print in regular (not italic) font.
+	level3=0.01, # FDR cutoff to print in large bold font.
+	txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+	treeHeight=0.5, # height of the hierarchical clustering tree
+  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+dev.off()
+write.csv(cc_oculina_cold_results, "cc_oculina_cold_sym.csv")
+```
+
+### Molecular Functions
+
+```{r cache=TRUE, eval = FALSE}
+goDivision="MF" 
+```
+
+```{r cache=TRUE, eval = FALSE}
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+	perlPath="perl", 
+	largest=0.1, 
+	smallest=5,   
+	clusterCutHeight=0.25 
+)
+```
+
+```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
+pdf("mf_oculina_cold_sym_results.pdf")
+mf_oculina_cold_results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=1,
+	level1=0.1, 
+	level2=0.05, 
+	level3=0.01, 
+	txtsize=1.2,    
+	treeHeight=0.5, 
+  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") 
+)
+dev.off()
+write.csv(mf_oculina_cold_results, "mf_oculina_cold_sym.csv")
+```
+
+### Biological process
+```{r cache=TRUE, eval = FALSE}
+goDivision="BP"
+```
+
+```{r cache=TRUE, eval = FALSE}
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+	perlPath="perl", 
+	largest=0.1,  
+	smallest=5,   
+	clusterCutHeight=0.25 
+)
+```
+
+```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
+pdf("bp_oculina_cold_sym_results.pdf")
+bp_oculina_cold_results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=1,
+	level1=0.1, 
+	level2=0.05, 
+	level3=0.01, 
+	txtsize=1.2,    
+	treeHeight=0.5, 
+  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") 
+)
+dev.off()
+write.csv(bp_oculina_cold_results, "bp_oculina_cold_sym.csv")
+```

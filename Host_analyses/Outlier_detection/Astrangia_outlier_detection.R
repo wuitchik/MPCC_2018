@@ -21,5 +21,14 @@ arrayQualityMetrics(vsdBlind,intgroup=c("Treatment"), force=TRUE, outdir = "Astr
 ## Visit the .html output in Astrangia/arrayQualityMetrics/index.html
 # from this, two outliers are identified: AF2, AS3 and removed in subsequent analyses
 
+counts = counts %>%
+  select(-AF2,-AS3,-AP4,-AC1)
+
+expDesign = expDesign %>%
+  filter(Sample %in% colnames(counts)) 
+
+write.csv(counts, "Astrangia/outlier_removed_host_counts.csv")
+write.csv(expDesign, "Astrangia/outlier_removed_expDesign.csv")
+
 
 

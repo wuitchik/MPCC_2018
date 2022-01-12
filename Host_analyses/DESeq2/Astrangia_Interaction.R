@@ -1,4 +1,6 @@
-## Differential expression in Astrangia poculata 
+## Differential expression in Astrangia poculata
+## Interaction between temperature and symbiont state
+## Likelihood ratio test
 
 library(DESeq2)
 library(tidyverse)

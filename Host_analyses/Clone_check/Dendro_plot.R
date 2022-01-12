@@ -21,7 +21,6 @@ plot(hc,cex=0.7)
 
 dev.off()
 
-
 ### Oculina arbuscula ###
 
 bams=read.table("Oculina/bam_list")[,1] # list of bam files

@@ -3,7 +3,7 @@
 ### SNP relatedness on dendrogram
 In this analysis, the dendrogram for A. poculata (Astrangiahas the sample AP4 displaying disimilar clustering with all other samples. For this reason it was removed from subsequent analysis. Furthermore, while not outliers, it was identified that there was unintentional clonality in Oculina arbuscula. We renamed the genotypes to reflect this, and took a random sample from each clone in each treatment group to avoid unitentional pseudoreplication. The remaining clonal samples were not used in subsequent analyses.
 
-Clonal samples with new genotype identifiers (see Oculina_dendrogram.odf)
+Clonal samples with new genotype identifiers (see Oculina_dendrogram.pdf)
 
 - Z = genotype N+O+P
 - Y = genotype L+M

@@ -10,7 +10,7 @@ Clonal samples with new genotype identifiers (see Oculina_dendrogram.pdf)
 - X = genotype H+K
 
 ### using arrayQualityMetrics
-Two samples (AF2,AS3) were identified as outliers in A. poculata (see Astrangia/index.html)
+Two samples (AF2,AS3) were identified as outliers in A. poculata (see Astrangia/index.html), and one sample (R9) in O. arbuscula (see Oculina/index.html)
 
 ### unlikely clustering in ordinal space
 When initially exploring data with a principal component analysis (see AC1_PCA.png), one A. poculata sample (AC1) was identified as an outlier due to its extreme position relative to other samples of the same treatment in ordinal space. 

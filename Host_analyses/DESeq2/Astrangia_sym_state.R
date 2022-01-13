@@ -1,9 +1,6 @@
 ## Differential expression in Astrangia poculata
 ## Symbiont state
-<<<<<<< HEAD
-=======
-## Wald
->>>>>>> 860a98bb99a1b43e0e17947a2653baf0702af2fd
+
 
 library(DESeq2)
 library(tidyverse)
@@ -38,8 +35,6 @@ sym_results = as.data.frame(sym_results) %>%
 
 write.csv(sym_results, "Astrangia/sym_allTreatments_results.csv")
 
-
-<<<<<<< HEAD
 ## Symbiont state in control
 
 expDesign = expDesign %>%
@@ -114,16 +109,3 @@ cold_sym_results = as.data.frame(cold_sym_results) %>%
 write.csv(cold_sym_results, "Astrangia/cold_sym_results.csv")
 
 save.image(file = "Astrangia/Astrangia_sym_state.RData")
-=======
-
-as_expDesign_ORv2 = as_expDesign_OR %>%
-  mutate(Treatment_by_Sym.Status = paste(Treatment,Sym.Status, sep = "_"))
-
-as_dds.sym = DESeqDataSetFromMatrix(countData = as_counts_OR, 
-                                    colData = as_expDesign_ORv2,
-                                    design = ~ Treatment_by_Sym.Status)
-
-as_dds.sym = DESeq(as_dds.sym)
-as_cold.sym_results = results(as_dds.sym, alpha = 0.05, contrast = c("Treatment_by_Sym.Status", "Cold_Brown", "Cold_White"))
-as_cold.sym_summary = summary(as_cold.sym_results)
->>>>>>> 860a98bb99a1b43e0e17947a2653baf0702af2fd

@@ -60,22 +60,22 @@ powers = c(c(1:10), seq(from = 12, to=20, by=2))
 sft = pickSoftThreshold(input, powerVector = powers, verbose = 5, networkType = "signed")
 
 
-#    Power SFT.R.sq  slope truncated.R.sq mean.k. median.k. max.k.
-# 1      1    0.751 -4.210          0.921  4920.0  4.69e+03   8500
-# 2      2    0.951 -3.390          0.961  1180.0  1.02e+03   3500
-# 3      3    0.960 -2.850          0.965   388.0  3.06e+02   1890
-# 4      4    0.950 -2.560          0.967   161.0  1.13e+02   1180
-# 5      5    0.931 -2.360          0.980    81.1  4.61e+01    812
-# 6      6    0.883 -2.220          0.981    47.9  2.04e+01    590
-# 7      7    0.820 -2.070          0.965    32.3  9.67e+00    446
-# 8      8    0.752 -1.890          0.925    24.2  4.82e+00    346
-# 9      9    0.680 -1.630          0.803    19.6  2.52e+00    275
-# 10    10    0.940 -1.110          0.925    16.8  1.37e+00    223
-# 11    12    0.917 -0.969          0.908    13.8  4.44e-01    198
-# 12    14    0.877 -0.893          0.885    12.4  1.60e-01    191
-# 13    16    0.858 -0.843          0.879    11.7  6.30e-02    188
-# 14    18    0.797 -0.808          0.826    11.2  2.60e-02    188
-# 15    20    0.788 -0.786          0.821    11.0  1.13e-02    188
+#    Power SFT.R.sq   slope truncated.R.sq mean.k. median.k. max.k.
+#      1 1.00e-01 10.7000          0.937 17000.0  17100.00  18200
+#      2 5.78e-06  0.0441          0.962  8900.0   8880.00  10400
+#      3 8.88e-02 -3.5500          0.857  4800.0   4760.00   6360
+#      4 2.77e-01 -4.6200          0.811  2670.0   2630.00   4090
+#      5 4.65e-01 -4.8100          0.827  1530.0   1490.00   2750
+#      6 6.43e-01 -4.8300          0.884   907.0    873.00   1920
+#      7 7.52e-01 -4.6300          0.928   554.0    521.00   1380
+#      8 8.11e-01 -4.3700          0.957   348.0    321.00   1030
+#      9 8.47e-01 -4.1200          0.974   227.0    202.00    789
+#     10 8.53e-01 -3.8400          0.980   152.0    129.00    618
+#     12 8.16e-01 -3.0600          0.933    76.6     56.20    403
+#     14 8.91e-01 -2.0100          0.897    44.4     25.90    282
+#     16 9.58e-01 -1.5700          0.951    29.5     12.60    241
+#     18 9.49e-01 -1.3900          0.936    22.0      6.41    226
+#     20 6.17e-01 -1.4700          0.538    18.0      3.37    215
 
 # Plot the soft threshold scale independence
 pdf("figures/scale_independence.pdf")
@@ -120,6 +120,9 @@ net = blockwiseModules(input,
 # number of genes associated with each module
 table(net$colors)
 
+#black      blue     brown     green      grey      pink       red turquoise    yellow 
+# 650      1938      1734       849     23199       608       655      2770      1251 
+
 
 # Convert labels to colors for plotting
 mergedColors = labels2colors(net$colors)
@@ -137,9 +140,6 @@ moduleLabels = net$colors
 moduleColors = labels2colors(net$colors)
 MEs = net$MEs;
 geneTree = net$dendrograms[[1]];
-save(MEs, moduleLabels, moduleColors, geneTree,
-     file = "Astrangia_networkConstruction.RData")
-
 
 MEList = moduleEigengenes(input, colors = net$unmergedColors)
 MEs = MEList$eigengenes
@@ -185,98 +185,6 @@ labeledHeatmap(Matrix = moduleTraitCor,
                main = paste("Module-trait relationships"))
 dev.off()
 
+save.image(file = "Astrangia_WGCNA.RData")
 
 
-# Define variable weight containing the weight column of datTrait
-weight = as.data.frame(traits$Mapped_Sym);
-names(weight) = "Brown Phenotype"
-# names (colors) of the modules
-modNames = substring(names(MEs), 3)
-geneModuleMembership = as.data.frame(cor(input, MEs, use = "p"));
-MMPvalue = as.data.frame(corPvalueStudent(as.matrix(geneModuleMembership), nSamples));
-
-names(geneModuleMembership) = paste("MM", modNames, sep="");
-names(MMPvalue) = paste("p.MM", modNames, sep="");
-geneTraitSignificance = as.data.frame(cor(input, weight, use = "p"));
-GSPvalue = as.data.frame(corPvalueStudent(as.matrix(geneTraitSignificance), nSamples));
-names(geneTraitSignificance) = paste("GS.", names(weight), sep="");
-names(GSPvalue) = paste("p.GS.", names(weight), sep="");
-
-# intramodular analysis, pulling out eigengenes of interest
-
-module = "brown"
-column = match(module, modNames);
-moduleGenes = moduleColors==module;
-sizeGrWindow(7, 7);
-par(mfrow = c(1,1));
-verboseScatterplot(abs(geneModuleMembership[moduleGenes, column]),
-                   abs(geneTraitSignificance[moduleGenes, 1]),
-                   xlab = paste("Module Membership in", module, "module"),
-                   ylab = "Gene significance for brown phenotype",
-                   main = paste("Module membership vs. gene significance\n"),
-                   cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = module)
-
-names(t(input))
-names(t(input))[moduleColors=="brown"]
-
-
-test_list = rownames(t(input))
-annot = read.delim(file = "astrangia_iso2go.tab", sep = "\t") %>%
-  filter(Protein_ID %in% test_list)
-
-dim(annot)
-names(annot)
-probes = rownames(t(input))
-probes2annot = match(probes, annot$Protein_ID)
-
-# The following is the number or probes without annotation:
-sum(is.na(probes2annot))
-
-# Create the starting data frame
-geneInfo0 = data.frame(Protein_ID = probes,
-                       moduleColor = moduleColors,
-                       geneTraitSignificance,
-                       GSPvalue) %>%
-  left_join(annot, by = "Protein_ID")
-# Order modules by their significance for weight
-modOrder = order(-abs(cor(MEs, weight, use = "p")));
-# Add module membership information in the chosen order
-for (mod in 1:ncol(geneModuleMembership))
-{
-  oldNames = names(geneInfo0)
-  geneInfo0 = data.frame(geneInfo0, geneModuleMembership[, modOrder[mod]],
-                         MMPvalue[, modOrder[mod]]);
-  names(geneInfo0) = c(oldNames, paste("MM.", modNames[modOrder[mod]], sep=""),
-                       paste("p.MM.", modNames[modOrder[mod]], sep=""))
-}
-# Order the genes in the geneInfo variable first by module color, then by geneTraitSignificance
-geneOrder = order(geneInfo0$moduleColor, -abs(geneInfo0$GS.Brown.Phenotype));
-geneInfo = geneInfo0[geneOrder, ]
-
-write.csv(geneInfo, file = "test.csv")
-
-
-
-# Read in the probe annotation
-annot = read.csv(file = "GeneAnnotation.csv");
-# Match probes in the data set to the probe IDs in the annotation file
-probes = names(datExpr)
-probes2annot = match(probes, annot$substanceBXH)
-# Get the corresponding Locuis Link IDs
-allLLIDs = annot$LocusLinkID[probes2annot];
-# $ Choose interesting modules
-intModules = c("brown", "red", "salmon")
-for (module in intModules)
-{
-  # Select module probes
-  modGenes = (moduleColors==module)
-  # Get their entrez ID codes
-  modLLIDs = allLLIDs[modGenes];
-  # Write them into a file
-  fileName = paste("LocusLinkIDs-", module, ".txt", sep="");
-  write.table(as.data.frame(modLLIDs), file = fileName,
-              row.names = FALSE, col.names = FALSE)
-}
-# As background in the enrichment analysis, we will use all probes in the analysis.
-fileName = paste("LocusLinkIDs-all.txt", sep="");
-write.table(as.data.frame(allLLIDs), file = fileNam

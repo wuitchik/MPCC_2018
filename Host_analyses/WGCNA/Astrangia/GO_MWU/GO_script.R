@@ -42,7 +42,11 @@ for (goDivision in divisions){
   }
 }
 
-# record how many significant and save
+
+##### Left off here
+save.image(file = "feb_3.RData")
+
+xxxnxNXxxx# record how many significant and save
 divRec = c()
 inRec = c()
 sigRec = c()

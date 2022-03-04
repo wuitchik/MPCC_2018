@@ -1,0 +1,16 @@
+goDivision	input	nSig
+CC	cold	122
+CC	cold_sym	20
+CC	heat	98
+CC	heat_sym	107
+CC	sym_control	56
+MF	cold	138
+MF	cold_sym	21
+MF	heat	185
+MF	heat_sym	50
+MF	sym_control	68
+BP	cold	458
+BP	cold_sym	9
+BP	heat	374
+BP	heat_sym	404
+BP	sym_control	167

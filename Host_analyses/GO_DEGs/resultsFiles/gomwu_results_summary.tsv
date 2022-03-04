@@ -1,0 +1,16 @@
+goDivision	input	nSig
+CC	cold_results_modified_pvalues.csv	122
+CC	cold_sym_results_modified_pvalues.csv	20
+CC	heat_results_modified_pvalues.csv	98
+CC	heat_sym_results_modified_pvalues.csv	107
+CC	sym_control_results_modified_pvalues.csv	56
+MF	cold_results_modified_pvalues.csv	138
+MF	cold_sym_results_modified_pvalues.csv	21
+MF	heat_results_modified_pvalues.csv	185
+MF	heat_sym_results_modified_pvalues.csv	50
+MF	sym_control_results_modified_pvalues.csv	68
+BP	cold_results_modified_pvalues.csv	458
+BP	cold_sym_results_modified_pvalues.csv	9
+BP	heat_results_modified_pvalues.csv	374
+BP	heat_sym_results_modified_pvalues.csv	404
+BP	sym_control_results_modified_pvalues.csv	167

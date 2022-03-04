@@ -1,92 +1,67 @@
-# GO_MWU uses continuous measure of significance (such as fold-change or -log(p-value) ) to identify GO categories that are significantly enriches with either up- or down-regulated genes. The advantage - no need to impose arbitrary significance cutoff.
-
-# If the measure is binary (0 or 1) the script will perform a typical "GO enrichment" analysis based Fisher's exact test: it will show GO categories over-represented among the genes that have 1 as their measure. 
-
-# On the plot, different fonts are used to indicate significance and color indicates enrichment with either up (red) or down (blue) regulated genes. No colors are shown for binary measure analysis.
-
-# The tree on the plot is hierarchical clustering of GO categories based on shared genes. Categories with no branch length between them are subsets of each other.
-
-# The fraction next to GO category name indicates the fracton of "good" genes in it; "good" genes being the ones exceeding the arbitrary absValue cutoff (option in gomwuPlot). For Fisher's based test, specify absValue=0.5. This value does not affect statistics and is used for plotting only.
-
-# Stretch the plot manually to match tree to text
-
-# Mikhail V. Matz, UT Austin, February 2015; matz@utexas.edu
-
-################################################################
-
-
-# SET BASIC VARS ---------------------------------------------------------
-
-setwd("./go_mwu")
-goDatabase="go.obo"
-goAnnotations="amil_zachFullerV2_gos.tsv"
-divisions=c('CC', 'MF', 'BP')
-source("gomwu.functions.R")
-
+# load libraries
+library(tidyverse)
 
 # CHOOSE SET OF INPUT FILES TO LOOP RUN -----------------------------------
+data_path <- "Astrangia"   # path to the data
+results_files <- dir(data_path, pattern = "*.csv") # get file names
+names <- sub("\\.csv.*", "", results_files)
+
+# Load all result files from folder
+for(i in names){
+  filepath = file.path(data_path,paste(i,".csv", sep="")) # sets up .csv files
+  assign(i, read.delim(filepath, sep = ",") %>% # loads up files
+    mutate(mutated_p = -log(pvalue), # modifies to a signed p-value
+           mutated_p_updown = ifelse(log2FoldChange < 0,
+                                     mutated_p*-1,
+                                     mutated_p*1)) %>%
+    select(X, mutated_p_updown) %>%
+    rename(GeneID = X) %>%
+    na.omit() 
+    )
+}
+
+# Write these new modified files
+for( i in 1:length(names)) {
+  write.table(get(names[i]), 
+             paste0(names[i],
+             "_modified_pvalues.csv"),
+             sep = ",",
+             row.names = FALSE, 
+            col.names = FALSE,
+            quote = FALSE)
+}
+
+# Now we can loop our GO analyses
+
+# SET BASIC VARS ---------------------------------------------------------
+goDatabase = "go.obo"
+goAnnotations = "astrangia_iso2go.tab"
+divisions = c('CC', 'MF', 'BP')
+source("gomwu.functions.R")
 
 ####################  OVERALL SETS #################### 
-
-#Run individually for Up- and down-regulated genes
-#overall high and low sets plus red module membership and DAPC
-inputFiles = c('corStress_down_For_MWU.csv',
-               'corStress_up_For_MWU.csv',
-               'lowStress_down_For_MWU.csv',
-               'lowStress_up_For_MWU.csv',
-               'redMembership_ForMWU.csv',
-               'stressDAPC_ForMWU.csv');ALTERNATIVE='g'
-
-
-
-#overall input two-tailed
-inputFiles = c('clusterBstress_For_MWU.csv',
-               'clusterBstress_For_MWU.csv');ALTERNATIVE='t'
-inputFiles = c('clusterAstress_For_MWU.csv');ALTERNATIVE='t'
-
-
-######## INDIVIDUAL BIOPROJECTS:
-
-#individual bioprojects
-ll=load('individualInputs.Rdata')
-
-#for single tailed on up and downregulated genes
-inputFiles = append(paste(individualNames, 'down_For_MWU.csv', sep='_'),
-                    paste(individualNames, 'up_For_MWU.csv', sep='_'));ALTERNATIVE='g'
-
-
-
-#for two tailed
-inputFiles = paste(individualNames, 'For_MWU.csv', sep='_');ALTERNATIVE='t'
-
-#################################################
-
-
+inputFiles = paste0(names, "_modified_pvalues.csv")
 
 # LOOP THROUGH SELECTED INPUT FILES AND GO DIVISIONS ---------------------------------------
-
-
 for (goDivision in divisions){
-  print('==============')
-  print('==============')
-  print('==============')
+  print('--------------')
+  print('--------------')
+  print("------WORKING ON A NEW GO CATEGORY-----")
   print(goDivision)
-  #set BP smallest to 50 so you don't get too many
-  if (goDivision=='BP'){
-    SMALLEST=30
-  } else {
-    SMALLEST=10
-  }
+  print('--------------')
+  print('--------------')
   for (input in inputFiles){
     print('--------------')
-    print(paste(input, '...', sep='.'))
-    # Calculating stats. It might take ~3 min for MF and BP. Do not rerun it if you just want to replot the data with different cutoffs, go straight to gomwuPlot. If you change any of the numeric values below, delete the files that were generated in previos runs first.
+
+    print("input being worked on")
+    print(input)
+    #print(paste0(input, '...', sep='.'))
     gomwuStats(input, goDatabase, goAnnotations, goDivision,
-               perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
-               largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
-               smallest=SMALLEST,   # a GO category should contain at least this many genes to be considered
-               clusterCutHeight=0.0, # threshold for merging similar (gene-sharing) terms. See README for details.
-               Alternative=ALTERNATIVE # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead.
+               perlPath ="perl", # replace with full path to perl executable if it is not in your system's PATH already
+               largest =0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
+               smallest = 10,   # a GO category should contain at least this many genes to be considered
+               clusterCutHeight = 0.25, # threshold for merging similar (gene-sharing) terms. See README for details.
+               # Alternative=ALTERNATIVE # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead.
                # Module=TRUE,Alternative="g" # un-remark this if you are analyzing a SIGNED WGCNA module (values: 0 for not in module genes, kME for in-module genes). In the call to gomwuPlot below, specify absValue=0.001 (count number of "good genes" that fall into the module)
                #	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
     )
@@ -104,7 +79,7 @@ sigRec = c()
 for (goDivision in divisions){
   for (input in inputFiles){
     resName = paste(paste('MWU', goDivision, sep = "_"), input, sep = "_")
-    go.res=read.table(resName, header = T)
+    go.res = read.table(resName, header = T)
     totSig = sum(go.res$p.adj < 0.1)
     divRec = append(divRec, goDivision)
     inRec = append(inRec, input)

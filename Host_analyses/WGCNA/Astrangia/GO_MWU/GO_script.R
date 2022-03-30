@@ -17,8 +17,6 @@ divisions=c("BP", "CC", "MF")
 # run go_mwu for each -----------------------------------------------------
 for (goDivision in divisions){
   print('==============')
-  print('==============')
-  print('==============')
   print(goDivision)
   #set BP smallest to 50 so you don't get too many
   if (goDivision=='BP'){

@@ -1,3 +1,6 @@
+# Much of this script was stolen from Dixon (https://github.com/grovesdixon/Acropora_gene_expression_meta)
+
+
 # load libraries
 library(tidyverse)
 
@@ -28,7 +31,7 @@ for( i in 1:length(names)) {
              sep = ",",
              row.names = FALSE, 
             col.names = FALSE,
-            quote = FALSE)
+            quote = FALSE) # this is critical for GO MWU to read it properly
 }
 
 # Now we can loop our GO analyses
@@ -36,7 +39,10 @@ for( i in 1:length(names)) {
 # SET BASIC VARS ---------------------------------------------------------
 goDatabase = "go.obo"
 goAnnotations = "astrangia_iso2go.tab"
-divisions = c('CC', 'MF', 'BP')
+divisions = c('CC',
+              'MF',
+              'BP')
+
 source("gomwu.functions.R")
 
 ####################  OVERALL SETS #################### 
@@ -55,10 +61,11 @@ for (goDivision in divisions){
 
     print("input being worked on")
     print(input)
-    #print(paste0(input, '...', sep='.'))
+    
+    ## Modify your GO MWU parameters here
     gomwuStats(input, goDatabase, goAnnotations, goDivision,
-               perlPath ="perl", # replace with full path to perl executable if it is not in your system's PATH already
-               largest =0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
+               perlPath = "perl", # replace with full path to perl executable if it is not in your system's PATH already
+               largest = 0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
                smallest = 10,   # a GO category should contain at least this many genes to be considered
                clusterCutHeight = 0.25, # threshold for merging similar (gene-sharing) terms. See README for details.
                # Alternative=ALTERNATIVE # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead.
@@ -69,10 +76,8 @@ for (goDivision in divisions){
 }
 
 
+# record how many significant and save those ---------------------------------------------
 
-
-# record how many significant and save thsoe ---------------------------------------------
-library(tidyverse)
 divRec = c()
 inRec = c()
 sigRec = c()
@@ -99,58 +104,81 @@ res = tibble('goDivision'=divRec,
 res %>% 
   write_tsv(path='./resultsFiles/gomwu_results_summary.tsv')
 
+comparison_nSig = read.delim("gomwu_results_summary_mod.txt", sep = "\t")
 
+cols = c("cold" = "dodgerblue4", "cold_sym" = "dodgerblue2",
+         "heat" = "firebrick4", "heat_sym" = "firebrick2",
+         "sym_control" = "gray50")
 
-# OUTPUT THE HIGH-STRESS GO RESULTS -------------------------------------------
-input='corStress_For_MWU.csv'
+ggplot(comparison_nSig, aes(input,nSig)) +
+  geom_bar(stat = "identity", aes(fill = input)) +
+  facet_grid(. ~ goDivision) +
+  scale_fill_manual(values = cols) +
+  theme_classic()
+
+ggplot(comparison_nSig, aes(input,nSig)) +
+  geom_bar(stat = "identity", aes(fill = input)) +
+  scale_fill_manual(values = cols) +
+  theme_classic()
+
+# OUTPUT THE GO RESULTS-------------------------------------------
+# because each figure takes a little finessing, we do them each manually. 
+
+#input='sym_control_results_modified_pvalues.csv'
 goDivisions=c('BP', 'MF', 'CC')
-go.res = data.frame()
-for (goDivision in goDivisions){
-  print(goDivision)
-  resName = paste(paste('MWU', goDivision, sep = "_"), input, sep = "_")
-  divDf = read.table(resName, header = T)
-  divDf$goDivision=goDivision
-  go.res=rbind(go.res, divDf)
-}
-go.res %>% 
-  arrange(goDivision, pval) %>% 
-  write_tsv('../results_tables/all_high_stress_go_mwu_results.tsv')
-
-
-#all high stress
-input='corStress_For_MWU.csv';goDivision='BP';LVL=1e-9
-input='corStress_For_MWU.csv';goDivision='MF';LVL=1e-3
-input='corStress_For_MWU.csv';goDivision='CC';LVL=1e-3
-
-results=gomwuPlot(input,goAnnotations,goDivision,
-                  # absValue=0.0001,
-                  absValue=-log(0.05, 10),  # genes with the measure value exceeding this will be counted as "good genes". Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
-                  level1=LVL, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-                  level2=LVL, # FDR cutoff to print in regular (not italic) font.
-                  level3=LVL, # FDR cutoff to print in large bold font.
-                  txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
-                  treeHeight=0.5, # height of the hierarchical clustering tree
-                  #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
-)
-
-
-
-
+#go.res = data.frame()
+#for (goDivision in goDivisions){
+#  print(goDivision)
+#  resName = paste(paste('MWU', goDivision, sep = "_"), input, sep = "_")
+#  divDf = read.table(resName, header = T)
+#  divDf$goDivision=goDivision
+#  go.res=rbind(go.res, divDf)
+#}
+#go.res %>% 
+#  arrange(goDivision, pval) %>% 
+#    write_tsv('resultsFiles/sym_control_go_mwu_results.tsv')
+#
+#
+###all high stress
+#input='sym_control_results_modified_pvalues.csv';goDivision='BP'; LVL1=1e-5; LVL2 = 1e-4; LVL3 = 1e-3
+#input='cold_results_modified_pvalues.csv';goDivision='MF';LVL=1e-3
+#input='cold_results_modified_pvalues.csv';goDivision='CC';LVL=1e-3
+#
+#results=gomwuPlot(input,goAnnotations,goDivision,
+#                  # absValue=0.0001,
+#                  absValue=-log(0.05, 10),  # genes with the measure value exceeding this will be counted as "good genes". Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+#                  level1=LVL3, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+#                  level2=LVL2, # FDR cutoff to print in regular (not italic) font.
+#                  level3=LVL1, # FDR cutoff to print in large bold font.
+#                  txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+#                  treeHeight=0.5, # height of the hierarchical clustering tree
+#                  #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+#)
+#
 # plot results for each module with any significant enrichment -------------------
 sig = res %>% 
   filter(nSig>=2)
 
 for (i in 1:nrow(sig)){
+  if (goDivision == "BP"){#
+    LVL1 = 1e-9;
+    LVL2 = 1e-8;
+    LVL3 = 1e-7
+  } else {
+    LVL1 = 1e-2;
+    LVL2 = 1e-3;
+    LVL3 = 1e-4
+  }
   row=sig[i,]
   goDivision=row['goDivision']
   input = row['input']
   figFileName = paste('./resultsFiles/', sep='', paste(paste(goDivision, input, sep='_'), 'tree.pdf', sep='_'))
   pdf(figFileName)
   gomwuPlot(input,goAnnotations,goDivision,
-            absValue=0.00001,  # genes with the measure value exceeding this will be counted as "good genes". Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
-            level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-            level2=0.05, # FDR cutoff to print in regular (not italic) font.
-            level3=0.001, # FDR cutoff to print in large bold font.
+            absValue=-log(0.05, 10),  # genes with the measure value exceeding this will be counted as "good genes". Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+            level1=LVL3, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+            level2=LVL2, # FDR cutoff to print in regular (not italic) font.
+            level3=LVL1, # FDR cutoff to print in large bold font.
             txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
             treeHeight=0.5, # height of the hierarchical clustering tree
             #	colors=c("dodgerblue2","firebrick1","skyblue","lightcoral") # these are default colors, un-remar and change if needed

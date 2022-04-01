@@ -5,7 +5,7 @@
 library(tidyverse)
 
 # CHOOSE SET OF INPUT FILES TO LOOP RUN -----------------------------------
-data_path <- "Astrangia"   # path to the data
+data_path <- "Oculina"   # path to the data, change to run on a particular dataset
 results_files <- dir(data_path, pattern = "*.csv") # get file names
 names <- sub("\\.csv.*", "", results_files)
 
@@ -104,192 +104,25 @@ res = tibble('goDivision'=divRec,
 res %>% 
   write_tsv(path='./resultsFiles/gomwu_results_summary.tsv')
 
-comparison_nSig = read.delim("gomwu_results_summary_mod.txt", sep = "\t")
+comparison_nSig = read.delim("resultsFiles/gomwu_results_summary.tsv", sep = "\t") %>%
+  mutate(treatment = str_remove_all(input, "_results_modified_pvalues.csv"))
 
+
+## Comparing the numbers of GO terms
 cols = c("cold" = "dodgerblue4", "cold_sym" = "dodgerblue2",
          "heat" = "firebrick4", "heat_sym" = "firebrick2",
          "sym_control" = "gray50")
 
-ggplot(comparison_nSig, aes(input,nSig)) +
-  geom_bar(stat = "identity", aes(fill = input)) +
+ggplot(comparison_nSig, aes(treatment,nSig)) +
+  geom_bar(stat = "identity", aes(fill = treatment)) +
   facet_grid(. ~ goDivision) +
   scale_fill_manual(values = cols) +
   theme_classic()
 
-ggplot(comparison_nSig, aes(input,nSig)) +
-  geom_bar(stat = "identity", aes(fill = input)) +
-  scale_fill_manual(values = cols) +
-  theme_classic()
+ggsave("Oculina_Comparison_of_GO_numbers.pdf",
+       plot = last_plot(), 
+       width = 6,
+       units = "in")
 
-# OUTPUT THE GO RESULTS-------------------------------------------
-# because each figure takes a little finessing, we do them each manually. 
-
-#input='sym_control_results_modified_pvalues.csv'
-goDivisions=c('BP', 'MF', 'CC')
-#go.res = data.frame()
-#for (goDivision in goDivisions){
-#  print(goDivision)
-#  resName = paste(paste('MWU', goDivision, sep = "_"), input, sep = "_")
-#  divDf = read.table(resName, header = T)
-#  divDf$goDivision=goDivision
-#  go.res=rbind(go.res, divDf)
-#}
-#go.res %>% 
-#  arrange(goDivision, pval) %>% 
-#    write_tsv('resultsFiles/sym_control_go_mwu_results.tsv')
-#
-#
-###all high stress
-#input='sym_control_results_modified_pvalues.csv';goDivision='BP'; LVL1=1e-5; LVL2 = 1e-4; LVL3 = 1e-3
-#input='cold_results_modified_pvalues.csv';goDivision='MF';LVL=1e-3
-#input='cold_results_modified_pvalues.csv';goDivision='CC';LVL=1e-3
-#
-#results=gomwuPlot(input,goAnnotations,goDivision,
-#                  # absValue=0.0001,
-#                  absValue=-log(0.05, 10),  # genes with the measure value exceeding this will be counted as "good genes". Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
-#                  level1=LVL3, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-#                  level2=LVL2, # FDR cutoff to print in regular (not italic) font.
-#                  level3=LVL1, # FDR cutoff to print in large bold font.
-#                  txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
-#                  treeHeight=0.5, # height of the hierarchical clustering tree
-#                  #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
-#)
-#
-# plot results for each module with any significant enrichment -------------------
-sig = res %>% 
-  filter(nSig>=2)
-
-for (i in 1:nrow(sig)){
-  if (goDivision == "BP"){#
-    LVL1 = 1e-9;
-    LVL2 = 1e-8;
-    LVL3 = 1e-7
-  } else {
-    LVL1 = 1e-2;
-    LVL2 = 1e-3;
-    LVL3 = 1e-4
-  }
-  row=sig[i,]
-  goDivision=row['goDivision']
-  input = row['input']
-  figFileName = paste('./resultsFiles/', sep='', paste(paste(goDivision, input, sep='_'), 'tree.pdf', sep='_'))
-  pdf(figFileName)
-  gomwuPlot(input,goAnnotations,goDivision,
-            absValue=-log(0.05, 10),  # genes with the measure value exceeding this will be counted as "good genes". Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
-            level1=LVL3, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-            level2=LVL2, # FDR cutoff to print in regular (not italic) font.
-            level3=LVL1, # FDR cutoff to print in large bold font.
-            txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
-            treeHeight=0.5, # height of the hierarchical clustering tree
-            #	colors=c("dodgerblue2","firebrick1","skyblue","lightcoral") # these are default colors, un-remar and change if needed
-  )
-  dev.off()
-}
-
-
-#Code below is included in separate script look_at_genes_within_GO_terms.R
-
-#------------ LOOK AT GENES WITHIN GO TERMS ------------#
-library(cowplot)
-library(tidyverse)
-#upload the results for each genes output by the functions above
-#re-pick input if you need to
-input = 'brown_moduleInput.csv'
-goDivision = 'CC'
-
-#upload GO enrichment results
-resName = paste(paste('MWU', goDivision, sep = "_"), input, sep = "_")
-go.res=read.table(resName, header = T)
-go.res = go.res %>% 
-  arrange(pval)
-sig = go.res[go.res$p.adj < 0.1,]
-head(sig, n=20)
-
-
-#upload the gene-GO associations
-geneResName=paste(goDivision, input, sep='_')
-gene.res=read.table(geneResName, header=T)
-head(gene.res)
-
-
-#search the GO results for a particular term
-searchString = 'ribo'
-sig[grep(searchString, sig$name),] 
-
-
-#select the GO term from your results file (sigGo above)
-go="GO:0006979" #oxidative stress
-go="GO:0000302" #response to reactive oxygen species
-go='GO:0004930' #G-protein coupled receptor activity
-go='GO:0007409;GO:0048812' #neuron projection morphogenesis
-go='GO:0043009;GO:0009792;GO:0009790'
-
-#subset for that GO term
-go.genes = gene.res[gene.res$term == go, 'seq']
-length(go.genes)
-
-#get gene names
-geneSet = as.character(go.genes)
-
-#GATHER GENE NAMES
-adat = read.table('../../metadata/Amillepora_euk.emapper.annotations.tsv',
-                  sep='\t',
-                  header = TRUE)
-rownames(adat) = adat$query_name
-annots = adat[geneSet,] %>% 
-  dplyr::select(query_name,eggNOG.annot) %>% 
-  dplyr::rename(gene=query_name)
-nrow(annots)
-length(geneSet)
-
-
-#merge with deseq results
-ll=load('../../correlated_only/deseqResults/stress_deseqResults.Rdata')
-ll
-mdat = res %>% 
-  data.frame() %>% 
-  mutate(gene = rownames(res)) %>% 
-  right_join(annots, by = 'gene')
-head(mdat)
-geneSet = mdat$gene
-geneNames=mdat$eggNOG.annot
-
-#check the log2 values match expectation from heatmap
-mdat %>% 
-  ggplot(aes(y=log2FoldChange)) +
-  geom_boxplot()
-
-
-#------------ BUILD HEATMAP FOR A GIVEN GO TERM ------------#
-library(pheatmap)
-
-
-#you'll need the variance stabilized counts
-ll=load('../../largeIgnored/strongStressOnly_project_controlled.Rdata')
-ll
-rld.df=data.frame(t(datExpr))
-head(rld.df)
-
-
-#subset the variance stabilized counts to include only the GO of interest
-g=rld.df[geneSet,]
-g[1:10,1:10]
-cdat2 = coldata[colnames(g),] %>% 
-  mutate(stress=if_else(treat=='control',
-                        'control',
-                        'stress'))
-cdat2=cdat2[with(cdat2,order(cdat2$stress, cdat2$my_title)),]
-orderedRuns = cdat2$Run
-orderedTreats = cdat2$stress
-orderedG = g[,orderedRuns]
-
-pheatmap(test,
-         cluster_cols=FALSE,
-         cluster_rows=TRUE,
-         labels_col=paste(orderedTreats, orderedRuns, sep='.')[1:10])
-
-
-
-
-
+## This script kinda throws files all over the place, and so I just lazily moved everything and renamed files using the terminal because I'm like that.
 

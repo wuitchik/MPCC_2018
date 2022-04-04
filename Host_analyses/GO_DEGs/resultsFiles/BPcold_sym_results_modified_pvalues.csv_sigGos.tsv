@@ -1,0 +1,14 @@
+delta.rank	pval	level	nseqs	term	name	p.adj
+2608	5.67449388055547e-6	2	25	GO:0030490	maturation of SSU-rRNA	0.0149295933997414
+749	4.91853834154237e-5	6	248	GO:0034660	ncRNA metabolic process	0.0647033718829899
+-1171	1.37824767962515e-4	2	88	GO:0043123	positive regulation of I-kappaB kinase/NF-kappaB signaling	0.0893656361483419
+-1807	2.000973260556e-4	6	35	GO:2001239	regulation of extrinsic apoptotic signaling pathway in absence of ligand	0.0893656361483419
+-941	2.55455700639891e-4	6	126	GO:0043122	regulation of I-kappaB kinase/NF-kappaB signaling	0.0893656361483419
+1811	2.94614969259845e-4	4	33	GO:0022613	ribonucleoprotein complex biogenesis	0.0893656361483419
+-1160	3.1808793533606e-4	3	80	GO:2001236	regulation of extrinsic apoptotic signaling pathway	0.0893656361483419
+844	3.64285080604971e-4	2	149	GO:0034470	ncRNA processing	0.0893656361483419
+1049	3.64591922004494e-4	3	96	GO:0006364;GO:0016072	rRNA metabolic process	0.0893656361483419
+-2330	4.07265007409555e-4	6	19	GO:0032743	positive regulation of interleukin-2 production	0.0893656361483419
+-2110	4.28737208744993e-4	6	23	GO:0002726;GO:0002720;GO:0002724;GO:0002718	positive regulation of cytokine production involved in immune response	0.0893656361483419
+1981	4.38131107222424e-4	6	26	GO:0007032	endosome organization	0.0893656361483419
+-2913	4.41563386517843e-4	2	12	GO:0014014	negative regulation of gliogenesis	0.0893656361483419

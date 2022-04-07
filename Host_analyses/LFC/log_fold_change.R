@@ -88,7 +88,11 @@ heat_brown_LFC = ggplot(heat_brown_data, aes(Astrangia, Oculina)) +
 
 # make full figure
 (cold_white_LFC + cold_brown_LFC) / (heat_white_LFC + heat_brown_LFC) + plot_annotation(tag_levels = "A")
-ggsave("logfoldchange.pdf", last_plot())
+ggsave("logfoldchange.pdf",
+       height = 8,
+       width = 8,
+       units = "in",
+       last_plot())
 # test if significantly different
 
 

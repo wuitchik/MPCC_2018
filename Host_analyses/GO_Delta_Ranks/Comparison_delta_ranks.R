@@ -2,6 +2,7 @@
 
 # load libraries
 library(tidyverse)
+library(patchwork)
 
 # CHOOSE SET OF INPUT FILES TO LOOP RUN -----------------------------------
 astrangia_data_path = "Astrangia/MWU_outputs/"   # path to the astrangia data
@@ -25,32 +26,35 @@ for(i in oculina_names){
 
 #### Biological Processes and sym state
 
-BP_heat_sym_goods=intersect(astrangia_BP_heat_sym$term,oculina_BP_heat_sym$term)
-astrangia = astrangia_BP_heat_sym[astrangia_BP_heat_sym$term %in% BP_heat_sym_goods,]
-oculina = oculina_BP_heat_sym[oculina_BP_heat_sym$term %in% BP_heat_sym_goods,]
+MF_heat_sym_goods=intersect(astrangia_MF_heat_sym$term,oculina_MF_heat_sym$term)
+astrangia = astrangia_MF_heat_sym[astrangia_MF_heat_sym$term %in% MF_heat_sym_goods,]
+oculina = oculina_MF_heat_sym[oculina_MF_heat_sym$term %in% MF_heat_sym_goods,]
 
 # Combine them
 merged_data = merge(astrangia,oculina,by="term")
 
 
 # This is to manually look for interesting go terms, and you can play with it in excel
-BP_intersect = merged_data %>%
+MF_intersect = merged_data %>%
   filter(p.adj.x <0.1) %>%
   filter(p.adj.y < 0.1)
 
-write.csv(BP_intersect, "BP_heat_sym_intersect.csv")
+write.csv(MF_intersect, "MF_heat_sym_intersect.csv")
 
-# Read back in your manipulated csv for those that you want to use as labels
-BP_intersect = read.csv("BP_heat_sym_intersect.csv")
+# Here is the actual plot,
 
-# Here is the actual plot, lots of it is redundant 
+MF_Heat_Sym =
+  ggplot(merged_data, aes(delta.rank.x, delta.rank.y, label = name.y)) +
+  geom_point(alpha = 0.75) + 
+  labs( x = "Astrangia Delta Rank",
+        y = "Oculina Delta Rank") +
+  labs(title = "MF Heat Sym State") +
+  stat_regline_equation(label.y = 5.5, aes(label = ..eq.label..)) +
+  stat_regline_equation(aes(label = ..rr.label..)) +
+  geom_smooth(method = "lm", color = "red") +
+  theme_classic()
 
-ggplot(BP_intersect, aes(delta.rank.x, delta.rank.y, label = name.y)) +
-  geom_point() + 
-  labs( x = "Astrangia",
-        y = "Oculina") +
-  labs(title = "BP Heat Sym State") +
-  geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
-  geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
-  theme_cowplot()
+library(ggpubr)
+
+(BP_Heat_Sym + MF_Heat_Sym + CC_Heat_Sym + plot_annotation(tag_levels = "A"))
 

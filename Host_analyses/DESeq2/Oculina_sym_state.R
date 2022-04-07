@@ -14,13 +14,13 @@ dds = DESeqDataSetFromMatrix(countData = counts,
                              design = ~ Treatment + Sym.Status)
 dds = DESeq(dds)
 
-sym_results = results(dds, alpha = 0.05, contrast = c("Sym.Status", "Brown", "White"))
+sym_results = results(dds, alpha = 0.05, contrast = c("Sym.Status", "White", "Brown"))
 sym_summary = summary(sym_results)
 
 # out of 20488 with nonzero total read count
 # adjusted p-value < 0.05
-# LFC > 0 (up)       : 58, 0.28%
-# LFC < 0 (down)     : 56, 0.27%
+# LFC > 0 (up)       : 56, 0.27%
+# LFC < 0 (down)     : 58, 0.28%
 # outliers [1]       : 22, 0.11%
 # low counts [2]     : 10535, 51%
 # (mean count < 1)
@@ -44,13 +44,13 @@ dds.sym = DESeqDataSetFromMatrix(countData = counts,
 dds.sym = DESeq(dds.sym)
 control_sym_results = results(dds.sym,
                               alpha = 0.05,
-                              contrast = c("Treatment_by_Sym.Status", "Control_Brown", "Control_White"))
+                              contrast = c("Treatment_by_Sym.Status", "Control_White", "Control_Brown"))
 control_sym_summary = summary(control_sym_results)
 
 # out of 20488 with nonzero total read count
 # adjusted p-value < 0.05
-# LFC > 0 (up)       : 0, 0%
-# LFC < 0 (down)     : 1, 0.0049%
+# LFC > 0 (up)       : 1, 0.0049%
+# LFC < 0 (down)     : 0, 0%
 # outliers [1]       : 16, 0.078%
 # low counts [2]     : 0, 0%
 # (mean count < 0)
@@ -67,13 +67,13 @@ write.csv(control_sym_results, "Oculina/sym_control_results.csv")
 
 heat_sym_results = results(dds.sym,
                            alpha = 0.05,
-                           contrast = c("Treatment_by_Sym.Status", "Heat_Brown", "Heat_White"))
+                           contrast = c("Treatment_by_Sym.Status", "Heat_White", "Heat_Brown"))
 heat_sym_summary = summary(heat_sym_results)
 
 # out of 20488 with nonzero total read count
 # adjusted p-value < 0.05
-# LFC > 0 (up)       : 0, 0%
-# LFC < 0 (down)     : 1, 0.0049%
+# LFC > 0 (up)       : 1, 0.0049%
+# LFC < 0 (down)     : 0, 0%
 # outliers [1]       : 16, 0.078%
 # low counts [2]     : 0, 0%
 # (mean count < 0)
@@ -89,13 +89,13 @@ write.csv(heat_sym_results, "Oculina/heat_sym_results.csv")
 
 cold_sym_results = results(dds.sym,
                            alpha = 0.05,
-                           contrast = c("Treatment_by_Sym.Status", "Cold_Brown", "Cold_White"))
+                           contrast = c("Treatment_by_Sym.Status", "Cold_White", "Cold_Brown"))
 cold_sym_summary = summary(cold_sym_results)
 
 # out of 20488 with nonzero total read count
 # adjusted p-value < 0.05
-# LFC > 0 (up)       : 2, 0.0098%
-# LFC < 0 (down)     : 1, 0.0049%
+# LFC > 0 (up)       : 1, 0.0049%
+# LFC < 0 (down)     : 2, 0.0098%
 # outliers [1]       : 16, 0.078%
 # low counts [2]     : 0, 0%
 # (mean count < 0)

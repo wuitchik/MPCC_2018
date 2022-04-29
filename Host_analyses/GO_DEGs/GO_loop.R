@@ -5,11 +5,8 @@
 library(tidyverse)
 
 # CHOOSE SET OF INPUT FILES TO LOOP RUN -----------------------------------
-<<<<<<< HEAD
-data_path <- "Oculina"   # path to the data, change to run on a particular dataset
-=======
+#data_path <- "Oculina"   # path to the data, change to run on a particular dataset
 data_path <- "Astrangia"   # path to the data, change to Oculina when ready to run on that dataset
->>>>>>> cfedeb9ca2bcdbfcf9fce8d3627c49df037b1f2c
 results_files <- dir(data_path, pattern = "*.csv") # get file names
 names <- sub("\\.csv.*", "", results_files)
 

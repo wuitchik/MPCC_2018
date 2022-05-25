@@ -36,7 +36,6 @@ ggsave(plot = last_plot(), "FvFm.pdf")
 
 # final - initial
 
-
 astrangia2 = read_excel("Astrangia_PAM.xlsx") %>%
   filter(day == 14 | day == 5) %>%
   mutate(FvFm = as.numeric(avgfvfm),

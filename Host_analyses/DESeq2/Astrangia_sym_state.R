@@ -1,7 +1,5 @@
 ## Differential expression in Astrangia poculata
 ## Symbiont state
-
-
 library(DESeq2)
 library(tidyverse)
 
@@ -111,17 +109,17 @@ cold_sym_results = as.data.frame(cold_sym_results) %>%
 write.csv(cold_sym_results, "Astrangia/cold_sym_results.csv")
 
 
-# Brown control vs brown hot
+# Brown control vs brown hot, controls go second
 
 sym_control_vs_hot_results = results(dds.sym,
                            alpha = 0.05,
-                           contrast = c("Treatment_by_Sym.Status", "Control_Brown", "Heat_Brown"))
+                           contrast = c("Treatment_by_Sym.Status", "Heat_Brown", "Control_Brown"))
 sym_control_vs_hot_summary = summary(sym_control_vs_hot_results)
 
 # out of 33652 with nonzero total read count
 # adjusted p-value < 0.05
-# LFC > 0 (up)       : 207, 0.62%
-# LFC < 0 (down)     : 351, 1%
+# LFC > 0 (up)       : 351, 1%
+# LFC < 0 (down)     : 207, 0.62%
 # outliers [1]       : 12, 0.036%
 # low counts [2]     : 24352, 72%
 # (mean count < 4)
@@ -138,13 +136,13 @@ write.csv(sym_control_vs_hot_results, "Astrangia/sym_control_vs_hot_results.csv"
 
 apo_control_vs_hot_results = results(dds.sym,
                                      alpha = 0.05,
-                                     contrast = c("Treatment_by_Sym.Status", "Control_White", "Heat_White"))
+                                     contrast = c("Treatment_by_Sym.Status", "Heat_White", "Control_White"))
 apo_control_vs_hot_summary = summary(apo_control_vs_hot_results)
 
 # out of 33652 with nonzero total read count
 # adjusted p-value < 0.05
-# LFC > 0 (up)       : 111, 0.33%
-# LFC < 0 (down)     : 61, 0.18%
+# LFC > 0 (up)       : 61, 0.18%
+# LFC < 0 (down)     : 111, 0.33%
 # outliers [1]       : 12, 0.036%
 # low counts [2]     : 26273, 78%
 # (mean count < 6)
@@ -161,13 +159,13 @@ write.csv(apo_control_vs_hot_results, "Astrangia/apo_control_vs_hot_results.csv"
 
 sym_control_vs_cold_results = results(dds.sym,
                                      alpha = 0.05,
-                                     contrast = c("Treatment_by_Sym.Status", "Control_Brown", "Cold_Brown"))
+                                     contrast = c("Treatment_by_Sym.Status", "Cold_Brown", "Control_Brown"))
 sym_control_vs_cold_summary = summary(sym_control_vs_cold_results)
 
 # out of 33652 with nonzero total read count
 # adjusted p-value < 0.05
-# LFC > 0 (up)       : 2023, 6%
-# LFC < 0 (down)     : 1477, 4.4%
+# LFC > 0 (up)       : 1477, 4.4%
+# LFC < 0 (down)     : 2023, 6%
 # outliers [1]       : 12, 0.036%
 # low counts [2]     : 17947, 53%
 # (mean count < 1)
@@ -184,13 +182,13 @@ write.csv(sym_control_vs_cold_results, "Astrangia/sym_control_vs_cold_results.cs
 
 apo_control_vs_cold_results = results(dds.sym,
                                      alpha = 0.05,
-                                     contrast = c("Treatment_by_Sym.Status", "Control_White", "Cold_White"))
+                                     contrast = c("Treatment_by_Sym.Status", "Cold_White", "Control_White"))
 apo_control_vs_cold_summary = summary(apo_control_vs_cold_results)
 
 # out of 33652 with nonzero total read count
 # adjusted p-value < 0.05
-# LFC > 0 (up)       : 2375, 7.1%
-# LFC < 0 (down)     : 1814, 5.4%
+# LFC > 0 (up)       : 1814, 5.4%
+# LFC < 0 (down)     : 2375, 7.1%
 # outliers [1]       : 12, 0.036%
 # low counts [2]     : 16026, 48%
 # (mean count < 1)
@@ -201,6 +199,3 @@ apo_control_vs_cold_results = as.data.frame(apo_control_vs_cold_results) %>%
   arrange(padj)
 
 write.csv(apo_control_vs_cold_results, "Astrangia/apo_control_vs_cold_results.csv")
-
-
-save.image(file = "Astrangia/Astrangia_sym_state.RData")

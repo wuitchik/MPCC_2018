@@ -77,57 +77,6 @@ for (goDivision in divisions){
 }
 
 
-# record how many significant and save those ---------------------------------------------
-
-divRec = c()
-inRec = c()
-sigRec = c()
-for (goDivision in divisions){
-  for (input in inputFiles){
-    resName = paste(paste('MWU', goDivision, sep = "_"), input, sep = "_")
-    go.res = read.table(resName, header = T)
-    totSig = sum(go.res$p.adj < 0.1)
-    divRec = append(divRec, goDivision)
-    inRec = append(inRec, input)
-    sigRec = append(sigRec, totSig)
-    sig=go.res[go.res$p.adj < 0.1,] %>% 
-      arrange(pval)
-    sigOut=paste( c('./resultsFiles/', goDivision, input, '_sigGos.tsv'), collapse='')
-    if (nrow(sig)>0){
-      sig %>% 
-        write_tsv(path=sigOut)
-    }
-  }
-}
-res = tibble('goDivision'=divRec,
-             'input'=inRec,
-             'nSig'=sigRec)
-res %>% 
-  write_tsv(path='./resultsFiles/gomwu_results_summary.tsv')
-
-comparison_nSig = read.delim("resultsFiles/gomwu_results_summary.tsv", sep = "\t") %>%
-  mutate(treatment = str_remove_all(input, "_results_modified_pvalues.csv"))
-
-
-## Comparing the numbers of GO terms
-cols = c("cold" = "dodgerblue4", "cold_sym" = "dodgerblue2",
-         "heat" = "firebrick4", "heat_sym" = "firebrick2",
-         "sym_control" = "gray50")
-
-ggplot(comparison_nSig, aes(treatment,nSig)) +
-  geom_bar(stat = "identity", aes(fill = treatment)) +
-  facet_grid(. ~ goDivision) +
-  scale_fill_manual(values = cols) +
-  theme_classic()
-
-<<<<<<< HEAD
-ggsave("Oculina_Comparison_of_GO_numbers.pdf",
-=======
-ggsave("Comparison_of_GO_numbers.pdf",
->>>>>>> cfedeb9ca2bcdbfcf9fce8d3627c49df037b1f2c
-       plot = last_plot(), 
-       width = 6,
-       units = "in")
 
 ## This script kinda throws files all over the place, and so I just lazily moved everything and renamed files using the terminal because I'm like that.
 

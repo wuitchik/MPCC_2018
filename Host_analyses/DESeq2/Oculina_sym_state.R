@@ -1,4 +1,4 @@
-## Differential expression in Oculina poculata
+## Differential expression in Oculina arbuscula
 ## Symbiont state
 library(DESeq2)
 library(tidyverse)

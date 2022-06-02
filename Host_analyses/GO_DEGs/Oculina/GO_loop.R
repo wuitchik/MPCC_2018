@@ -1,45 +1,43 @@
 # Much of this script was stolen from Dixon (https://github.com/grovesdixon/Acropora_gene_expression_meta)
 
-
 # load libraries
 library(tidyverse)
 
 # CHOOSE SET OF INPUT FILES TO LOOP RUN -----------------------------------
-#data_path <- "Oculina"   # path to the data, change to run on a particular dataset
-data_path <- "Oculina"   # path to the data, change to Oculina when ready to run on that dataset
-results_files <- dir(data_path, pattern = "*.csv") # get file names
+data_path <- "~/Documents/GitHub/MPCC_2018/Host_analyses/GO_DEGs/Oculina"
+results_files <- dir("~/Documents/GitHub/MPCC_2018/Host_analyses/DESeq2/Oculina/", pattern = "*results.csv") # get file names
 names <- sub("\\.csv.*", "", results_files)
 
 # Load all result files from folder
 for(i in names){
-  filepath = file.path(data_path,paste(i,".csv", sep="")) # sets up .csv files
+  filepath = file.path("~/Documents/GitHub/MPCC_2018/Host_analyses/DESeq2/Oculina/",paste(i,".csv", sep="")) # sets up .csv files
   assign(i, read.delim(filepath, sep = ",") %>% # loads up files
-    mutate(mutated_p = -log(pvalue), # modifies to a signed p-value
-           mutated_p_updown = ifelse(log2FoldChange < 0,
-                                     mutated_p*-1,
-                                     mutated_p*1)) %>%
-    select(X, mutated_p_updown) %>%
-    rename(GeneID = X) %>%
-    na.omit() 
-    )
+           mutate(mutated_p = -log(pvalue), # modifies to a signed p-value
+                  mutated_p_updown = ifelse(log2FoldChange < 0,
+                                            mutated_p*-1,
+                                            mutated_p*1)) %>%
+           select(X, mutated_p_updown) %>%
+           rename(GeneID = X) %>%
+           na.omit() 
+  )
 }
 
 # Write these new modified files
 for( i in 1:length(names)) {
   write.table(get(names[i]), 
-             paste0(names[i],
-             "_modified_pvalues.csv"),
-             sep = ",",
-             row.names = FALSE, 
-            col.names = FALSE,
-            quote = FALSE) # this is critical for GO MWU to read it properly
+              paste0(names[i],
+                     "_modified_pvalues.csv"),
+              sep = ",",
+              row.names = FALSE, 
+              col.names = FALSE,
+              quote = FALSE) # this is critical for GO MWU to read it properly
 }
 
 # Now we can loop our GO analyses
 
 # SET BASIC VARS ---------------------------------------------------------
 goDatabase = "go.obo"
-goAnnotations = "astrangia_iso2go.tab"
+goAnnotations = "Astrangia_iso2go.tab"
 divisions = c('CC',
               'MF',
               'BP')
@@ -59,7 +57,7 @@ for (goDivision in divisions){
   print('--------------')
   for (input in inputFiles){
     print('--------------')
-
+    
     print("input being worked on")
     print(input)
     

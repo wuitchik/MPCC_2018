@@ -5,14 +5,13 @@
 library(tidyverse)
 
 # CHOOSE SET OF INPUT FILES TO LOOP RUN -----------------------------------
-#data_path <- "Oculina"   # path to the data, change to run on a particular dataset
-data_path <- "Oculina"   # path to the data, change to Oculina when ready to run on that dataset
-results_files <- dir(data_path, pattern = "*.csv") # get file names
+data_path <- "~/Documents/GitHub/MPCC_2018/Host_analyses/GO_DEGs/Astrangia"
+results_files <- dir("~/Documents/GitHub/MPCC_2018/Host_analyses/DESeq2/Astrangia/", pattern = "*results.csv") # get file names
 names <- sub("\\.csv.*", "", results_files)
 
 # Load all result files from folder
 for(i in names){
-  filepath = file.path(data_path,paste(i,".csv", sep="")) # sets up .csv files
+  filepath = file.path("~/Documents/GitHub/MPCC_2018/Host_analyses/DESeq2/Astrangia/",paste(i,".csv", sep="")) # sets up .csv files
   assign(i, read.delim(filepath, sep = ",") %>% # loads up files
     mutate(mutated_p = -log(pvalue), # modifies to a signed p-value
            mutated_p_updown = ifelse(log2FoldChange < 0,

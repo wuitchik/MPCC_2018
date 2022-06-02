@@ -3,10 +3,11 @@
 # load libraries
 library(tidyverse)
 library(patchwork)
+library(ggpubr)
 
 # CHOOSE SET OF INPUT FILES TO LOOP RUN -----------------------------------
-astrangia_data_path = "Astrangia/MWU_outputs/"   # path to the astrangia data
-oculina_data_path = "Oculina/MWU_outputs/" # Oculina path
+astrangia_data_path = "Astrangia/MWU_files/"   # path to the astrangia data
+oculina_data_path = "Oculina/MWU_files/" # Oculina path
 
 astrangia_results_files <- dir(astrangia_data_path, pattern = ".csv*") # get file names
 oculina_results_files <- dir(oculina_data_path, pattern = ".csv*") # get file names

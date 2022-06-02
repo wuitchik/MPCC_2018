@@ -9,13 +9,13 @@ Dixon_MF = read.table("Dixon_MF.csv", header = T)
 Dixon_CC = read.table("Dixon_CC.csv", header = T)
 
 # Read in Astrangia GO, Symbiont comparisons
-Ast_Heat_Sym_BP = read.table("../GO_DEGs/Astrangia/MWU_files/astrangia_MWU_BP_sym_control_vs_hot_results_modified_pvalues.csv", header = T)
-Ast_Heat_Sym_MF = read.table("../GO_DEGs/Astrangia/MWU_files/astrangia_MWU_MF_sym_control_vs_hot_results_modified_pvalues.csv", header = T)
-Ast_Heat_Sym_CC = read.table("../GO_DEGs/Astrangia/MWU_files/astrangia_MWU_CC_sym_control_vs_hot_results_modified_pvalues.csv", header = T)
+Ast_Heat_Sym_BP = read.table("../GO_DEGs/Astrangia/MWU_BP_sym_control_vs_hot_results_modified_pvalues.csv", header = T)
+Ast_Heat_Sym_MF = read.table("../GO_DEGs/Astrangia/MWU_MF_sym_control_vs_hot_results_modified_pvalues.csv", header = T)
+Ast_Heat_Sym_CC = read.table("../GO_DEGs/Astrangia/MWU_CC_sym_control_vs_hot_results_modified_pvalues.csv", header = T)
 
-Ast_Heat_apo_BP = read.table("../GO_DEGs/Astrangia/MWU_files/astrangia_MWU_BP_apo_control_vs_hot_results_modified_pvalues.csv", header = T)
-Ast_Heat_apo_MF = read.table("../GO_DEGs/Astrangia/MWU_files/astrangia_MWU_MF_apo_control_vs_hot_results_modified_pvalues.csv", header = T)
-Ast_Heat_apo_CC = read.table("../GO_DEGs/Astrangia/MWU_files/astrangia_MWU_CC_apo_control_vs_hot_results_modified_pvalues.csv", header = T)
+Ast_Heat_apo_BP = read.table("../GO_DEGs/Astrangia/MWU_BP_apo_control_vs_hot_results_modified_pvalues.csv", header = T)
+Ast_Heat_apo_MF = read.table("../GO_DEGs/Astrangia/MWU_MF_apo_control_vs_hot_results_modified_pvalues.csv", header = T)
+Ast_Heat_apo_CC = read.table("../GO_DEGs/Astrangia/MWU_CC_apo_control_vs_hot_results_modified_pvalues.csv", header = T)
 
 
 #### Heat Treatment ####
@@ -268,6 +268,6 @@ Cold_apo_CC_plot = ggplot(Cold_apo_CC_data, aes(delta.rank.x, delta.rank.y, labe
 
 ggsave("Astrangia_cold_within_sym.pdf", 
        last_plot(),
-       width = 10,
+       width = 13,
        height = 7,
        units = "in")

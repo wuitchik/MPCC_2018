@@ -9,13 +9,13 @@ Dixon_MF = read.table("Dixon_MF.csv", header = T)
 Dixon_CC = read.table("Dixon_CC.csv", header = T)
 
 # Read in Ocurangia GO, Symbiont comparisons
-Ocu_Heat_Sym_BP = read.table("../GO_DEGs/Oculina/MWU_files/oculina_BP_sym_control_vs_hot_results_modified_pvalues.csv", header = T)
-Ocu_Heat_Sym_MF = read.table("../GO_DEGs/Oculina/MWU_files/oculina_MF_sym_control_vs_hot_results_modified_pvalues.csv", header = T)
-Ocu_Heat_Sym_CC = read.table("../GO_DEGs/Oculina/MWU_files/oculina_CC_sym_control_vs_hot_results_modified_pvalues.csv", header = T)
+Ocu_Heat_Sym_BP = read.table("../GO_DEGs/Oculina/MWU_BP_sym_control_vs_hot_results_modified_pvalues.csv", header = T)
+Ocu_Heat_Sym_MF = read.table("../GO_DEGs/Oculina/MWU_MF_sym_control_vs_hot_results_modified_pvalues.csv", header = T)
+Ocu_Heat_Sym_CC = read.table("../GO_DEGs/Oculina/MWU_CC_sym_control_vs_hot_results_modified_pvalues.csv", header = T)
 
-Ocu_Heat_apo_BP = read.table("../GO_DEGs/Oculina/MWU_files/oculina_BP_apo_control_vs_hot_results_modified_pvalues.csv", header = T)
-Ocu_Heat_apo_MF = read.table("../GO_DEGs/Oculina/MWU_files/oculina_MF_apo_control_vs_hot_results_modified_pvalues.csv", header = T)
-Ocu_Heat_apo_CC = read.table("../GO_DEGs/Oculina/MWU_files/oculina_CC_apo_control_vs_hot_results_modified_pvalues.csv", header = T)
+Ocu_Heat_apo_BP = read.table("../GO_DEGs/Oculina/MWU_BP_apo_control_vs_hot_results_modified_pvalues.csv", header = T)
+Ocu_Heat_apo_MF = read.table("../GO_DEGs/Oculina/MWU_MF_apo_control_vs_hot_results_modified_pvalues.csv", header = T)
+Ocu_Heat_apo_CC = read.table("../GO_DEGs/Oculina/MWU_CC_apo_control_vs_hot_results_modified_pvalues.csv", header = T)
 
 
 #### Heat Treatment ####
@@ -143,13 +143,13 @@ ggsave("Oculina_heat_within_sym.pdf",
 
 #### Cold Treatment ####
 # Read in Ocurangia GO, Symbiont comparisons
-Ocu_Cold_Sym_BP = read.table("../GO_DEGs/Oculina/MWU_files/", header = T)
-Ocu_Cold_Sym_MF = read.table("../GO_DEGs/Oculina/MWU_files/oculina_MF_sym_control_vs_cold_results_modified_pvalues.csv", header = T)
-Ocu_Cold_Sym_CC = read.table("../GO_DEGs/Oculina/MWU_files/oculina_CC_sym_control_vs_cold_results_modified_pvalues.csv", header = T)
+Ocu_Cold_Sym_BP = read.table("../GO_DEGs/Oculina/MWU_BP_sym_control_vs_cold_results_modified_pvalues.csv", header = T)
+Ocu_Cold_Sym_MF = read.table("../GO_DEGs/Oculina/MWU_BP_sym_control_vs_cold_results_modified_pvalues.csv", header = T)
+Ocu_Cold_Sym_CC = read.table("../GO_DEGs/Oculina/MWU_BP_sym_control_vs_cold_results_modified_pvalues.csv", header = T)
 
-Ocu_Cold_apo_BP = read.table("../GO_DEGs/Oculina/MWU_files/oculina_BP_apo_control_vs_cold_results_modified_pvalues.csv", header = T)
-Ocu_Cold_apo_MF = read.table("../GO_DEGs/Oculina/MWU_files/oculina_MF_apo_control_vs_cold_results_modified_pvalues.csv", header = T)
-Ocu_Cold_apo_CC = read.table("../GO_DEGs/Oculina/MWU_files/oculina_CC_apo_control_vs_cold_results_modified_pvalues.csv", header = T)
+Ocu_Cold_apo_BP = read.table("../GO_DEGs/Oculina/MWU_BP_apo_control_vs_cold_results_modified_pvalues.csv", header = T)
+Ocu_Cold_apo_MF = read.table("../GO_DEGs/Oculina/MWU_BP_apo_control_vs_cold_results_modified_pvalues.csv", header = T)
+Ocu_Cold_apo_CC = read.table("../GO_DEGs/Oculina/MWU_BP_apo_control_vs_cold_results_modified_pvalues.csv", header = T)
 
 #### Brown Phenotype 
 

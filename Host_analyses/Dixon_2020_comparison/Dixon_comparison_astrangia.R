@@ -137,19 +137,19 @@ heat_apo_CC_plot = ggplot(heat_apo_CC_data, aes(delta.rank.x, delta.rank.y, labe
 
 ggsave("Astrangia_heat_within_sym.pdf", 
        last_plot(),
-       width = 10,
+       width = 13,
        height = 7,
        units = "in")
 
 #### Cold Treatment ####
 # Read in Astrangia GO, Symbiont comparisons
-Ast_Cold_Sym_BP = read.table("../GO_DEGs/Astrangia/MWU_files/astrangia_MWU_BP_sym_control_vs_cold_results_modified_pvalues.csv", header = T)
-Ast_Cold_Sym_MF = read.table("../GO_DEGs/Astrangia/MWU_files/astrangia_MWU_MF_sym_control_vs_cold_results_modified_pvalues.csv", header = T)
-Ast_Cold_Sym_CC = read.table("../GO_DEGs/Astrangia/MWU_files/astrangia_MWU_CC_sym_control_vs_cold_results_modified_pvalues.csv", header = T)
+Ast_Cold_Sym_BP = read.table("../GO_DEGs/Astrangia/MWU_BP_sym_control_vs_cold_results_modified_pvalues.csv", header = T)
+Ast_Cold_Sym_MF = read.table("../GO_DEGs/Astrangia/MWU_MF_sym_control_vs_cold_results_modified_pvalues.csv", header = T)
+Ast_Cold_Sym_CC = read.table("../GO_DEGs/Astrangia/MWU_CC_sym_control_vs_cold_results_modified_pvalues.csv", header = T)
 
-Ast_Cold_apo_BP = read.table("../GO_DEGs/Astrangia/MWU_files/astrangia_MWU_BP_apo_control_vs_cold_results_modified_pvalues.csv", header = T)
-Ast_Cold_apo_MF = read.table("../GO_DEGs/Astrangia/MWU_files/astrangia_MWU_MF_apo_control_vs_cold_results_modified_pvalues.csv", header = T)
-Ast_Cold_apo_CC = read.table("../GO_DEGs/Astrangia/MWU_files/astrangia_MWU_CC_apo_control_vs_cold_results_modified_pvalues.csv", header = T)
+Ast_Cold_apo_BP = read.table("../GO_DEGs/Astrangia/MWU_BP_apo_control_vs_cold_results_modified_pvalues.csv", header = T)
+Ast_Cold_apo_MF = read.table("../GO_DEGs/Astrangia/MWU_MF_apo_control_vs_cold_results_modified_pvalues.csv", header = T)
+Ast_Cold_apo_CC = read.table("../GO_DEGs/Astrangia/MWU_CC_apo_control_vs_cold_results_modified_pvalues.csv", header = T)
 
 #### Brown Phenotype 
 
@@ -164,7 +164,7 @@ Cold_sym_BP_data = merge(Cold_sym, Dixon_BP_set, by="term")
 Cold_sym_BP_plot = ggplot(Cold_sym_BP_data, aes(delta.rank.x, delta.rank.y, label = name.y)) +
   scale_fill_distiller(palette = "Blues", direction = 1) +
   geom_hex() +
-  labs( x = "Sym State",
+  labs( x = "Brown Phenotype",
         y = "Dixon") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
@@ -182,7 +182,7 @@ Cold_sym_MF_data = merge(Cold_sym_MF, Dixon_MF_set, by="term")
 Cold_sym_MF_plot = ggplot(Cold_sym_MF_data, aes(delta.rank.x, delta.rank.y, label = name.y)) +
   scale_fill_distiller(palette = "Blues", direction = 1) +
   geom_hex() +
-  labs( x = "Sym State",
+  labs( x = "Brown Phenotype",
         y = "Dixon") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
@@ -200,7 +200,7 @@ Cold_sym_CC_data = merge(Cold_sym_CC, Dixon_CC_set, by="term")
 Cold_sym_CC_plot = ggplot(Cold_sym_CC_data, aes(delta.rank.x, delta.rank.y, label = name.y)) +
   scale_fill_distiller(palette = "Blues", direction = 1) +
   geom_hex() +
-  labs( x = "Sym State",
+  labs( x = "Brown Phenotype",
         y = "Dixon") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
@@ -220,7 +220,7 @@ Cold_apo_BP_data = merge(Cold_apo, Dixon_BP_set, by="term")
 Cold_apo_BP_plot = ggplot(Cold_apo_BP_data, aes(delta.rank.x, delta.rank.y, label = name.y)) +
   scale_fill_distiller(palette = "Blues", direction = 1) +
   geom_hex() +
-  labs( x = "apo State",
+  labs( x = "White Phenotype",
         y = "Dixon") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
@@ -238,7 +238,7 @@ Cold_apo_MF_data = merge(Cold_apo_MF, Dixon_MF_set, by="term")
 Cold_apo_MF_plot = ggplot(Cold_apo_MF_data, aes(delta.rank.x, delta.rank.y, label = name.y)) +
   scale_fill_distiller(palette = "Blues", direction = 1) +
   geom_hex() +
-  labs( x = "apo State",
+  labs( x = "White Phenotype",
         y = "Dixon") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
@@ -256,7 +256,7 @@ Cold_apo_CC_data = merge(Cold_apo_CC, Dixon_CC_set, by="term")
 Cold_apo_CC_plot = ggplot(Cold_apo_CC_data, aes(delta.rank.x, delta.rank.y, label = name.y)) +
   scale_fill_distiller(palette = "Blues", direction = 1) +
   geom_hex() +
-  labs( x = "apo State",
+  labs( x = "White Phenotype",
         y = "Dixon") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +

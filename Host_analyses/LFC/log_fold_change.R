@@ -2,97 +2,61 @@
 
 # libraries
 library(tidyverse)
-library(DESeq2)
 library(patchwork)
 library(ggpubr) 
 
-# load astrangia data
-load("../DESeq2/Astrangia/Astrangia_sym_state.RData")
+# Load data
+hot_sym = read.csv("../DESeq2/Astrangia/sym_control_vs_hot_results.csv") 
+hot_apo = read.csv("../DESeq2/Astrangia/apo_control_vs_hot_results.csv")
 
-white_astrangia_cold = as.data.frame(results(dds.sym, alpha = 0.05, contrast = c("Treatment_by_Sym.Status", "Cold_White", "Control_White")))
-white_astrangia_heat = as.data.frame(results(dds.sym, alpha = 0.05, contrast = c("Treatment_by_Sym.Status", "Heat_White", "Control_White")))
-brown_astrangia_cold = as.data.frame(results(dds.sym, alpha = 0.05, contrast = c("Treatment_by_Sym.Status", "Cold_Brown", "Control_Brown")))
-brown_astrangia_heat = as.data.frame(results(dds.sym, alpha = 0.05, contrast = c("Treatment_by_Sym.Status", "Heat_Brown", "Control_Brown")))
-                                    
-# overwrite with oculina
-load("../DESeq2/Oculina/Oculina_sym_state.RData")
+cold_sym = read.csv("../DESeq2/Astrangia/sym_control_vs_cold_results.csv")
+cold_apo = read.csv("../DESeq2/Astrangia/apo_control_vs_cold_results.csv")
 
-white_oculina_cold = as.data.frame(results(dds.sym, alpha = 0.05, contrast = c("Treatment_by_Sym.Status", "Cold_White", "Control_White")))
-white_oculina_heat = as.data.frame(results(dds.sym, alpha = 0.05, contrast = c("Treatment_by_Sym.Status", "Heat_White", "Control_White")))
-brown_oculina_cold = as.data.frame(results(dds.sym, alpha = 0.05, contrast = c("Treatment_by_Sym.Status", "Cold_Brown", "Control_Brown")))
-brown_oculina_heat = as.data.frame(results(dds.sym, alpha = 0.05, contrast = c("Treatment_by_Sym.Status", "Heat_Brown", "Control_Brown")))
 
 # merge data sets
-cold_white_data = white_astrangia_cold %>%
-  merge(white_oculina_cold, by=0) %>%
-  dplyr::rename(GeneID = "Row.names",
-                Astrangia = "log2FoldChange.x",
-                Oculina = "log2FoldChange.y")
+hot = hot_sym %>%
+  merge(hot_apo, by="X") %>%
+  rename(GeneID = X,
+                Brown = "log2FoldChange.x",
+                White = "log2FoldChange.y") %>%
+  mutate_if(is.numeric , replace_na, replace = 1) %>%
+  mutate(Colours = case_when(padj.x < 0.1 & padj.y < 0.1 ~ "both",
+                             padj.x < 0.1 & padj.y > 0.1  ~ "brown",
+                             padj.x > 0.1 & padj.y < 0.1 ~ "white",
+                             padj.x > 0.1 & padj.y > 0.1 ~ "none"))
 
-cold_brown_data = brown_astrangia_cold %>%
-  merge(brown_oculina_cold, by=0) %>%
-  dplyr::rename(GeneID = "Row.names",
-                Astrangia = "log2FoldChange.x",
-                Oculina = "log2FoldChange.y")
+non_sig = hot %>%
+  filter(Colours == "none")
 
-heat_white_data = white_astrangia_heat %>%
-  merge(white_oculina_heat, by=0) %>%
-  dplyr::rename(GeneID = "Row.names",
-                Astrangia = "log2FoldChange.x",
-                Oculina = "log2FoldChange.y")
+brown_only = hot %>%
+  filter(Colours == "brown")
 
-heat_brown_data = brown_astrangia_heat %>%
-  merge(brown_oculina_heat, by=0) %>%
-  dplyr::rename(GeneID = "Row.names",
-                Astrangia = "log2FoldChange.x",
-                Oculina = "log2FoldChange.y")
+white_only = hot %>%
+  filter (Colours == "white")
+
+both = hot %>%
+  filter (Colours == "both")
 
 
-# make into a figure
 
-cold_white_LFC = ggplot(cold_white_data, aes(Astrangia, Oculina)) +
-  geom_point(color = "#0D47A1", shape = 1) +
-  geom_smooth(method = "lm", color = "black") +
-  xlim(-8, 8) +
-  ylim(-8, 8) +
-  stat_regline_equation(label.y = 5.5, aes(label = ..eq.label..)) +
-  stat_regline_equation(aes(label = ..rr.label..)) +
-  theme_classic()
+ggplot(data = non_sig, aes(x = Brown, y = White)) +
+  geom_point(alpha = 0.1) +
+  geom_point(data = brown_only, colour = "brown") +
+  geom_point(data = white_only, colour = "green") +
+  geom_point(data = both, colour = "red") +
+  labs(x = "Brown LFC",
+       y = "White LFC") + 
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  theme_cowplot()
 
-cold_brown_LFC = ggplot(cold_brown_data, aes(Astrangia, Oculina)) +
-  geom_point(color = "#0D47A1") +
-  geom_smooth(method = "lm", color = "black") +
-  xlim(-8, 8) +
-  ylim(-8, 8) +
-  stat_regline_equation(label.y = 5.5, aes(label = ..eq.label..)) +
-  stat_regline_equation(aes(label = ..rr.label..)) +
-  theme_classic()
 
-heat_white_LFC = ggplot(heat_white_data, aes(Astrangia, Oculina)) +
-  geom_point(color = "#C62828", shape = 1) +
-  geom_smooth(method = "lm", color = "black") +
-  stat_regline_equation(label.y = 5.5, aes(label = ..eq.label..)) +
-  stat_regline_equation(aes(label = ..rr.label..)) +
-  xlim(-8, 8) +
-  ylim(-8, 8) +
-  theme_classic()
-
-heat_brown_LFC = ggplot(heat_brown_data, aes(Astrangia, Oculina)) +
-  geom_point(color = "#C62828") +
-  geom_smooth(method = "lm", color = "black") +
-  stat_regline_equation(label.y = 5.5, aes(label = ..eq.label..)) +
-  stat_regline_equation(aes(label = ..rr.label..)) +
-  xlim(-8, 8) +
-  ylim(-8, 8) +
-  theme_classic()
-
-# make full figure
-(cold_white_LFC + cold_brown_LFC) / (heat_white_LFC + heat_brown_LFC) + plot_annotation(tag_levels = "A")
-ggsave("logfoldchange.pdf",
-       height = 8,
-       width = 8,
-       units = "in",
-       last_plot())
-# test if significantly different
-
++
+  #scale_fill_continuous() +
+  labs(x = "Brown LFC",
+       y = "White LFC") +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+ # scale_color_viridis(option = "G", direction = -1) +
+  theme_cowplot()
 

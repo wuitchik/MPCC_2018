@@ -20,8 +20,8 @@ percentVar = round(100 * attr(pcaData, "percentVar"))
 # Make PERMANOVA using adonis
 
 pca <- prcomp(t(assay(vst)), center = TRUE, scale. = FALSE)
-host_pca <- adonis(pca$x ~ 
-                     vst$Treatment * vst$Sym.Status +
+host_pca <- adonis2(pca$x ~ 
+                     vst$Treatment:vst$Sym.Status +
                      vst$Sym.Status +
                      vst$Treatment,
                    method = 'eu')
@@ -75,5 +75,9 @@ ggplot(pcaData, aes(PC1, PC2)) +
   ylab(paste0("PC2: ",percentVar[2],"% variance")) +
   theme_classic()
 
+
+
 ggsave("PCA.pdf", plot = last_plot())
 ggsave("PCA.png", plot = last_plot())
+
+save.image(file = "PCA.Rdata")

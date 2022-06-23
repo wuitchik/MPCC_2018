@@ -14,8 +14,6 @@ dds = DESeqDataSetFromMatrix(countData = counts,
                              design = ~ Treatment + Sym.Status)
 dds = DESeq(dds)
 
-save(counts, expDesign, dds, file = "full_dds.RData")
-
 # Comparing how the white coral respond relative to brown corals
 
 sym_results = results(dds, alpha = 0.05, contrast = c("Sym.Status", "White", "Brown"))
@@ -46,6 +44,12 @@ dds.sym = DESeqDataSetFromMatrix(countData = counts,
                                  colData = expDesign,
                                  design = ~ Treatment_by_Sym.Status)
 dds.sym = DESeq(dds.sym)
+
+# save for other analyses
+save(counts, expDesign, dds.sym, file = "./Astrangia/sym_dds.RData")
+
+# Calculate results
+
 control_sym_results = results(dds.sym,
                               alpha = 0.05,
                               contrast = c("Treatment_by_Sym.Status", "Control_White", "Control_Brown"))

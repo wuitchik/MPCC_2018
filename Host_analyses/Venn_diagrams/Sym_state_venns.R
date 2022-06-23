@@ -94,6 +94,22 @@ brown_only_heat = brown_heat %>%
 white_only_heat = white_heat %>%
   anti_join(brown_heat, by = "X")
 
+
+brown_cold = read.csv("../DESeq2/Astrangia/sym_control_vs_cold_results.csv") %>%
+  filter(padj < 0.05)
+white_cold = read.csv("../DESeq2/Astrangia/apo_control_vs_cold_results.csv") %>%
+  filter(padj < 0.05)
+
+shared_cold = brown_cold %>%
+  semi_join(white_cold, by = "X")
+
+brown_only_cold = brown_cold %>%
+  anti_join(white_cold, by = "X")
+
+white_only_cold = white_cold %>%
+  anti_join(brown_cold, by = "X")
+
+
 ### Making .csv with annotations for exploration
 
 annotations = read.delim("astrangia_annotations.txt", sep = "\t")
@@ -110,8 +126,24 @@ white_only_heat_annotated = white_only_heat %>%
   rename(Protein_ID = X) %>%
   left_join(annotations)
 
+shared_cold_annotated = shared_cold %>%
+  rename(Protein_ID = X) %>%
+  left_join(annotations)
+
+brown_only_cold_annotated = brown_only_cold %>%
+  rename(Protein_ID = X) %>%
+  left_join(annotations)
+
+white_only_cold_annotated = white_only_cold %>%
+  rename(Protein_ID = X) %>%
+  left_join(annotations)
+
 write.csv(shared_heat_annotated, "shared_heat.csv", row.names = F)
 write.csv(brown_only_heat_annotated, "brown_only_heat.csv", row.names = F)
 write.csv(white_only_heat_annotated, "white_only_heat.csv", row.names = F)
+write.csv(shared_cold_annotated, "shared_cold.csv", row.names = F)
+write.csv(brown_only_cold_annotated, "brown_only_cold.csv", row.names = F)
+write.csv(white_only_cold_annotated, "white_only_cold.csv", row.names = F)
+
 
 

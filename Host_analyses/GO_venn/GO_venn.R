@@ -6,7 +6,7 @@ library(tidyverse)
 
 # CHOOSE SET OF INPUT FILES TO loop through from Venn folder -----------------------------------
 data_path <- "~/Documents/GitHub/MPCC_2018/Host_analyses/GO_venn"
-results_files <- dir("~/Documents/GitHub/MPCC_2018/Host_analyses/Venn_diagrams/", pattern = "*.csv") # get file names
+results_files <- dir("~/Documents/GitHub/MPCC_2018/Host_analyses/Venn_diagrams/", pattern = "*cold.csv") # get file names
 names <- sub("\\.csv.*", "", results_files)
 iso2go = read.delim("astrangia_iso2go.tab", sep = "\t")
 
@@ -78,10 +78,10 @@ for (goDivision in divisions){
 
 ### Plotting results, adjust for go category and analysis
 
-input = "brown_only_cold_fishers.csv"
-goDivision="CC" 
+input = "white_only_cold_fishers.csv"
+goDivision="BP" 
 
-pdf("./figures/CC_brown_only_cold.pdf")
+pdf("./figures/BP_white_only_cold.pdf")
 gomwuPlot(input,goAnnotations,goDivision,
                   absValue = 0.001,  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
                   #	absValue=1, # un-remark this if you are using log2-fold changes

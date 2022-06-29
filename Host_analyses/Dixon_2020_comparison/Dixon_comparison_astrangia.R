@@ -2,6 +2,10 @@
 library(tidyverse)
 library(patchwork)
 library(cowplot)
+library(ggrepel)
+
+# set ggrepel to not remove points due to overlap
+options(ggrepel.max.overlaps = Inf)
 
 # Read in Dixon's red module
 Dixon_BP = read.table("Dixon_BP.csv", header = T)
@@ -36,19 +40,22 @@ Dixon_BP_set = Dixon_BP[Dixon_BP$term %in% heat_sym_goods,]
 # Combine them
 heat_sym_BP_data = merge(heat_sym, Dixon_BP_set, by="term")
 
-stress_data = heat_sym_BP_data[heat_sym_BP_data$term %in% stress$term,] %>%
+heat_sym_stress_data = heat_sym_BP_data[heat_sym_BP_data$term %in% stress$term,] %>%
   left_join(stress)
+
+# build hex plot with select Dixon GO's over top
 
 heat_sym_BP_plot = ggplot(heat_sym_BP_data, aes(delta.rank.x, delta.rank.y)) +
   scale_fill_distiller(palette = "Reds", direction = 1) +
   geom_hex() +
   labs( x = "Brown Phenotype",
-        y = "Dixon") +
+        y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
   geom_smooth(method=lm, color="black", se =FALSE) +
-  geom_point(data = stress_data) + 
-  geom_text_repel(data = stress_data, aes(label = summary)) +
+  geom_point(data = heat_sym_stress_data) + 
+  xlim(-6000,6000) +
+  geom_text_repel(data = heat_sym_stress_data, aes(label = summary)) +
   theme_cowplot()
 
 # Molecular Function
@@ -63,9 +70,10 @@ heat_sym_MF_plot = ggplot(heat_sym_MF_data, aes(delta.rank.x, delta.rank.y, labe
   scale_fill_distiller(palette = "Reds", direction = 1) +
   geom_hex() +
   labs( x = "Brown Phenotype",
-        y = "Dixon") +
+        y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
+  xlim(-6000,6000) +
   geom_smooth(method=lm, color="black", se =FALSE) +
   theme_cowplot()
 
@@ -81,9 +89,10 @@ heat_sym_CC_plot = ggplot(heat_sym_CC_data, aes(delta.rank.x, delta.rank.y, labe
   scale_fill_distiller(palette = "Reds", direction = 1) +
   geom_hex() +
   labs( x = "Brown Phenotype",
-        y = "Dixon") +
+        y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
+  xlim(-6000,6000) +
   geom_smooth(method=lm, color="black", se =FALSE) +
   theme_cowplot()
 
@@ -100,17 +109,17 @@ heat_apo_BP_data = merge(heat_apo, Dixon_BP_set, by="term")
 heat_apo_stress_data = heat_apo_BP_data[heat_apo_BP_data$term %in% stress$term,] %>%
   left_join(stress)
 
-
 heat_apo_BP_plot = ggplot(heat_apo_BP_data, aes(delta.rank.x, delta.rank.y)) +
   scale_fill_distiller(palette = "Reds", direction = 1) +
   geom_hex() +
   labs( x = "White Phenotype",
-        y = "Dixon") +
+        y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
   geom_smooth(method=lm, color="black", se =FALSE) +
+  xlim(-6000,6000) +
   geom_point(data = heat_apo_stress_data) + 
-  geom_text_repel(data = stress_data, aes(label = summary)) +
+  geom_text_repel(data = heat_apo_stress_data, aes(label = summary)) +
   theme_cowplot()
 
 
@@ -126,9 +135,10 @@ heat_apo_MF_plot = ggplot(heat_apo_MF_data, aes(delta.rank.x, delta.rank.y, labe
   scale_fill_distiller(palette = "Reds", direction = 1) +
   geom_hex() +
   labs( x = "White Phenotype",
-        y = "Dixon") +
+        y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
+  xlim(-6000,6000) +
   geom_smooth(method=lm, color="black", se =FALSE) +
   theme_cowplot()
 
@@ -144,9 +154,10 @@ heat_apo_CC_plot = ggplot(heat_apo_CC_data, aes(delta.rank.x, delta.rank.y, labe
   scale_fill_distiller(palette = "Reds", direction = 1) +
   geom_hex() +
   labs( x = "White Phenotype",
-        y = "Dixon") +
+        y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
+  xlim(-6000,6000) +
   geom_smooth(method=lm, color="black", se =FALSE) +
   theme_cowplot()
 
@@ -178,15 +189,20 @@ Dixon_BP_set = Dixon_BP[Dixon_BP$term %in% Cold_sym_goods,]
 
 # Combine them
 Cold_sym_BP_data = merge(Cold_sym, Dixon_BP_set, by="term")
+cold_sym_stress_data = Cold_sym_BP_data[Cold_sym_BP_data$term %in% stress$term,] %>%
+  left_join(stress)
 
 Cold_sym_BP_plot = ggplot(Cold_sym_BP_data, aes(delta.rank.x, delta.rank.y, label = name.y)) +
   scale_fill_distiller(palette = "Blues", direction = 1) +
   geom_hex() +
   labs( x = "Brown Phenotype",
-        y = "Dixon") +
+        y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
+  geom_point(data = cold_sym_stress_data) + 
+  geom_text_repel(data = cold_sym_stress_data, aes(label = summary)) +
   geom_smooth(method=lm, color="black", se =FALSE) +
+  xlim(-6000,6000) +
   theme_cowplot()
 
 # Molecular Function
@@ -201,9 +217,10 @@ Cold_sym_MF_plot = ggplot(Cold_sym_MF_data, aes(delta.rank.x, delta.rank.y, labe
   scale_fill_distiller(palette = "Blues", direction = 1) +
   geom_hex() +
   labs( x = "Brown Phenotype",
-        y = "Dixon") +
+        y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
+  xlim(-6000,6000) +
   geom_smooth(method=lm, color="black", se =FALSE) +
   theme_cowplot()
 
@@ -219,9 +236,10 @@ Cold_sym_CC_plot = ggplot(Cold_sym_CC_data, aes(delta.rank.x, delta.rank.y, labe
   scale_fill_distiller(palette = "Blues", direction = 1) +
   geom_hex() +
   labs( x = "Brown Phenotype",
-        y = "Dixon") +
+        y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
+  xlim(-6000,6000) +
   geom_smooth(method=lm, color="black", se =FALSE) +
   theme_cowplot()
 
@@ -234,15 +252,21 @@ Dixon_BP_set = Dixon_BP[Dixon_BP$term %in% Cold_apo_goods,]
 
 # Combine them
 Cold_apo_BP_data = merge(Cold_apo, Dixon_BP_set, by="term")
+cold_apo_stress_data = Cold_apo_BP_data[Cold_apo_BP_data$term %in% stress$term,] %>%
+  left_join(stress)
 
 Cold_apo_BP_plot = ggplot(Cold_apo_BP_data, aes(delta.rank.x, delta.rank.y, label = name.y)) +
   scale_fill_distiller(palette = "Blues", direction = 1) +
   geom_hex() +
   labs( x = "White Phenotype",
-        y = "Dixon") +
+        y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
+  geom_point(data = cold_apo_stress_data) + 
+  geom_text_repel(data = cold_apo_stress_data, aes(label = summary)) +
   geom_smooth(method=lm, color="black", se =FALSE) +
+  geom_smooth(method=lm, color="black", se =FALSE) +
+  xlim(-6000,6000) +
   theme_cowplot()
 
 # Molecular Function
@@ -257,9 +281,10 @@ Cold_apo_MF_plot = ggplot(Cold_apo_MF_data, aes(delta.rank.x, delta.rank.y, labe
   scale_fill_distiller(palette = "Blues", direction = 1) +
   geom_hex() +
   labs( x = "White Phenotype",
-        y = "Dixon") +
+        y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
+  xlim(-6000,6000) +
   geom_smooth(method=lm, color="black", se =FALSE) +
   theme_cowplot()
 
@@ -275,10 +300,12 @@ Cold_apo_CC_plot = ggplot(Cold_apo_CC_data, aes(delta.rank.x, delta.rank.y, labe
   scale_fill_distiller(palette = "Blues", direction = 1) +
   geom_hex() +
   labs( x = "White Phenotype",
-        y = "Dixon") +
+        y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
+  xlim(-6000,6000) +
   geom_smooth(method=lm, color="black", se =FALSE) +
+  guides(shape = guide_legend(override.aes = list(size = 0.5))) +
   theme_cowplot()
 
 ((Cold_sym_BP_plot + Cold_sym_MF_plot + Cold_sym_CC_plot) /
@@ -289,3 +316,11 @@ ggsave("Astrangia_cold_within_sym.pdf",
        width = 13,
        height = 7,
        units = "in")
+
+
+# make biological process plot
+
+(heat_sym_BP_plot + Cold_sym_BP_plot) / ( heat_apo_BP_plot + Cold_apo_BP_plot)
+
+ggsave("BP_annotate.pdf", plot = last_plot())
+

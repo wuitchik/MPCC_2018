@@ -1,0 +1,595 @@
+---
+title: "deseqOculina_symbiont"
+author: "Hannah Aichelman"
+date: "10/22/2019"
+output: html_document
+---
+
+
+```{r message=FALSE, warning=FALSE}
+
+library(tidyr)
+library(plyr)
+library(dplyr)
+library(DESeq2)
+library(ggplot2)
+#library(affycoretools)
+#library(arrayQualityMetrics)
+library(genefilter)
+#library(DESeq)
+library(cowplot)
+library(readr)
+library(RColorBrewer)
+library(gplots)
+library(knitr)
+library(plotly)
+library(vegan)
+library(kableExtra)
+library(reshape2)
+library(prettydoc)
+library(VennDiagram)
+```
+
+Read in culture counts file
+```{r,cache=TRUE, echo=FALSE}
+countDataCulture <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/Huzar_Github_Symbiont-Thermal-Stress-main/B_psygmophilum_counts.txt")
+```
+
+
+Set up experimental design matrix
+```{r,cache=TRUE}
+# rename the annoying name and add isogroup to the row name
+names(countDataCulture)=c( "Control_1.1", "Control_1", "Control_2.1", "Control_2", "Control_3.1", "Control_3", "Control_4.1", "Control_4", "Cool_1", "Cool_2", "Cool_3", "Cool_4","Heat_1.1", "Heat_1", "Heat_2.1", "Heat_2", "Heat_3.1", "Heat_3", "Heat_4.1", "Heat_4")
+row.names(countDataCulture)=sub("", "isogroup", rownames(countDataCulture))
+head(countDataCulture)
+
+treatment = as.factor(sapply(strsplit(colnames(countDataCulture), split = "_"), "[[", 1)) %>%
+  revalue(c("Control" = "control", "Cool" = "freezing", "Heat" = "hot"))
+
+expDesign = data.frame(treatment) 
+expDesign$sample = colnames(countDataCulture)
+```
+
+Experimental Design key with sample names 
+```{r,cache=TRUE, echo=FALSE}
+kable(expDesign) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+Descriptive Summary stats of the mapped reads. 
+
+```{r echo=FALSE}
+stats.per.sample = data.frame(t(do.call(cbind, lapply(countDataCulture, summary))))
+      stats.per.sample$libsum = apply(countDataCulture, 2, sum) ## libsum
+      stats.per.sample$perc05 = apply(countDataCulture, 2, quantile, 0.05)
+      stats.per.sample$perc10 = apply(countDataCulture, 2, quantile, 0.10)
+      stats.per.sample$perc90 = apply(countDataCulture, 2, quantile, 0.90)
+      stats.per.sample$perc95 = apply(countDataCulture, 2, quantile, 0.95)
+      stats.per.sample$zeros = apply(countDataCulture==0, 2, sum)
+      stats.per.sample$percent.zeros = 100*stats.per.sample$zeros/nrow(countDataCulture)
+write.csv(stats.per.sample, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/sym_culture_summary_table.csv", quote = FALSE)
+      
+kable(stats.per.sample) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+#Outlier Detection
+Skipping now since DESeq/arrayqualitymetrics is no longer supported
+
+Conduct array quality metrics to identify outliers  
+
+```{r, cache=TRUE}
+real=newCountDataSet(countDataCulture,expDesign) 
+real=estimateSizeFactors(real)
+```
+
+```{r, fig.align='center', cache=TRUE }
+plot(sort(sizeFactors(real)), main = "Ocuina Symbiont Size Factors") 
+```
+<br>
+Size factors of each sample used to normalize between libraries. 
+<br> 
+<br> 
+Create a directory with a bunch of output figures from arrayQualityMetrics() for you to explore if their are outliers. 
+
+```{r message=FALSE, warning=FALSE, eval = FALSE}
+cds=estimateDispersions(real,method="blind")
+vsdBlind=varianceStabilizingTransformation(cds)
+arrayQualityMetrics(vsdBlind,intgroup=c("treatment"), force=TRUE, outdir = "Oculina_brown_sym_arrayqualitymetrics") # this makes a directory "arrayQualityMetrics" and outputs various reports on outliers
+```
+
+Look at total counts across Oculina host and symbiont samples
+```{r}
+totalCountshost=colSums(countDataHost)
+totalCountshost
+barplot(totalCountshost, col=treatment, ylab="raw counts", main = "Oculina host total counts")
+
+min(totalCountshost) 
+max(totalCountshost) 
+
+
+totalCountssym=colSums(countDataSym)
+totalCountssym
+barplot(totalCountssym, col=treatment, ylab="raw counts", main = "Oculina symbiont total counts")
+
+min(totalCountssym) 
+max(totalCountssym) 
+
+totalCountsculture=colSums(countDataCulture)
+totalCountsculture
+barplot(totalCountsculture, col=treatment, ylab="raw counts", main = "B. psygmophilum culture total counts")
+
+min(totalCountsculture) 
+max(totalCountsculture) 
+
+```
+####Outlier Conclusisons
+
+Do not need to remove any outliers for the Oculina host or symbiont. This is considering brown/symbiotic individuals only though.
+
+Skipped this step for the Culture because I am now running R v4.0.1 and I cannot library the original DESeq package. 
+
+***
+
+#Differential Expression
+
+***
+
+```{r warning=FALSE, cache=TRUE}
+dds<-DESeqDataSetFromMatrix(countData=countDataCulture, colData=expDesign, design=~treatment) #can only test for the main effects of treatment
+dds = DESeq(dds)
+results = results(dds)
+summary(results)
+```
+
+
+
+Let's check to see if we set up our contrast correctly. We should have the treatment condition first and the control second in the log2 fold change (MLE) output. 
+
+```{r, cache=TRUE}
+head(results)
+```
+
+```{r echo=FALSE, cache=TRUE}
+norm.counts.culture = counts(dds, normalized = TRUE) # these are the counts DESeq uses
+write.csv(norm.counts.culture,"/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/normalized_counts_culture.csv") #these are all counts, not considering treatment comparisons
+              
+norm.counts.stats = data.frame(
+  min = apply(norm.counts.culture, 2, min),
+  mean = apply(norm.counts.culture, 2, mean),
+  median = apply(norm.counts.culture, 2, median), 
+  max = apply(norm.counts.culture, 2, max),
+  zeros = apply(norm.counts.culture == 0, 2, sum), 
+  percent.zeros = 100* apply(norm.counts.culture == 0, 2, sum) / nrow(norm.counts.culture) 
+)
+
+kable(norm.counts.stats) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+Lets do a rlogged transformation, which is useful various unsupervised clustering analyses. Be sure the include blind = TRUE as it doesn't normalize the data with any priors from our experimental design. 
+
+```{r, cache=TRUE}
+rlogged = rlogTransformation(dds, blind = TRUE)
+```
+
+Hot versus control expression comparison
+```{r}
+##second term is the "control"
+res_hot_culture <- results(dds, contrast=c("treatment","hot","control"))
+head(res_hot_culture)
+#how many FDR < 10%?
+table(res_hot_culture$padj<0.1)
+# 0.1=5415
+# 0.05=4330
+# 0.01=2860
+summary(res_hot_culture)
+write.table(res_hot_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_hot_results_sym.txt", quote=F, sep="\t")
+```
+
+MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
+
+```{r, cache=TRUE, fig.align='center'}
+DESeq2::plotMA(res_hot_culture, main = "Hot vs Control, Culture")
+```
+
+
+Cold versus control expression comparison
+```{r}
+##second term is the "control"
+res_cold_culture <- results(dds, contrast=c("treatment","freezing","control"))
+head(res_cold_culture)
+#how many FDR < 10%?
+table(res_cold_culture$padj<0.01)
+# 0.1=7163
+# 0.05=5834
+# 0.01=4057
+summary(res_cold_culture)
+write.table(res_cold_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_cold_results_sym.txt", quote=F, sep="\t")
+```
+
+MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
+
+```{r, cache=TRUE, fig.align='center'}
+DESeq2::plotMA(res_cold_culture, main = "Freezing vs Control, Culture")
+```
+
+
+##Heatmaps
+***
+<br> <br> 
+
+Overall expression, sample by distance. 
+
+```{r, cache=TRUE, fig.align="center"}
+sampleDists <- as.matrix(dist(t(assay(rlogged))))
+heatmap.2(as.matrix(sampleDists), key=F, trace="none",
+          col=colorpanel(100, "black", "white"),
+          margin=c(10, 10))
+```
+
+<br><br>
+<b>Individual genes heatmap </b> 
+<br> 
+Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this. Upregulation indicated by warmer colors, downregulation indicated by cooler colors.
+
+First for heat vs. control comparison
+```{r, cache=TRUE, fig.align='center'}
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/normalized_counts_culture.csv")
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_hot_results_sym.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts, by.x = "X", by.y = "X")  # turn into a countdatafile
+  row.names(hm) = hm$X
+  hm$X = NULL
+
+## Turning into z-score table
+hm.z = data.matrix(hm)
+hm.z = sweep(hm.z, 1L, rowMeans(hm.z), check.margin = FALSE)
+hm.z.sx = apply(hm.z, 1L, sd)
+hm.z = sweep(hm.z, 1L, hm.z.sx, "/", check.margin = FALSE)
+hm.z = data.matrix(hm.z)
+
+colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
+```
+
+Now for cold vs. control comparison
+```{r, cache=TRUE, fig.align='center'}
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/normalized_counts_culture.csv")
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_cold_results_sym.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts, by.x = "X", by.y = "X")  # turn into a countdatafile
+  row.names(hm) = hm$X
+  hm$X = NULL
+
+## Turning into z-score table
+hm.z = data.matrix(hm)
+hm.z = sweep(hm.z, 1L, rowMeans(hm.z), check.margin = FALSE)
+hm.z.sx = apply(hm.z, 1L, sd)
+hm.z = sweep(hm.z, 1L, hm.z.sx, "/", check.margin = FALSE)
+hm.z = data.matrix(hm.z)
+
+colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
+```
+##Principal Component Analyses 
+
+<br>
+First we create a PCA data frame and calculate the variance estimated by PC1 and PC2
+```{r cache=TRUE, fig.align="center"}
+pcadata = DESeq2::plotPCA(rlogged, intgroup = c( "treatment"), returnData = TRUE)
+percentVar = round(100 * attr(pcadata, "percentVar"))
+pca = prcomp(t(assay(rlogged)), center = TRUE, scale. = FALSE)
+```
+<br><br>
+
+Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
+```{r cache=TRUE}
+adonis(pca$x ~ treatment, data = pcadata, method = 'eu')
+```
+<br><br>
+Significant effect of treatment (p = 0.001)
+```{r cache=TRUE, fig.align="center"}
+# symbionts in culture, so using open circles but same colors as in symbiosis
+cols_sym = c("control" = "#a6611a", "freezing" = "#74c476", "hot" = "#fd8d3c")
+
+pca_culture = DESeq2::plotPCA(rlogged, returnData = TRUE, intgroup = c("treatment") ) %>% 
+      ggplot(aes(x = PC1, y = PC2)) +
+      geom_point(aes(colour = treatment), size = 3, shape = 21, stroke = 1) +
+      scale_colour_manual(values = cols_sym,
+                          name = "Treatment") +
+      stat_ellipse(aes(color=rlogged$treatment), type = "t", lwd = 1) +
+      xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+      ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+      #labs(title = "~ treatment, p<0.001")+
+      theme_bw()
+pca_culture
+
+ggsave(pca_culture, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/culture_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
+```
+Principal component analyses highlighting treatment groups. Treatment has a significant affect (p < 0.001) on overall expression
+
+<br><br>
+
+** Should try to do this for culture individual flask at some point. 
+```{r cache=TRUE, fig.align="center"}
+DESeq2::plotPCA(rlogged, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
+      ggplot(aes(x = PC1, y = PC2)) +
+      geom_point(aes(colour = genotype), size = 3) +
+      xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+      ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+      labs(title = "~ genotype, p=0.2")+
+      theme_cowplot()
+```
+Principal component analyses highlighting genotypes of coral. Genotype does not have a significant affect (p < 0.2) on overall expression
+
+
+##Venn Diagrams
+
+Read in our result tables and isolate gene lists that are significant in each experiment. 
+
+```{r cache=TRUE}
+hot = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_hot_results_sym.txt", header = TRUE)
+hot = row.names(hot[hot$padj<0.05 & !is.na(hot$padj),])
+
+freezing = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_cold_results_sym.txt", header = TRUE)
+freezing = row.names(freezing[freezing$padj<0.05 & !is.na(freezing$padj),])
+```
+<br><br>
+
+Set up a venn diagram looking for similar genes in each experiment. 
+```{r cache=TRUE}
+all_shared = list("Hot" = hot, "Freezing" = freezing)
+prettyvenn=venn.diagram(
+      x = all_shared,
+      filename=NULL,
+      #col = "transparent",
+      fill = c("#fd8d3c", "#74c476"),
+      alpha = 0.5,
+      # label.col = c("darkred", "white", "darkgreen", "white", "white", "white", "blue4"),
+      cex = 2.5,
+      fontfamily = "sans",
+      fontface = "bold",
+      cat.default.pos = "text",
+      cat.col = "black",
+      cat.cex = 2.5,
+      cat.fontfamily = "sans",
+      cat.dist = c(0.08, 0.08),
+      cat.pos = 1
+    );
+grid.draw(prettyvenn)
+```
+
+
+
+##Gene Ontology
+Make Gene Ontology input table for MWU for hot treatment
+```{r message=FALSE, warning=FALSE, eval = FALSE}
+oc_hot_res = read.table("tables/oculina_hot_results_sym.txt")
+head(oc_hot_res)
+oc_hot_res$isogroup=row.names(oc_hot_res)
+
+go_input_hot_oculina = oc_hot_res %>%
+  mutate(mutated_p = -log(pvalue)) %>%
+  mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
+  select(isogroup, mutated_p_updown) %>%
+  na.omit()
+
+nrow(go_input_hot_oculina)
+head(go_input_hot_oculina)
+colnames(go_input_hot_oculina) <- c("gene", "pval")
+head(go_input_hot_oculina)
+write.csv(go_input_hot_oculina, file="tables/hot_oculina_sym_GO.csv", quote=F, row.names=FALSE)
+
+```
+
+Make Gene Ontology input table for MWU for Oculina cold treatment
+```{r message=FALSE, warning=FALSE, eval = FALSE}
+oc_cold_res = read.table("tables/oculina_cold_results_sym.txt")
+head(oc_cold_res)
+oc_cold_res$isogroup=row.names(oc_cold_res)
+
+go_input_cold_oculina = oc_cold_res %>%
+  mutate(mutated_p = -log(pvalue)) %>%
+  mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
+  select(isogroup, mutated_p_updown) %>%
+  na.omit()
+
+nrow(go_input_cold_oculina)
+head(go_input_cold_oculina)
+colnames(go_input_cold_oculina) <- c("gene", "pval")
+head(go_input_cold_oculina)
+write.csv(go_input_cold_oculina, file="tables/cold_oculina_sym_GO.csv", quote=F, row.names=FALSE)
+```
+
+
+### Cellular Components
+Hot vs. control comparison first
+```{r, cache=TRUE, eval = FALSE}
+input="hot_oculina_sym_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+goAnnotations="Brevolium_psyg_iso2go.tab" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
+goDatabase="go.obo" # download from http://www.geneontology.org/GO.downloads.ontology.shtml
+goDivision="CC" # either MF, or BP, or CC
+source("gomwu.functions.R")
+```
+
+```{r cache=TRUE, eval = FALSE}
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+	perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
+	largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
+	smallest=5,   # a GO category should contain at least this many genes to be considered
+	clusterCutHeight=0.25) # threshold for merging similar (gene-sharing) terms. See README for details.
+#	Alternative="g" # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead. 
+#	Module=TRUE,Alternative="g" # un-remark this if you are analyzing a SIGNED WGCNA module (values: 0 for not in module genes, kME for in-module genes). In the call to gomwuPlot below, specify absValue=0.001 (count number of "good genes" that fall into the module)
+#	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
+
+# do not continue if the printout shows that no GO terms pass 10% FDR.
+
+```
+0 GO terms pass 10% FDR for CC, so not continuing to plot.
+
+
+### Molecular Functions
+
+```{r cache=TRUE, eval = FALSE}
+goDivision="MF" 
+```
+
+```{r cache=TRUE, eval = FALSE}
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+	perlPath="perl", 
+	largest=0.1, 
+	smallest=5,   
+	clusterCutHeight=0.25 
+)
+```
+
+```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
+pdf("mf_oculina_sym_hot_results.pdf")
+mf_oculina_hot_results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=1,
+	level1=0.1, 
+	level2=0.05, 
+	level3=0.01, 
+	txtsize=1.2,    
+	treeHeight=0.5, 
+  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") 
+)
+dev.off()
+write.csv(mf_oculina_hot_results, "mf_oculina_hot_sym.csv")
+```
+
+### Biological process
+```{r cache=TRUE, eval = FALSE}
+goDivision="BP"
+```
+
+```{r cache=TRUE, eval = FALSE}
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+	perlPath="perl", 
+	largest=0.1,  
+	smallest=5,   
+	clusterCutHeight=0.25 
+)
+```
+
+```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
+pdf("bp_oculina_sym_hot_results.pdf")
+bp_oculina_hot_results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=1,
+	level1=0.1, 
+	level2=0.05, 
+	level3=0.01, 
+	txtsize=1.2,    
+	treeHeight=0.5, 
+  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") 
+)
+dev.off()
+write.csv(bp_oculina_hot_results, "bp_oculina_hot_sym.csv")
+```
+
+
+Now cold vs. control comparison 
+```{r, cache=TRUE, eval = FALSE}
+input="cold_oculina_sym_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+goAnnotations="Brevolium_psyg_iso2go.tab" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
+goDatabase="go.obo" # download from http://www.geneontology.org/GO.downloads.ontology.shtml
+goDivision="CC" # either MF, or BP, or CC
+source("gomwu.functions.R")
+```
+
+```{r cache=TRUE, eval = FALSE}
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+	perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
+	largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
+	smallest=5,   # a GO category should contain at least this many genes to be considered
+	clusterCutHeight=0.25) # threshold for merging similar (gene-sharing) terms. See README for details.
+#	Alternative="g" # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead. 
+#	Module=TRUE,Alternative="g" # un-remark this if you are analyzing a SIGNED WGCNA module (values: 0 for not in module genes, kME for in-module genes). In the call to gomwuPlot below, specify absValue=0.001 (count number of "good genes" that fall into the module)
+#	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
+
+# do not continue if the printout shows that no GO terms pass 10% FDR.
+
+```
+
+```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
+pdf("cc_oculina_cold_sym_results.pdf")
+cc_oculina_cold_results=gomwuPlot(input,goAnnotations,goDivision,
+#	absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+	absValue=1,
+	level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+	level2=0.05, # FDR cutoff to print in regular (not italic) font.
+	level3=0.01, # FDR cutoff to print in large bold font.
+	txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+	treeHeight=0.5, # height of the hierarchical clustering tree
+  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+dev.off()
+write.csv(cc_oculina_cold_results, "cc_oculina_cold_sym.csv")
+```
+
+### Molecular Functions
+
+```{r cache=TRUE, eval = FALSE}
+goDivision="MF" 
+```
+
+```{r cache=TRUE, eval = FALSE}
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+	perlPath="perl", 
+	largest=0.1, 
+	smallest=5,   
+	clusterCutHeight=0.25 
+)
+```
+
+```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
+pdf("mf_oculina_cold_sym_results.pdf")
+mf_oculina_cold_results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=1,
+	level1=0.1, 
+	level2=0.05, 
+	level3=0.01, 
+	txtsize=1.2,    
+	treeHeight=0.5, 
+  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") 
+)
+dev.off()
+write.csv(mf_oculina_cold_results, "mf_oculina_cold_sym.csv")
+```
+
+### Biological process
+```{r cache=TRUE, eval = FALSE}
+goDivision="BP"
+```
+
+```{r cache=TRUE, eval = FALSE}
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+	perlPath="perl", 
+	largest=0.1,  
+	smallest=5,   
+	clusterCutHeight=0.25 
+)
+```
+
+```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
+pdf("bp_oculina_cold_sym_results.pdf")
+bp_oculina_cold_results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=1,
+	level1=0.1, 
+	level2=0.05, 
+	level3=0.01, 
+	txtsize=1.2,    
+	treeHeight=0.5, 
+  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") 
+)
+dev.off()
+write.csv(bp_oculina_cold_results, "bp_oculina_cold_sym.csv")
+```

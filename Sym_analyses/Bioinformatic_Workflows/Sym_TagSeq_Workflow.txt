@@ -1,0 +1,159 @@
+# This document details the analysis of TagSeq from the Symbioiniaceae culture part of the host buffering experiments
+# These experiments were run by Alexa Huzar in Fall 2020.
+
+#------------------------------GET DATA FROM ILLUMINA BASE SPACE
+
+module load basespace-cli
+bs download project -i 236499269 -o .
+
+# Working directory for this project
+[haich@scc1 sym_ge]$ pwd
+/projectnb/davies-hb/hannah/sym_ge
+
+# Organizing files
+[haich@scc1 sym_ge]$ cat cp_files 
+#!/bin/bash
+#$ -V # inherit the submission environment
+#$ -cwd # start job in submission directory
+#$ -N cp_files # job name, anything you want
+#$ -l h_rt=24:00:00 #maximum run time
+#$ -M hannahaichelman@gmail.com #your email
+#$ -m be
+
+cp SA21045-Control_3_L002_ds.d5a888381a0f4cef84afe6869d919413/Control-3_S183_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_1_1_L001_ds.300c755dfa374d049c6d661ebde5d9a8/Heat-1-1_S193_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_3_L001_ds.3c6cba9cc60544018065f90a47cb65ef/Control-3_S183_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_4_L001_ds.10d60047634141d2aab0fba03b09d100/Heat-4_S192_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_2_1_L002_ds.6e358644e1b5434c895fde73fd283afa/Heat-2-1_S190_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Cool_4_L002_ds.4d986cbbf3794533b83ec9f7412401e5/Cool-4_S177_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_2_L002_ds.fbc80a8c83384d81a893e3d2614edcf0/Heat-2_S194_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_2_L002_ds.ee8a3efa24d84d78be422955c6d2149e/Control-2_S182_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_1_1_L001_ds.0c0b518ecb6a4aabb19153f571d7bb90/Control-1-1_S185_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Cool_4_L001_ds.b0e51ac8637a4424b4e74d0c44f7fd8b/Cool-4_S177_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_3_L002_ds.d37be2adeef349c5ac5e2bd74e6dd658/Heat-3_S191_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_1_L001_ds.98c6a8e32b914f75a4957b285de39cad/Control-1_S181_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_2_1_L001_ds.cbd3e708c05a4bf09cc2c6179ba7175d/Heat-2-1_S190_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_4_1_L002_ds.377a319a409643d481cd018c4174a9cb/Control-4-1_S188_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_2_L001_ds.8a57eee92c05453a9f4152f66b52041e/Heat-2_S194_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_1_L002_ds.1b8cba1c89564f63ba3bd74d7a5b8d58/Control-1_S181_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Cool_1_L002_ds.4f8829b10dfc4a16899ad4ae2e87fb5e/Cool-1_S179_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_1_L001_ds.0c645aefa1734e5488f7fc8a3a03220f/Heat-1_S189_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Cool_2_L002_ds.2978e6bbc0444b37801bded4e7f6eaa1/Cool-2_S180_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Cool_3_L002_ds.b1c5dbba575847fb93bfb951b08b50d4/Cool-3_S178_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_4_1_L001_ds.65358b460f0c4a0fb15fb0305e309531/Control-4-1_S188_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_3_1_L001_ds.5e03717ab9e940bebf49662203498e7a/Heat-3-1_S195_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_4_L002_ds.c09e7cd249a74e479de58690ec9d2f97/Control-4_S184_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_3_1_L002_ds.3147a2560eee4894b3db405cfd520f88/Heat-3-1_S195_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_4_1_L001_ds.0b2e3d3936c04819863ad4457a32ca5a/Heat-4-1_S196_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_1_L002_ds.cef8b251a11f46c1bed75b41f64b5531/Heat-1_S189_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_3_L001_ds.8df526fc8f934e31906de3015518a6ec/Heat-3_S191_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_1_1_L002_ds.8befcac3a67240f5880d435136394239/Control-1-1_S185_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_3_1_L001_ds.bdc38cd1f5284154b1c9714009bd1346/Control-3-1_S187_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Cool_2_L001_ds.a0ce001d81e447098c450a5c2666f9c9/Cool-2_S180_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Cool_3_L001_ds.66ca99ad85a640239812ad0f9ccacc26/Cool-3_S178_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_4_L002_ds.20c066cbb5cb4530b0353baa4b133ecd/Heat-4_S192_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Cool_1_L001_ds.b0075a90c3f3445e912c3485e2724f51/Cool-1_S179_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_2_1_L001_ds.96e8caae537a40988f0b674477d34752/Control-2-1_S186_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_3_1_L002_ds.9f7bd994e029401ab3028e2778f78d36/Control-3-1_S187_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_2_L001_ds.ce53adf5219e44a8ad76824b1018d931/Control-2_S182_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_4_L001_ds.899bad38011f494e9d18181d2f0e8ab3/Control-4_S184_L001_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_1_1_L002_ds.1153dbeda21348e689737f82141010ee/Heat-1-1_S193_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Heat_4_1_L002_ds.d7afb3d735b2483f82fae35953bb4d59/Heat-4-1_S196_L002_R1_001.fastq.gz ./fastqs/
+cp SA21045-Control_2_1_L002_ds.06acc44686b64b51bbb9ef6835e57c2e/Control-2-1_S186_L002_R1_001.fastq.gz ./fastqs/
+
+
+# unzip files
+[haich@scc1 fastqs]$ pwd
+/projectnb/davies-hb/hannah/sym_ge/fastqs
+
+[haich@scc1 fastqs]$ nano gunzip_files 
+
+#!/bin/bash
+#$ -V # inherit the submission environment
+#$ -cwd # start job in submission directory
+#$ -N gunzip # job name, anything you want
+#$ -l h_rt=24:00:00 #maximum run time
+#$ -M hannahaichelman@gmail.com #your email
+#$ -m be
+
+gunzip *.gz
+
+
+#------------------------------BACKING UP DATA
+tarball'd the back-up files in case something goes wrong 
+
+[haich@scc1 sym_ge]$ pwd
+/projectnb/davies-hb/hannah/sym_ge
+
+[haich@scc1 sym_ge]$ mkdir sym_ge_backup
+[haich@scc1 sym_ge]$ mv SA* sym_ge_backup/
+[haich@scc1 sym_ge]$ mv JA21018_236499269.json sym_ge_backup/
+
+[haich@scc1 sym_ge]$ tar -zcvf sym_ge_backup.tar.gz sym_ge_backup/
+
+
+#----------------------------- CAT DIFFERENT LANE FILES
+[haich@scc1 fastqs]$ pwd
+/projectnb/davies-hb/hannah/sym_ge/fastqs
+
+
+#!/bin/bash
+#$ -V # inherit the submission environment
+#$ -cwd # start job in submission directory
+#$ -N cat_files # job name, anything you want
+#$ -l h_rt=24:00:00 #maximum run time
+#$ -M hannahaichelman@gmail.com #your email
+#$ -m be
+cat Control-1-1_S185_L001_R1_001.fastq Control-1-1_S185_L002_R1_001.fastq > Culture_Control-1-1.fastq
+cat Control-1_S181_L001_R1_001.fastq Control-1_S181_L002_R1_001.fastq > Culture_Control-1.fastq
+cat Control-2-1_S186_L001_R1_001.fastq Control-2-1_S186_L002_R1_001.fastq > Culture_Control-2-1.fastq
+cat Control-2_S182_L001_R1_001.fastq Control-2_S182_L002_R1_001.fastq > Culture_Control-2.fastq
+cat Control-3-1_S187_L001_R1_001.fastq Control-3-1_S187_L002_R1_001.fastq > Culture_Control-3-1.fastq
+cat Control-3_S183_L001_R1_001.fastq Control-3_S183_L002_R1_001.fastq > Culture_Control-3.fastq
+cat Control-4-1_S188_L001_R1_001.fastq Control-4-1_S188_L002_R1_001.fastq > Culture_Control-4-1.fastq
+cat Control-4_S184_L001_R1_001.fastq Control-4_S184_L002_R1_001.fastq > Culture_Control-4.fastq
+cat Cool-1_S179_L001_R1_001.fastq Cool-1_S179_L002_R1_001.fastq > Culture_Cool-1.fastq
+cat Cool-2_S180_L001_R1_001.fastq Cool-2_S180_L002_R1_001.fastq > Culture_Cool-2.fastq
+cat Cool-3_S178_L001_R1_001.fastq Cool-3_S178_L002_R1_001.fastq > Culture_Cool-3.fastq
+cat Cool-4_S177_L001_R1_001.fastq Cool-4_S177_L002_R1_001.fastq > Culture_Cool-4.fastq
+cat Heat-1-1_S193_L001_R1_001.fastq Heat-1-1_S193_L002_R1_001.fastq > Culture_Heat-1-1.fastq
+cat Heat-1_S189_L001_R1_001.fastq Heat-1_S189_L002_R1_001.fastq > Culture_Heat-1.fastq
+cat Heat-2-1_S190_L001_R1_001.fastq Heat-2-1_S190_L002_R1_001.fastq > Culture_Heat-2-1.fastq
+cat Heat-2_S194_L001_R1_001.fastq Heat-2_S194_L002_R1_001.fastq > Culture_Heat-2.fastq
+cat Heat-3-1_S195_L001_R1_001.fastq Heat-3-1_S195_L002_R1_001.fastq > Culture_Heat-3-1.fastq
+cat Heat-3_S191_L001_R1_001.fastq Heat-3_S191_L002_R1_001.fastq > Culture_Heat-3.fastq
+cat Heat-4-1_S196_L001_R1_001.fastq Heat-4-1_S196_L002_R1_001.fastq > Culture_Heat-4-1.fastq
+cat Heat-4_S192_L001_R1_001.fastq Heat-4_S192_L002_R1_001.fastq > Culture_Heat-4.fastq
+
+
+# Made a folder called original_files and moved all of the original fastq's there. 
+# Kept re-named and cat'd folders here:
+/projectnb/davies-hb/hannah/sym_ge/fastqs
+
+
+#------------------------------TRIMMING FILES
+[haich@scc1 fastqs]$ pwd
+/projectnb/davies-hb/hannah/sym_ge/fastqs
+
+# make sure to cp tagseq_trim_launch.pl into the working directory 
+
+/projectnb/davies-hb/hannah/MPCC_2018/tag-based_RNAseq-master/tagseq_trim_launch.pl '\.fastq$' > clean
+
+scc6_qsub_launcher.py -N trim -P coral -jobsfile clean
+
+qsub trim_array.qsub 
+
+# cat'd all of the trim output into a single file, deleted the individual files
+cat trim.o* > trim.o.all
+rm -f trim.o5*
+
+#------------------------------USE IN ORTHOLOG ANALYSIS
+
+# copied all .trim files to /projectnb/davies-hb/hannah/MPCC_2018/Oculina/orthologs/ortho_mapping to include in mapping to orthologs
+
+
+
+
+
+
+

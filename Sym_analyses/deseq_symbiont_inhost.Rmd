@@ -1,0 +1,426 @@
+---
+title: "deseqOculina_symbiont"
+author: "Hannah Aichelman"
+date: "10/22/2019"
+output: html_document
+---
+
+
+```{r message=FALSE, warning=FALSE}
+## get Bioconductor packages
+if (!requireNamespace("BiocManager"))
+install.packages("BiocManager")
+BiocManager::install("DESeq2")
+
+library(tidyr)
+library(plyr)
+library(dplyr)
+library(DESeq2)
+library(ggplot2)
+#library(affycoretools) no version for R4.0.1
+#library(arrayQualityMetrics) no version for R4.0.1
+library(genefilter)
+#library(DESeq) no version for R4.0.1
+library(cowplot)
+library(readr)
+library(RColorBrewer)
+library(gplots)
+library(knitr)
+library(plotly)
+library(vegan)
+library(kableExtra)
+library(reshape2)
+library(prettydoc)
+library(VennDiagram)
+```
+
+Read in Oculina host and symbiont counts files. Each only include brown hosts
+```{r,cache=TRUE, echo=FALSE}
+countDataSym <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/CountsFiles/mapping_hannynewref/Oculina_Counts_newref_sym.txt")
+```
+
+
+Set up experimental design matrix
+```{r,cache=TRUE}
+names(countDataSym) = c("OA4", "OA5", "OA6", 
+                        "OC4_F_B",	"OC5_H_B",	"OC9_C_B",	
+                        "OD4_C_B",	"OD5_F_B",	"OD6_H_B",
+                        "OE10", "OE11", "OE3",
+                        "OF7_C_B",	"OF8_F_B",	"OF9_H_B",
+                        "OH11", "OH15", "OH1",
+                        "OI1_C_B",	"OI2_F_B",	"OI3_H_B",	
+                        "OJ13_C_B",	"OJ14_F_B",	"OJ15_H_B",	
+                        "OK1", "OK2", "OK3",
+                        "OL6_C_B",	"OL7_F_B",	"OL8_H_B",	
+                        "OM1_C_B",	"OM2_F_B",	"OM3_H_B",
+                        "ON4", "ON5", "ON6",
+                        "OO1", "OO2",
+                        "OP1", "OP2", "OP3",
+                        "OQ11", "OQ1", "OQ4",
+                        "OR7_C_B",	"OR8_F_B",	"OR9_H_B")
+
+countDataSym_brown = countDataSym %>%
+  select(-c(OA4, OA5, OA6, OE10, OE11, OE3, OH11, OH15, OH1, OK1, OK2, OK3, ON4, ON5, ON6, OO1, OO2, OP1, OP2, OP3, OQ11, OQ1, OQ4))
+
+# We found a pair of clones in the symbiotic Oculina dataset, M's and L's, so removing lowest read count clone pair (L's)
+colSums(countDataSym_brown)
+
+countDataSym_brown_noclone = countDataSym_brown %>%
+  select(-c(OL6_C_B, OL7_F_B, OL8_H_B))
+
+treatmentSym = as.factor(sapply(strsplit(colnames(countDataSym_brown_noclone), split = "_"), "[[", 2)) %>%
+  revalue(c("C" = "control", "F" = "freezing", "H" = "hot"))
+
+genotypeSym  = as.factor(sapply(strsplit(colnames(countDataSym_brown_noclone), split = ""), "[[", 2))
+
+expDesign_Sym = data.frame(colnames(countDataSym_brown_noclone), treatmentSym, genotypeSym)
+expDesign_Sym$type = "sym"
+expDesign_Sym$treat_type = paste(expDesign_Sym$treatmentSym,expDesign_Sym$type, sep = "_")
+names(expDesign_Sym) = c("sample", "treatment", "genotype", "type", "treat_type")
+```
+
+Experimental Design key with sample names 
+```{r,cache=TRUE, echo=FALSE}
+kable(expDesign_Sym) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+Descriptive Summary stats of the mapped reads. 
+
+```{r echo=FALSE}
+stats.per.sample = data.frame(t(do.call(cbind, lapply(countDataSym_brown_noclone, summary))))
+      stats.per.sample$libsum = apply(countDataSym_brown_noclone, 2, sum) ## libsum
+      stats.per.sample$perc05 = apply(countDataSym_brown_noclone, 2, quantile, 0.05)
+      stats.per.sample$perc10 = apply(countDataSym_brown_noclone, 2, quantile, 0.10)
+      stats.per.sample$perc90 = apply(countDataSym_brown_noclone, 2, quantile, 0.90)
+      stats.per.sample$perc95 = apply(countDataSym_brown_noclone, 2, quantile, 0.95)
+      stats.per.sample$zeros = apply(countDataSym_brown_noclone==0, 2, sum)
+      stats.per.sample$percent.zeros = 100*stats.per.sample$zeros/nrow(countDataSym_brown_noclone)
+write.csv(stats.per.sample, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_brownsym_summary_table.csv", quote = FALSE)
+      
+kable(stats.per.sample) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+#Outlier Detection
+Skipping this for now, because arrayqualitymetrics is no longer operational
+
+Conduct array quality metrics to identify outliers  
+
+```{r, cache=TRUE}
+real=newCountDataSet(countDataSym,expDesign) 
+real=estimateSizeFactors(real)
+```
+
+```{r, fig.align='center', cache=TRUE }
+plot(sort(sizeFactors(real)), main = "Ocuina Symbiont Size Factors") 
+```
+<br>
+Size factors of each sample used to normalize between libraries. 
+<br> 
+<br> 
+Create a directory with a bunch of output figures from arrayQualityMetrics() for you to explore if their are outliers. 
+
+```{r message=FALSE, warning=FALSE, eval = FALSE}
+cds=estimateDispersions(real,method="blind")
+vsdBlind=varianceStabilizingTransformation(cds)
+arrayQualityMetrics(vsdBlind,intgroup=c("treatment"), force=TRUE, outdir = "Oculina_brown_sym_arrayqualitymetrics") # this makes a directory "arrayQualityMetrics" and outputs various reports on outliers
+```
+
+Look at total counts across Oculina host and symbiont samples
+```{r}
+totalCountssym=colSums(countDataSym)
+totalCountssym
+barplot(totalCountssym, col=treatment, data = ylab="raw counts", main = "Oculina symbiont total counts")
+
+min(totalCountssym) 
+max(totalCountssym) 
+
+```
+####Outlier Conclusisons
+
+Do not need to remove any outliers for the Oculina host or symbiont. This is considering brown/symbiotic individuals only though.
+
+
+***
+
+#Differential Expression
+
+***
+
+```{r warning=FALSE, cache=TRUE}
+dds<-DESeqDataSetFromMatrix(countData=countDataSym_brown_noclone, colData=expDesign_Sym, design=~treatment) #can only test for the main effects of treatment
+dds = DESeq(dds)
+results = results(dds)
+summary(results)
+```
+
+
+
+Let's check to see if we set up our contrast correctly. We should have the treatment condition first and the control second in the log2 fold change (MLE) output. 
+
+```{r, cache=TRUE}
+head(results)
+```
+
+```{r echo=FALSE, cache=TRUE}
+norm.counts.sym = counts(dds, normalized = TRUE) # these are the counts DESeq uses
+write.csv(norm.counts.sym,"/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/Oculina_normalized_counts_sym.csv") #these are all counts, not considering treatment comparisons
+              
+norm.counts.stats = data.frame(
+  min = apply(norm.counts.sym, 2, min),
+  mean = apply(norm.counts.sym, 2, mean),
+  median = apply(norm.counts.sym, 2, median), 
+  max = apply(norm.counts.sym, 2, max),
+  zeros = apply(norm.counts.sym == 0, 2, sum), 
+  percent.zeros = 100* apply(norm.counts.sym == 0, 2, sum) / nrow(norm.counts.sym) 
+)
+
+kable(norm.counts.stats) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+Lets do a rlogged transformation, which is useful various unsupervised clustering analyses. Be sure the include blind = TRUE as it doesn't normalize the data with any priors from our experimental design. 
+
+```{r, cache=TRUE}
+rlogged = rlogTransformation(dds, blind = TRUE)
+```
+
+Hot versus control expression comparison
+```{r}
+##second term is the "control"
+res_hot_sym <- results(dds, contrast=c("treatment","hot","control"))
+head(res_hot_sym)
+#how many FDR < 10%?
+table(res_hot_sym$padj<0.1)
+# 0.1=75
+# 0.05=28
+# 0.01=9
+summary(res_hot_sym)
+write.table(res_hot_sym, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_results_sym.txt", quote=F, sep="\t")
+```
+
+MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
+
+```{r, cache=TRUE, fig.align='center'}
+DESeq2::plotMA(res_hot_sym, main = "Hot vs Control, Symbiont")
+```
+
+
+Cold versus control expression comparison
+```{r}
+##second term is the "control"
+res_cold_sym <- results(dds, contrast=c("treatment","freezing","control"))
+head(res_cold_sym)
+#how many FDR < 10%?
+table(res_cold_sym$padj<0.1)
+# 0.1=13
+# 0.05=9
+# 0.01=3
+summary(res_cold_sym)
+write.table(res_cold_sym, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_results_sym.txt", quote=F, sep="\t")
+```
+
+MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
+
+```{r, cache=TRUE, fig.align='center'}
+DESeq2::plotMA(res_cold_sym, main = "Freezing vs Control, Symbiont")
+```
+
+
+##Heatmaps
+***
+<br> <br> 
+
+Overall expression, sample by distance. 
+
+```{r, cache=TRUE, fig.align="center"}
+sampleDists <- as.matrix(dist(t(assay(rlogged))))
+heatmap.2(as.matrix(sampleDists), key=F, trace="none",
+          col=colorpanel(100, "black", "white"),
+          margin=c(10, 10))
+```
+
+<br><br>
+<b>Individual genes heatmap </b> 
+<br> 
+Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this. Upregulation indicated by warmer colors, downregulation indicated by cooler colors.
+
+First for heat vs. control comparison
+```{r, cache=TRUE, fig.align='center'}
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/Oculina_normalized_counts_sym.csv")
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_results_sym.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts, by.x = "X", by.y = "X")  # turn into a countdatafile
+  row.names(hm) = hm$X
+  hm$X = NULL
+
+## Turning into z-score table
+hm.z = data.matrix(hm)
+hm.z = sweep(hm.z, 1L, rowMeans(hm.z), check.margin = FALSE)
+hm.z.sx = apply(hm.z, 1L, sd)
+hm.z = sweep(hm.z, 1L, hm.z.sx, "/", check.margin = FALSE)
+hm.z = data.matrix(hm.z)
+
+colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
+
+
+```
+
+Now for cold vs. control comparison
+```{r, cache=TRUE, fig.align='center'}
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/Oculina_normalized_counts_sym.csv")
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_results_sym.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts, by.x = "X", by.y = "X")  # turn into a countdatafile
+  row.names(hm) = hm$X
+  hm$X = NULL
+
+## Turning into z-score table
+hm.z = data.matrix(hm)
+hm.z = sweep(hm.z, 1L, rowMeans(hm.z), check.margin = FALSE)
+hm.z.sx = apply(hm.z, 1L, sd)
+hm.z = sweep(hm.z, 1L, hm.z.sx, "/", check.margin = FALSE)
+hm.z = data.matrix(hm.z)
+
+colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
+```
+##Principal Component Analyses 
+
+<br>
+First we create a PCA data frame and calculate the variance estimated by PC1 and PC2
+```{r cache=TRUE, fig.align="center"}
+pcadata = DESeq2::plotPCA(rlogged, intgroup = c("treatment", "genotype"), returnData = TRUE)
+percentVar = round(100 * attr(pcadata, "percentVar"))
+pca = prcomp(t(assay(rlogged)), center = TRUE, scale. = FALSE)
+```
+<br><br>
+
+Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
+```{r cache=TRUE}
+adonis(pca$x ~ genotype + treatment, data = pcadata, method = 'eu')
+```
+<br><br>
+Significant effect of treatment (p = 0.001), but not of genotype (p = 0.2)
+```{r cache=TRUE, fig.align="center"}
+# symbionts in symbiosis
+# so want filled shape
+# colors are orange/brown/green for temperature treatment
+
+cols_sym = c("control" = "#a6611a", "freezing" = "#74c476", "hot" = "#fd8d3c")
+cols_sym = c("control" = "grey", "freezing" = "#68a2ff", "hot" = "#ea6227")
+
+pca_sym = DESeq2::plotPCA(rlogged, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
+      ggplot(aes(x = PC1, y = PC2)) +
+      geom_point(aes(colour = treatment), size = 3, shape = 19) +
+      scale_colour_manual(values = cols_sym,
+                          name = "Treatment") +
+      stat_ellipse(aes(color=rlogged$treatment), type = "t", linetype = 1, lwd = 1) +
+      xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+      ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+      #labs(title = "~ treatment, p<0.001")+
+      theme_bw()
+pca_sym
+ggsave(pca_sym, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/Oculina_plots/brown_sym_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
+```
+Principal component analyses highlighting treatment groups. Treatment has a significant affect (p < 0.001) on overall expression
+
+<br><br>
+
+```{r cache=TRUE, fig.align="center"}
+DESeq2::plotPCA(rlogged, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
+      ggplot(aes(x = PC1, y = PC2)) +
+      geom_point(aes(colour = genotype), size = 3) +
+      xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+      ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+      labs(title = "~ genotype, p=0.2")+
+      theme_cowplot()
+```
+Principal component analyses highlighting genotypes of coral. Genotype does not have a significant affect (p = 0.2) on overall expression (justification for not including it in the model)
+
+
+##Venn Diagrams
+
+Read in our result tables and isolate gene lists that are significant in each experiment. 
+
+```{r cache=TRUE}
+hot = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_results_sym.txt")
+hot = row.names(hot[hot$padj<0.05 & !is.na(hot$padj),])
+
+freezing = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_results_sym.txt")
+freezing = row.names(freezing[freezing$padj<0.05 & !is.na(freezing$padj),])
+```
+<br><br>
+
+Set up a venn diagram looking for similar genes in each experiment. 
+```{r cache=TRUE}
+all_shared = list("Hot" = hot, "Freezing" = freezing)
+    prettyvenn=venn.diagram(
+      x = all_shared,
+      filename=NULL,
+      #col = "transparent",
+      fill = c("#68a2ff", "#ea6227"),
+      alpha = 0.5,
+      # label.col = c("darkred", "white", "darkgreen", "white", "white", "white", "blue4"),
+      cex = 2.5,
+      fontfamily = "sans",
+      fontface = "bold",
+      cat.default.pos = "text",
+      cat.col = "black",
+      cat.cex = 2.5,
+      cat.fontfamily = "sans",
+      cat.dist = c(0.08, 0.08),
+      cat.pos = 1
+    );
+grid.draw(prettyvenn)
+```
+
+
+
+##Gene Ontology
+Make Gene Ontology input table for MWU for hot treatment
+```{r message=FALSE, warning=FALSE, eval = FALSE}
+oc_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_results_sym.txt")
+head(oc_hot_res)
+oc_hot_res$isogroup=row.names(oc_hot_res)
+
+go_input_hot_oculina = oc_hot_res %>%
+  mutate(mutated_p = -log(pvalue)) %>%
+  mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
+  select(isogroup, mutated_p_updown) %>%
+  na.omit()
+
+nrow(go_input_hot_oculina)
+head(go_input_hot_oculina)
+colnames(go_input_hot_oculina) <- c("gene", "pval")
+head(go_input_hot_oculina)
+write.csv(go_input_hot_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/hot_oculina_sym_GO.csv", quote=F, row.names=FALSE)
+```
+
+Make Gene Ontology input table for MWU for Oculina cold treatment
+```{r message=FALSE, warning=FALSE, eval = FALSE}
+oc_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_results_sym.txt")
+head(oc_cold_res)
+oc_cold_res$isogroup=row.names(oc_cold_res)
+
+go_input_cold_oculina = oc_cold_res %>%
+  mutate(mutated_p = -log(pvalue)) %>%
+  mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
+  select(isogroup, mutated_p_updown) %>%
+  na.omit()
+
+nrow(go_input_cold_oculina)
+head(go_input_cold_oculina)
+colnames(go_input_cold_oculina) <- c("gene", "pval")
+head(go_input_cold_oculina)
+write.csv(go_input_cold_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/cold_oculina_sym_GO.csv", quote=F, row.names=FALSE)
+```

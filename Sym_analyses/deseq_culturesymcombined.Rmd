@@ -135,7 +135,7 @@ names(countDataCombined) = c("OA4", "OA5", "OA6",
                         "Cool_1", "Cool_2", "Cool_3", "Cool_4",
                         "Heat_1.1", "Heat_1", "Heat_2.1", "Heat_2", "Heat_3.1", "Heat_3", "Heat_4.1", "Heat_4")
 
-# remove aposymbiotic individual columns from  the in host data and the combined data
+# remove aposymbiotic individual columns from the in host data and the combined data
 countDataSym_brown = countDataSym %>%
   select(-c(OA4, OA5, OA6, OE10, OE11, OE3, OH11, OH15, OH1, OK1, OK2, OK3, ON4, ON5, ON6, OO1, OO2, OP1, OP2, OP3, OQ11, OQ1, OQ4))
 

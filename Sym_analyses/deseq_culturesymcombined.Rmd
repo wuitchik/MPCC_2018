@@ -62,7 +62,7 @@ library(adegenet)
 
 ### Read in and format data
 
-Read in Oculina symbiont counts files, in host and in culture. The file for the symbiont only include brown hosts in creating counts file. 
+Read in Oculina symbiont counts files, separately for in host and in culture data. The file for the symbionts in host only include brown hosts in creating counts file. 
 ```{r,cache=TRUE, echo=FALSE}
 
 #countDataHost <- read.table("/Users/hannahaichelman/Documents/BU/MPCC_TagSeq/deseq/Oculina/CountsFiles/Oculina_counts_brownhost.txt")

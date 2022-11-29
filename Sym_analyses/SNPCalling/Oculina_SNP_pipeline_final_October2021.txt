@@ -1,6 +1,6 @@
 #Pipeline to call SNPs from Oculina TagSeq data:
 #Author: Hannah Aichelman, adapted from Sarah Barfield
-#Last Updated: June 12, 2020 to map to new reference, October 21 to clean up the pipeline
+#Last Updated: June 12, 2020 to map to new reference, October 2021 to clean up the pipeline
 #This pipeline takes TagSeq data and calls SNPs with the purpose of figuring out clones in the dataset
 
 
@@ -37,20 +37,21 @@ bowtie2 --no-unal --score-min L,16,1 --local -L 16 -x /projectnb/davies-hb/hanna
 
 
 #this is different from the tagseq mapping script in a few ways. the tagseq method includes these unique flags:
---no-hd = suppress SAM header lines (starting with @)
---no-sq  = suppress @SQ SAM header lines
--k = indicates -k mode. In this mode, bowtie searches for up to N distinct, valid alignments for each read. We have -k 5, meaning bowtie will search for at most 5 distinct alignments. 
-The manual says that the -k mode is effective in situations where you care more about whether a read aligns, or aligns a certain number of times, rather than where exactly it originated
+#--no-hd = suppress SAM header lines (starting with @)
+#--no-sq  = suppress @SQ SAM header lines
+#-k = indicates -k mode. In this mode, bowtie searches for up to N distinct, valid alignments for each read. We have -k 5, meaning bowtie will search for at most 5 distinct alignments. 
+#The manual says that the -k mode is effective in situations where you care more about whether a read aligns, or aligns a certain number of times, rather than where exactly it originated
 
 
 #need to parse the sam files into host and sym specific files. Matt Kanke wrote this to help:
 
 for x in *bt2.sam; do echo $x; grep 'Oarb\|SO:unsorted' $x &> ${x//sam/Oarb.sam}; grep 'Sym\|SO:unsorted' $x &> ${x//sam/Sym.sam}; done
 
-#Moved original .sam biles and Sym.sam files to other_sams/ directory
+#Moved original .sam files and Sym.sam files to other_sams/ directory
 
 #create file 'sams' that is a list of all sam files
 ls *bt2.Oarb.sam > sams
+
 #how many files?
 cat sams | wc -l  
 #47

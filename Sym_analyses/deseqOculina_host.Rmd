@@ -649,7 +649,7 @@ grid.draw(prettyvenn.white)
 ##Gene Ontology
 Make Gene Ontology input table for MWU for hot treatment
 ```{r message=FALSE, warning=FALSE, eval = FALSE}
-oc_hot_res = read.table("tables/oculina_hot_results.txt")
+oc_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_results.txt")
 head(oc_hot_res)
 oc_hot_res$isogroup=row.names(oc_hot_res)
 
@@ -663,13 +663,13 @@ nrow(go_input_hot_oculina)
 head(go_input_hot_oculina)
 colnames(go_input_hot_oculina) <- c("gene", "pval")
 head(go_input_hot_oculina)
-write.csv(go_input_hot_oculina, file="tables/hot_oculina_host_GO.csv", quote=F, row.names=FALSE)
+write.csv(go_input_hot_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_GO.csv", quote=F, row.names=FALSE)
 
 ```
 
 Make Gene Ontology input table for MWU for Oculina cold treatment
 ```{r message=FALSE, warning=FALSE, eval = FALSE}
-oc_cold_res = read.table("tables/oculina_cold_results.txt")
+oc_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_results.txt")
 head(oc_cold_res)
 oc_cold_res$isogroup=row.names(oc_cold_res)
 
@@ -683,7 +683,7 @@ nrow(go_input_cold_oculina)
 head(go_input_cold_oculina)
 colnames(go_input_cold_oculina) <- c("gene", "pval")
 head(go_input_cold_oculina)
-write.csv(go_input_cold_oculina, file="tables/cold_oculina_host_GO.csv", quote=F, row.names=FALSE)
+write.csv(go_input_cold_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_GO.csv", quote=F, row.names=FALSE)
 ```
 
 

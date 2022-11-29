@@ -1,20 +1,43 @@
 ---
 title: "OculinaDEseq_host"
 author: "Hannah Aichelman"
-date: "10/21/2019"
+date: "11/29/2022"
 output: html_document
 ---
 
+### Install and libray packages
+```{r InstallPackages, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# This code is from Colleen Bove, lets us library the old version of DESeq (to do array quality metrics) even running versions of R after 3.6
 
-```{r message=FALSE, warning=FALSE}
+## get Bioconductor packages
+if (!requireNamespace("BiocManager"))
+install.packages("BiocManager")
+BiocManager::install("DESeq2")
 
+## installing WGCNA:
+#source("http://bioconductor.org/biocLite.R")
+BiocManager::install(c("AnnotationDbi", "impute", "GO.db", "preprocessCore"))
+BiocManager::install("WGCNA", dependencies=TRUE)
+BiocManager::install("arrayQualityMetrics", dependencies=TRUE) # use this arrayQualityMetrics install if using later versions of R (3.6.3 works)
+BiocManager::install("affycoretools", dependencies=TRUE)
+#repos="http://cran.us.r-project.org"
+## R version 3.6 is funky with arrayQualityMetrics and DESeq so need this work around:
+install.packages("ape", lib = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+library(ape, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+install.packages("magick", lib = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library", dependencies = FALSE)
+library(magick, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+BiocManager::install("arrayQualityMetrics", type = "source", checkBuilt = TRUE, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+BiocManager::install("DESeq", type = "source", checkBuilt = TRUE, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+```
+
+```{r Libraries, message=FALSE, warning=FALSE}
 library(tidyr)
 library(plyr)
 library(dplyr)
 library(DESeq2)
 library(ggplot2)
-#library(affycoretools)
-#library(arrayQualityMetrics)
+library(affycoretools)
+library(arrayQualityMetrics)
 library(genefilter)
 #library(DESeq)
 library(cowplot)
@@ -31,13 +54,13 @@ library(VennDiagram)
 ```
 
 Read in Oculina host counts file. 
-```{r,cache=TRUE, echo=FALSE}
-countDataHost <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/CountsFiles/mapping_hannynewref/Oculina_counts_newref_host.txt")
+```{r CountsFile,cache=TRUE, echo=FALSE}
+countDataHost <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_counts_newref_host.txt")
 ```
 
 
 Re-name samples with treatment and symbiotic state info
-```{r,cache=TRUE}
+```{r ReNameSamples,cache=TRUE}
 names(countDataHost) = c("OA4_C_W", "OA5_F_W", "OA6_H_W", 
                         "OC4_F_B",	"OC5_H_B",	"OC9_C_B",	
                         "OD4_C_B",	"OD5_F_B",	"OD6_H_B",
@@ -65,14 +88,14 @@ countDataHost_white = countDataHost %>%
 
 Set up experimental design matrix
 Based on clone analysis, there are 3 sets of clones in Oculina individuals:
-N+O+P -> Z (white)
-L+M -> Y (brown)
-H+K -> X (white)
-Also, OR9_H_B identified as an outlier in original array quality metrics run, so removed. 
+N+O+P -> (white) - keep N
+L+M -> (brown) - keep L
+H+K -> (white) - keep H
 
-Details on github: https://github.com/wuitchik/MPCC_2018/tree/main/Host_analyses/Outlier_detection
+More details on github: https://github.com/wuitchik/MPCC_2018/tree/main/Host_analyses/Outlier_detection
+But kept the genotype with the highest total read count for all cases.
 
-```{r,cache=TRUE}
+```{r ExperimentalDesignMatrix,cache=TRUE}
 treatmentHost_brown = as.factor(sapply(strsplit(colnames(countDataHost_brown), split = "_"), "[[", 2)) %>%
   revalue(c("C" = "control", "F" = "freezing", "H" = "hot"))
 
@@ -93,71 +116,52 @@ expDesign_Host_white$treat_type = paste(expDesign_Host_white$treatmentHost_white
 names(expDesign_Host_white) = c("sample", "treatment", "genotype", "type", "treat_type")
 
 
-#re-name genotypes to indicate clones
-# first white hosts
+# remove clones from white hosts experimental design and counts
 expDesign_Host_white_clones_removed = expDesign_Host_white %>%
-  mutate(genotype = recode(genotype, A="A", E="E", H="X", K="X", N="Z", O="Z", P="Z", Q="Q"))
+  filter(genotype!="H") %>%
+  filter(genotype!="N")
 
-x.genotype = expDesign_Host_white_clones_removed %>%
-  filter(genotype == "X") %>%
-  group_by(treatment) %>%
-  slice_sample(n=1)
+countDataHost_white_clones_removed = countDataHost_white %>%
+  select(-c(OH15_H_W, OH1_C_W, OH11_F_W, ON4_C_W, ON5_F_W, ON6_H_W))
 
-z.genotype = expDesign_Host_white_clones_removed %>%
-  filter(genotype == "Z") %>%
-  group_by(treatment) %>%
-  slice_sample(n=2)
-
-excluded.list.white = c(x.genotype$sample, z.genotype$sample)
-
-expDesign_Host_white_clones_removed = expDesign_Host_white_clones_removed %>%
-  filter(!sample %in% excluded.list.white)
-
-# now for brown hosts
+# remove clones from brown hosts experimental design and counts
 expDesign_Host_brown_clones_removed = expDesign_Host_brown %>%
-  mutate(genotype = recode(genotype, C="C", D="D", F="F", I="I", J="J", L="Y", M="Y", R="R"))
+  filter(genotype!="L") 
 
-y.genotype = expDesign_Host_brown_clones_removed %>%
-  filter(genotype == "Y") %>%
-  group_by(greatment) %>%
-  slice_sample(n=1)
-
-excluded.list.brown = c(y.genotype$sample)
-
-expDesign_Host_white_clones_removed = expDesign_Host_white_clones_removed %>%
-  filter(!sample %in% excluded.list.white)
+countDataHost_brown_clones_removed = countDataHost_brown %>%
+  select(-c(OL6_C_B, OL7_F_B, OL8_H_B))
 ```
 
 Experimental Design key with sample names 
 ```{r,cache=TRUE, echo=FALSE}
-kable(expDesign_Host_brown) %>%
+kable(expDesign_Host_brown_clones_removed) %>%
   kable_styling(bootstrap_options = "striped", full_width = F)
 
-kable(expDesign_Host_white) %>%
+kable(expDesign_Host_white_clones_removed) %>%
   kable_styling(bootstrap_options = "striped", full_width = F)
 ```
 Descriptive Summary stats of the mapped reads. 
 
 ```{r echo=FALSE}
-stats.per.sample.brown = data.frame(t(do.call(cbind, lapply(countDataHost_brown, summary))))
-      stats.per.sample.brown$libsum = apply(countDataHost_brown, 2, sum) ## libsum
-      stats.per.sample.brown$perc05 = apply(countDataHost_brown, 2, quantile, 0.05)
-      stats.per.sample.brown$perc10 = apply(countDataHost_brown, 2, quantile, 0.10)
-      stats.per.sample.brown$perc90 = apply(countDataHost_brown, 2, quantile, 0.90)
-      stats.per.sample.brown$perc95 = apply(countDataHost_brown, 2, quantile, 0.95)
-      stats.per.sample.brown$zeros = apply(countDataHost_brown==0, 2, sum)
-      stats.per.sample.brown$percent.zeros = 100*stats.per.sample.brown$zeros/nrow(countDataHost_brown)
-write.csv(stats.per.sample.brown, file= "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_brownhost_summary_table.csv", quote = FALSE)
+stats.per.sample.brown = data.frame(t(do.call(cbind, lapply(countDataHost_brown_clones_removed, summary))))
+      stats.per.sample.brown$libsum = apply(countDataHost_brown_clones_removed, 2, sum) ## libsum
+      stats.per.sample.brown$perc05 = apply(countDataHost_brown_clones_removed, 2, quantile, 0.05)
+      stats.per.sample.brown$perc10 = apply(countDataHost_brown_clones_removed, 2, quantile, 0.10)
+      stats.per.sample.brown$perc90 = apply(countDataHost_brown_clones_removed, 2, quantile, 0.90)
+      stats.per.sample.brown$perc95 = apply(countDataHost_brown_clones_removed, 2, quantile, 0.95)
+      stats.per.sample.brown$zeros = apply(countDataHost_brown_clones_removed==0, 2, sum)
+      stats.per.sample.brown$percent.zeros = 100*stats.per.sample.brown$zeros/nrow(countDataHost_brown_clones_removed)
+write.csv(stats.per.sample.brown, file= "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_brownhost_summary_table.csv", quote = FALSE)
 
-stats.per.sample.white = data.frame(t(do.call(cbind, lapply(countDataHost_white, summary))))
-      stats.per.sample.white$libsum = apply(countDataHost_white, 2, sum) ## libsum
-      stats.per.sample.white$perc05 = apply(countDataHost_white, 2, quantile, 0.05)
-      stats.per.sample.white$perc10 = apply(countDataHost_white, 2, quantile, 0.10)
-      stats.per.sample.white$perc90 = apply(countDataHost_white, 2, quantile, 0.90)
-      stats.per.sample.white$perc95 = apply(countDataHost_white, 2, quantile, 0.95)
-      stats.per.sample.white$zeros = apply(countDataHost_white==0, 2, sum)
-      stats.per.sample.white$percent.zeros = 100*stats.per.sample.white$zeros/nrow(countDataHost_white)
-write.csv(stats.per.sample.white, file= "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_whitehost_summary_table.csv", quote = FALSE)
+stats.per.sample.white = data.frame(t(do.call(cbind, lapply(countDataHost_white_clones_removed, summary))))
+      stats.per.sample.white$libsum = apply(countDataHost_white_clones_removed, 2, sum) ## libsum
+      stats.per.sample.white$perc05 = apply(countDataHost_white_clones_removed, 2, quantile, 0.05)
+      stats.per.sample.white$perc10 = apply(countDataHost_white_clones_removed, 2, quantile, 0.10)
+      stats.per.sample.white$perc90 = apply(countDataHost_white_clones_removed, 2, quantile, 0.90)
+      stats.per.sample.white$perc95 = apply(countDataHost_white_clones_removed, 2, quantile, 0.95)
+      stats.per.sample.white$zeros = apply(countDataHost_white_clones_removed==0, 2, sum)
+      stats.per.sample.white$percent.zeros = 100*stats.per.sample.white$zeros/nrow(countDataHost_white_clones_removed)
+write.csv(stats.per.sample.white, file= "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_whitehost_summary_table.csv", quote = FALSE)
       
 kable(stats.per.sample.brown) %>%
   kable_styling(bootstrap_options = "striped", full_width = F)
@@ -171,7 +175,7 @@ kable(stats.per.sample.white) %>%
 
 
 Conduct array quality metrics to identify outliers  
-
+Skip this when running - output from array quality metrics provided in Github
 ```{r, cache=TRUE}
 real=newCountDataSet(countDataHost,expDesign) 
 real=estimateSizeFactors(real)
@@ -222,12 +226,12 @@ Do not need to remove any outliers for the Oculina host or symbiont. This is con
 ***
 
 ```{r warning=FALSE, cache=TRUE}
-dds.brown<-DESeqDataSetFromMatrix(countData=countDataHost_brown, colData=expDesign_Host_brown, design=~genotype + treatment) #can only test for the main effects of treatment
+dds.brown<-DESeqDataSetFromMatrix(countData=countDataHost_brown_clones_removed, colData=expDesign_Host_brown_clones_removed, design=~genotype + treatment) #can only test for the main effects of treatment
 dds.brown = DESeq(dds.brown)
 results.brown = results(dds.brown)
 summary(results.brown)
 
-dds.white<-DESeqDataSetFromMatrix(countData=countDataHost_white, colData=expDesign_Host_white, design=~genotype + treatment) #can only test for the main effects of treatment
+dds.white<-DESeqDataSetFromMatrix(countData=countDataHost_white_clones_removed, colData=expDesign_Host_white_clones_removed, design=~genotype + treatment) #can only test for the main effects of treatment
 dds.white = DESeq(dds.white)
 results.white = results(dds.white)
 summary(results.white)
@@ -244,10 +248,10 @@ head(results.white)
 
 ```{r echo=FALSE, cache=TRUE}
 norm.counts.brownhost = counts(dds.brown, normalized = TRUE) # these are the counts DESeq uses
-write.csv(norm.counts.brownhost, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/Oculina_normalized_counts_brownhost.csv") #these are all counts, not considering treatment comparisons
+write.csv(norm.counts.brownhost, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_brownhost.csv") #these are all counts, not considering treatment comparisons
 
 norm.counts.whitehost = counts(dds.white, normalized = TRUE) # these are the counts DESeq uses
-write.csv(norm.counts.whitehost, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/Oculina_normalized_counts_whitehost.csv") #these are all counts, not considering treatment comparisons
+write.csv(norm.counts.whitehost, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_whitehost.csv") #these are all counts, not considering treatment comparisons
               
 norm.counts.brown.stats = data.frame(
   min = apply(norm.counts.brownhost, 2, min),
@@ -273,7 +277,7 @@ kable(norm.counts.white.stats) %>%
   kable_styling(bootstrap_options = "striped", full_width = F)
 ```
 
-Lets do a rlogged transformation, which is useful various unsupervised clustering analyses. Be sure the include blind = TRUE as it doesn't normalize the data with any priors from our experimental design. 
+Now do an rlogged transformation, which is useful various unsupervised clustering analyses. Be sure the include blind = TRUE as it doesn't normalize the data with any priors from our experimental design. 
 
 ```{r, cache=TRUE}
 rlogged.brown = rlogTransformation(dds.brown, blind = TRUE)
@@ -286,22 +290,22 @@ Hot versus control expression comparison
 res_hot_brown_host <- results(dds.brown, contrast=c("treatment","hot","control"))
 head(res_hot_brown_host)
 #how many FDR < 10%?
-table(res_hot_brown_host$padj<0.05)
-# 0.1=750
-# 0.05=511
-# 0.01=253
+table(res_hot_brown_host$padj<0.05) # we actually get more DEGs when genotype is included in model.
+# 0.1=544
+# 0.05=338
+# 0.01=176
 summary(res_hot_brown_host)
-write.table(res_hot_brown_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_brown_host_results.txt", quote=F, sep="\t")
+write.table(res_hot_brown_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_results.txt", quote=F, sep="\t")
 
 res_hot_white_host <- results(dds.white, contrast=c("treatment","hot","control"))
 head(res_hot_white_host)
 #how many FDR < 10%?
-table(res_hot_white_host$padj<0.1)
-# 0.1=363
-# 0.05=240
-# 0.01=98
+table(res_hot_white_host$padj<0.01)
+# 0.1=33
+# 0.05=31
+# 0.01=15
 summary(res_hot_white_host)
-write.table(res_hot_white_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_white_host_results.txt", quote=F, sep="\t")
+write.table(res_hot_white_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_white_host_results.txt", quote=F, sep="\t")
 ```
 
 MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
@@ -318,22 +322,22 @@ Cold versus control expression comparison
 res_cold_brown_host <- results(dds.brown, contrast=c("treatment","freezing","control"))
 head(res_cold_brown_host)
 #how many FDR < 10%?
-table(res_cold_brown_host$padj<0.01)
-# 0.1=4958
-# 0.05=4077
-# 0.01=2829
+table(res_cold_brown_host$padj<0.05)
+# 0.1=4339
+# 0.05=3536
+# 0.01=2333
 summary(res_cold_brown_host)
-write.table(res_cold_brown_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_brown_host_results.txt", quote=F, sep="\t")
+write.table(res_cold_brown_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_results.txt", quote=F, sep="\t")
 
 res_cold_white_host <- results(dds.white, contrast=c("treatment","freezing","control"))
 head(res_cold_white_host)
 #how many FDR < 10%?
-table(res_cold_white_host$padj<0.01)
-# 0.1=3830
-# 0.05=3041
-# 0.01=1061
+table(res_cold_white_host$padj<0.05)
+# 0.1=2154
+# 0.05=1536
+# 0.01=871
 summary(res_cold_white_host)
-write.table(res_cold_white_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_white_host_results.txt", quote=F, sep="\t")
+write.table(res_cold_white_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_white_host_results.txt", quote=F, sep="\t")
 
 ```
 
@@ -342,6 +346,56 @@ MA plot, red dots indicate genes significantly differentially expressed at FDR <
 ```{r, cache=TRUE, fig.align='center'}
 DESeq2::plotMA(res_cold_brown_host, main = "Freezing vs Control, Brown Host")
 DESeq2::plotMA(res_cold_white_host, main = "Freezing vs Control, White Host")
+```
+
+## Make a barplot of differentially expressed genes
+```{r, cache=TRUE, fig.align='center'}
+summary(res_hot_brown_host)
+# up = 225
+# down = 319
+summary(res_hot_white_host)
+# up = 17
+# down = 16
+summary(res_cold_brown_host)
+# up = 1964
+# down = 2375
+summary(res_cold_white_host)
+# up = 1143
+# down = 1011
+
+host_degs = data.frame(
+  temperature = factor(c("hot", "hot", "hot", "hot", "cold", "cold", "cold", "cold")),
+  type = factor(c("brown_host", "brown_host", "white_host", "white_host", "brown_host", "brown_host", "white_host", "white_host")),
+  direction = factor(c("up","down","up","down","up","down","up","down")),
+  temperature_direction = factor(c("hot_up","hot_down", "hot_up","hot_down", "cold_up","cold_down","cold_up","cold_down")),
+  number = c(225, -319, 17, -16, 1964, -2375, 1143, -1011)
+)
+
+annotate_text = data.frame(
+  label = c("1964", "2375", "1143", "1011","225", "319","17", "16"),
+  temperature = factor(c("hot", "hot", "hot", "hot", "cold", "cold", "cold", "cold")),
+  type = factor(c("brown_host", "brown_host", "white_host", "white_host", "brown_host", "brown_host", "white_host", "white_host")),
+  direction = factor(c("up","down","up","down","up","down","up","down")),
+  temperature_direction = factor(c("hot_up","hot_down", "hot_up","hot_down", "cold_up","cold_down","cold_up","cold_down")),
+  x = c(1,1,1,1,2,2,2,2),
+  y = c(1800,-2100,1300,-1200,500,-500,200,-200)
+)
+
+cols = c("cold_up" = "#3182bd", "cold_down" =  "#9ecae1","hot_up" = "#de2d26", "hot_down" ="#fc9272")
+
+deg_barplot = ggplot(host_degs, aes(x = temperature, y = number, fill=temperature_direction)) +
+  geom_bar(stat = "identity", position = position_stack(), color = "black") +
+  scale_fill_manual(values = cols) +
+  xlab("Temperature Treatment") +
+  ylab("Differentially expressed genes") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  facet_grid(. ~ type) +
+  theme(panel.spacing = unit(0, "lines")) +
+  geom_text(data = annotate_text, aes(x = x, y = y, label = label))
+deg_barplot
+
+ggsave(deg_barplot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/host_deg_barplot.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
 ```
 
 
@@ -370,8 +424,8 @@ Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this
 
 First for heat vs. control comparison
 ```{r, cache=TRUE, fig.align='center'}
-norm_counts_brown = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/Oculina_normalized_counts_brownhost.csv")
-hm_brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_brown_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+norm_counts_brown = read.csv("//Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_brownhost.csv")
+hm_brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
   filter(padj < 0.1) %>% # only want the most DEGs
   select(X) %>%
   merge(norm_counts_brown, by.x = "X", by.y = "X")  # turn into a countdatafile
@@ -392,8 +446,8 @@ heatmap.2(hm_brown.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
           margin = c(5,15))
 
 
-norm_counts_white = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/Oculina_normalized_counts_whitehost.csv")
-hm_white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_white_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+norm_counts_white = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_whitehost.csv")
+hm_white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_white_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
   filter(padj < 0.1) %>% # only want the most DEGs
   select(X) %>%
   merge(norm_counts_white, by.x = "X", by.y = "X")  # turn into a countdatafile
@@ -416,8 +470,8 @@ heatmap.2(hm_white.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
 
 Now for cold vs. control comparison
 ```{r, cache=TRUE, fig.align='center'}
-norm_counts_brown = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/Oculina_normalized_counts_brownhost.csv")
-hm_brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_brown_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+norm_counts_brown = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_brownhost.csv")
+hm_brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
   filter(padj < 0.1) %>% # only want the most DEGs
   select(X) %>%
   merge(norm_counts_brown, by.x = "X", by.y = "X")  # turn into a countdatafile
@@ -438,8 +492,8 @@ heatmap.2(hm_brown.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
           margin = c(5,15))
 
 
-norm_counts_white = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/Oculina_normalized_counts_whitehost.csv")
-hm_white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_white_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+norm_counts_white = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_whitehost.csv")
+hm_white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_white_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
   filter(padj < 0.1) %>% # only want the most DEGs
   select(X) %>%
   merge(norm_counts_white, by.x = "X", by.y = "X")  # turn into a countdatafile
@@ -463,11 +517,11 @@ heatmap.2(hm_white.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
 <br>
 First we create a PCA data frame and calculate the variance estimated by PC1 and PC2
 ```{r cache=TRUE, fig.align="center"}
-pcadata.brown = DESeq2::plotPCA(rlogged.brown, intgroup = c( "treatment", "genotype"), returnData = TRUE)
+pcadata.brown = DESeq2::plotPCA(rlogged.brown, intgroup = c("treatment", "genotype"), returnData = TRUE)
 percentVar.brown = round(100 * attr(pcadata.brown, "percentVar"))
 pca.brown = prcomp(t(assay(rlogged.brown)), center = TRUE, scale. = FALSE)
 
-pcadata.white = DESeq2::plotPCA(rlogged.white, intgroup = c( "treatment", "genotype"), returnData = TRUE)
+pcadata.white = DESeq2::plotPCA(rlogged.white, intgroup = c("treatment", "genotype"), returnData = TRUE)
 percentVar.white = round(100 * attr(pcadata.white, "percentVar"))
 pca.white = prcomp(t(assay(rlogged.white)), center = TRUE, scale. = FALSE)
 ```
@@ -482,33 +536,33 @@ adonis(pca.white$x ~ genotype + treatment, data = pcadata.white, method = 'eu')
 <br><br>
 
 ```{r cache=TRUE, fig.align="center"}
-cols = c("control" = "grey", "freezing" = "#68a2ff", "hot" = "#ea6227")
+cols = c("control" = "grey", "freezing" = "#3182bd", "hot" = "#de2d26")
 
 pca_brown = DESeq2::plotPCA(rlogged.brown, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
       ggplot(aes(x = PC1, y = PC2)) +
       geom_point(aes(colour = treatment), size = 3, shape = 19) +
       scale_colour_manual(values = cols,
                           name = "Treatment") +
-      stat_ellipse(aes(color=rlogged.brown$treatment), type = "t", linetype = 2, lwd = 1) +
+      stat_ellipse(aes(color=rlogged.brown$treatment), type = "t", linetype = 2, linewidth = 1) +
       xlab(paste0("PC1: ",percentVar.brown[1],"% variance")) +
       ylab(paste0("PC2: ",percentVar.brown[2],"% variance")) +
       #labs(title = "~ treatment, p<0.001")+
       theme_bw()
 pca_brown
-ggsave(pca_brown, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/Oculina_plots/brown_host_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
+ggsave(pca_brown, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/brown_host_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
 
 pca_white = DESeq2::plotPCA(rlogged.white, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
       ggplot(aes(x = PC1, y = PC2)) +
       geom_point(aes(colour = treatment), size = 3, shape = 19) +
       scale_colour_manual(values = cols,
                           name = "Treatment") +
-      stat_ellipse(aes(color=rlogged.white$treatment), type = "t", lwd = 1) +
+      stat_ellipse(aes(color=rlogged.white$treatment), type = "t", linewidth = 1) +
       xlab(paste0("PC1: ",percentVar.white[1],"% variance")) +
       ylab(paste0("PC2: ",percentVar.white[2],"% variance")) +
       #labs(title = "~ treatment, p<0.001")+
       theme_bw()
 pca_white
-ggsave(pca_sym, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/Oculina_plots/white_host_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
+ggsave(pca_white, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/white_host_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
 
 ```
 Principal component analyses highlighting treatment groups. Treatment has a significant affect (p < 0.001) on overall expression
@@ -516,11 +570,11 @@ Principal component analyses highlighting treatment groups. Treatment has a sign
 <br><br>
 
 ```{r cache=TRUE, fig.align="center"}
-DESeq2::plotPCA(rlogged, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
+DESeq2::plotPCA(rlogged.brown, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
       ggplot(aes(x = PC1, y = PC2)) +
       geom_point(aes(colour = genotype), size = 3) +
-      xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-      ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+      #xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+      #ylab(paste0("PC2: ",percentVar[2],"% variance")) +
       labs(title = "~ genotype, p<0.001")+
       theme_cowplot()
 ```

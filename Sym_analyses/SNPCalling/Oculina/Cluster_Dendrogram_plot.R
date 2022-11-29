@@ -16,3 +16,7 @@ plot(hc,cex=0.7)
 abline(h=0.17, col='darkgray', lty = 2, lwd=2) # add a vertical line to indicate cut-off for clones
 # This cut-off aligns well with what James Fifer has used in the past (0.15), 
 # this means that any samples that cluster together below that threshold are clones
+
+# Sample names are read as follows: 
+# OI3_H_B = Oculina, genet I, fragment 3, heat treatment, brown/symbiotic
+# This analysis indicates that for brown/symbiotic individuals, we only have one unexpected clonal group (M and L)

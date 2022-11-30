@@ -23,8 +23,8 @@ goAnnotations="O_arbuscula_isogroup_to_GOterm.tab" # two-column, tab-delimited, 
 goDatabase="go.obo" # download from http://www.geneontology.org/GO.downloads.ontology.shtml
 source("gomwu.functions.R")
 
-#### Oculina Host Hot GO Terms ####
-input="hot_oculina_sym_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+#### Oculina Symbiotic Heat GO Terms ####
+input="oculina_hot_brown_host_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
 goDivision="MF" # either MF, or BP, or CC
 
 # ------------- Calculating stats
@@ -40,15 +40,15 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
            #	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
 )
 # do not continue if the printout shows that no GO terms pass 10% FDR.
-# 2 GO terms at 10% FDR
+# 167 GO terms at 10% FDR
 
 quartz()
-mf_hot_sym_results=gomwuPlot(input,goAnnotations,goDivision,
+mf_hot_brown_host_results=gomwuPlot(input,goAnnotations,goDivision,
                              absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
                              #absValue=1, # un-remark this if you are using log2-fold changes
-                             level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-                             level2=0.05, # FDR cutoff to print in regular (not italic) font.
-                             level3=0.01, # FDR cutoff to print in large bold font.
+                             level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                             level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                             level3=0.001, # FDR cutoff to print in large bold font.
                              txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
                              treeHeight=0.5, # height of the hierarchical clustering tree
                              #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
@@ -59,7 +59,7 @@ mf_hot_sym_results=gomwuPlot(input,goAnnotations,goDivision,
 # text representation of results, with actual adjusted p-values
 results[[1]]
 #[1] 1.925315e-05 4.682142e-04
-write.csv(mf_hot_sym_results, "mf_hot_oculina_sym_results.csv")
+write.csv(mf_hot_brown_host_results, "mf_oculina_host_brown_heat_results.csv")
 
 
 goDivision="BP" 
@@ -225,15 +225,15 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
            #	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
 )
 # do not continue if the printout shows that no GO terms pass 10% FDR.
-# 11 GO terms at 10% FDR
+# 167 GO terms at 10% FDR
 
 quartz()
 mf_cold_sym_results=gomwuPlot(input,goAnnotations,goDivision,
                   absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
                   #absValue=1, # un-remark this if you are using log2-fold changes
-                  level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-                  level2=0.05, # FDR cutoff to print in regular (not italic) font.
-                  level3=0.01, # FDR cutoff to print in large bold font.
+                  level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                  level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                  level3=0.001, # FDR cutoff to print in large bold font.
                   txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
                   treeHeight=0.5, # height of the hierarchical clustering tree
                   #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed

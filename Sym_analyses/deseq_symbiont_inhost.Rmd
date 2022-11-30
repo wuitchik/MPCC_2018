@@ -1,7 +1,7 @@
 ---
 title: "deseqOculina_symbiont"
 author: "Hannah Aichelman"
-date: "10/22/2019"
+date: "11/30/2022"
 output: html_document
 ---
 
@@ -54,6 +54,7 @@ library(prettydoc)
 library(VennDiagram)
 ```
 
+### Counts file and experimental design
 
 Read in Oculina symbiont counts file
 ```{r,cache=TRUE, echo=FALSE}
@@ -374,7 +375,7 @@ pca = prcomp(t(assay(rlogged)), center = TRUE, scale. = FALSE)
 
 Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
 ```{r cache=TRUE}
-adonis(pca$x ~ genotype + treatment, data = pcadata, method = 'eu')
+adonis2(pca$x ~ genotype + treatment, data = pcadata, method = 'eu')
 
 # Terms added sequentially (first to last)
 # 

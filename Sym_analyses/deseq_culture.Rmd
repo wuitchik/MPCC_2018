@@ -6,15 +6,39 @@ output: html_document
 ---
 
 
-```{r message=FALSE, warning=FALSE}
+### Install and libray packages
+```{r InstallPackages, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# This code is from Colleen Bove, lets us library the old version of DESeq (to do array quality metrics) even running versions of R after 3.6
 
+## get Bioconductor packages
+if (!requireNamespace("BiocManager"))
+install.packages("BiocManager")
+BiocManager::install("DESeq2")
+
+## installing WGCNA:
+#source("http://bioconductor.org/biocLite.R")
+BiocManager::install(c("AnnotationDbi", "impute", "GO.db", "preprocessCore"))
+BiocManager::install("WGCNA", dependencies=TRUE)
+BiocManager::install("arrayQualityMetrics", dependencies=TRUE) # use this arrayQualityMetrics install if using later versions of R (3.6.3 works)
+BiocManager::install("affycoretools", dependencies=TRUE)
+#repos="http://cran.us.r-project.org"
+## R version 3.6 is funky with arrayQualityMetrics and DESeq so need this work around:
+install.packages("ape", lib = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+library(ape, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+install.packages("magick", lib = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library", dependencies = FALSE)
+library(magick, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+BiocManager::install("arrayQualityMetrics", type = "source", checkBuilt = TRUE, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+BiocManager::install("DESeq", type = "source", checkBuilt = TRUE, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+```
+
+```{r Libraries, message=FALSE, warning=FALSE}
 library(tidyr)
 library(plyr)
 library(dplyr)
 library(DESeq2)
 library(ggplot2)
-#library(affycoretools)
-#library(arrayQualityMetrics)
+library(affycoretools)
+library(arrayQualityMetrics)
 library(genefilter)
 #library(DESeq)
 library(cowplot)
@@ -30,7 +54,9 @@ library(prettydoc)
 library(VennDiagram)
 ```
 
-Read in culture counts file
+### Counts file and experimental design
+
+Read in Breviolum psygmophilum symbiont in culture counts file
 ```{r,cache=TRUE, echo=FALSE}
 countDataCulture <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/Huzar_Github_Symbiont-Thermal-Stress-main/B_psygmophilum_counts.txt")
 ```
@@ -44,7 +70,7 @@ row.names(countDataCulture)=sub("", "isogroup", rownames(countDataCulture))
 head(countDataCulture)
 
 treatment = as.factor(sapply(strsplit(colnames(countDataCulture), split = "_"), "[[", 1)) %>%
-  revalue(c("Control" = "control", "Cool" = "freezing", "Heat" = "hot"))
+  revalue(c("Control" = "control", "Cool" = "cold", "Heat" = "heat"))
 
 expDesign = data.frame(treatment) 
 expDesign$sample = colnames(countDataCulture)
@@ -66,16 +92,15 @@ stats.per.sample = data.frame(t(do.call(cbind, lapply(countDataCulture, summary)
       stats.per.sample$perc95 = apply(countDataCulture, 2, quantile, 0.95)
       stats.per.sample$zeros = apply(countDataCulture==0, 2, sum)
       stats.per.sample$percent.zeros = 100*stats.per.sample$zeros/nrow(countDataCulture)
-write.csv(stats.per.sample, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/sym_culture_summary_table.csv", quote = FALSE)
+write.csv(stats.per.sample, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/sym_culture_summary_table.csv", quote = FALSE)
       
 kable(stats.per.sample) %>%
   kable_styling(bootstrap_options = "striped", full_width = F)
 ```
 
 #Outlier Detection
-Skipping now since DESeq/arrayqualitymetrics is no longer supported
-
 Conduct array quality metrics to identify outliers  
+Skip this when running - output from array quality metrics provided in Github
 
 ```{r, cache=TRUE}
 real=newCountDataSet(countDataCulture,expDesign) 
@@ -151,7 +176,7 @@ head(results)
 
 ```{r echo=FALSE, cache=TRUE}
 norm.counts.culture = counts(dds, normalized = TRUE) # these are the counts DESeq uses
-write.csv(norm.counts.culture,"/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/normalized_counts_culture.csv") #these are all counts, not considering treatment comparisons
+write.csv(norm.counts.culture,"/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/normalized_counts_culture.csv") #these are all counts, not considering treatment comparisons
               
 norm.counts.stats = data.frame(
   min = apply(norm.counts.culture, 2, min),
@@ -175,42 +200,42 @@ rlogged = rlogTransformation(dds, blind = TRUE)
 Hot versus control expression comparison
 ```{r}
 ##second term is the "control"
-res_hot_culture <- results(dds, contrast=c("treatment","hot","control"))
+res_hot_culture <- results(dds, contrast=c("treatment","heat","control"))
 head(res_hot_culture)
 #how many FDR < 10%?
-table(res_hot_culture$padj<0.1)
+table(res_hot_culture$padj<0.05)
 # 0.1=5415
 # 0.05=4330
 # 0.01=2860
 summary(res_hot_culture)
-write.table(res_hot_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_hot_results_sym.txt", quote=F, sep="\t")
+write.table(res_hot_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/culture_hot_results.txt", quote=F, sep="\t")
 ```
 
 MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
 
 ```{r, cache=TRUE, fig.align='center'}
-DESeq2::plotMA(res_hot_culture, main = "Hot vs Control, Culture")
+DESeq2::plotMA(res_hot_culture, main = "Heat vs Control, Culture")
 ```
 
 
 Cold versus control expression comparison
 ```{r}
 ##second term is the "control"
-res_cold_culture <- results(dds, contrast=c("treatment","freezing","control"))
+res_cold_culture <- results(dds, contrast=c("treatment","cold","control"))
 head(res_cold_culture)
 #how many FDR < 10%?
-table(res_cold_culture$padj<0.01)
+table(res_cold_culture$padj<0.1)
 # 0.1=7163
 # 0.05=5834
 # 0.01=4057
 summary(res_cold_culture)
-write.table(res_cold_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_cold_results_sym.txt", quote=F, sep="\t")
+write.table(res_cold_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/culture_cold_results.txt", quote=F, sep="\t")
 ```
 
 MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
 
 ```{r, cache=TRUE, fig.align='center'}
-DESeq2::plotMA(res_cold_culture, main = "Freezing vs Control, Culture")
+DESeq2::plotMA(res_cold_culture, main = "Cold vs Control, Culture")
 ```
 
 
@@ -234,8 +259,8 @@ Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this
 
 First for heat vs. control comparison
 ```{r, cache=TRUE, fig.align='center'}
-norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/normalized_counts_culture.csv")
-hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_hot_results_sym.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/normalized_counts_culture.csv")
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/culture_hot_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
   filter(padj < 0.1) %>% # only want the most DEGs
   select(X) %>%
   merge(norm_counts, by.x = "X", by.y = "X")  # turn into a countdatafile
@@ -258,8 +283,8 @@ heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
 
 Now for cold vs. control comparison
 ```{r, cache=TRUE, fig.align='center'}
-norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/normalized_counts_culture.csv")
-hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_cold_results_sym.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/normalized_counts_culture.csv")
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/culture_cold_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
   filter(padj < 0.1) %>% # only want the most DEGs
   select(X) %>%
   merge(norm_counts, by.x = "X", by.y = "X")  # turn into a countdatafile
@@ -292,17 +317,22 @@ pca = prcomp(t(assay(rlogged)), center = TRUE, scale. = FALSE)
 
 Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
 ```{r cache=TRUE}
-adonis(pca$x ~ treatment, data = pcadata, method = 'eu')
+adonis2(pca$x ~ treatment, data = pcadata, method = 'eu')
+
+#           Df SumOfSqs     R2      F Pr(>F)    
+# treatment  2   9958.4 0.5414 10.035  0.001 ***
+# Residual  17   8435.4 0.4586                  
+# Total     19  18393.8 1.0000                  
 ```
 <br><br>
 Significant effect of treatment (p = 0.001)
 ```{r cache=TRUE, fig.align="center"}
 # symbionts in culture, so using open circles but same colors as in symbiosis
-cols_sym = c("control" = "#a6611a", "freezing" = "#74c476", "hot" = "#fd8d3c")
+cols_sym = c("control" = "#a6611a", "cold" = "#74c476", "heat" = "#fd8d3c")
 
 pca_culture = DESeq2::plotPCA(rlogged, returnData = TRUE, intgroup = c("treatment") ) %>% 
       ggplot(aes(x = PC1, y = PC2)) +
-      geom_point(aes(colour = treatment), size = 3, shape = 21, stroke = 1) +
+      geom_point(aes(colour = treatment), size = 3, shape = 19, stroke = 1) +
       scale_colour_manual(values = cols_sym,
                           name = "Treatment") +
       stat_ellipse(aes(color=rlogged$treatment), type = "t", lwd = 1) +
@@ -312,7 +342,7 @@ pca_culture = DESeq2::plotPCA(rlogged, returnData = TRUE, intgroup = c("treatmen
       theme_bw()
 pca_culture
 
-ggsave(pca_culture, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/culture_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
+ggsave(pca_culture, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/culture_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
 ```
 Principal component analyses highlighting treatment groups. Treatment has a significant affect (p < 0.001) on overall expression
 

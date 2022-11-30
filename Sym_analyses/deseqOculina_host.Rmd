@@ -53,6 +53,7 @@ library(prettydoc)
 library(VennDiagram)
 ```
 
+### Counts file and experimental design
 Read in Oculina host counts file. 
 ```{r CountsFile,cache=TRUE, echo=FALSE}
 countDataHost <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_counts_newref_host.txt")
@@ -176,9 +177,9 @@ kable(stats.per.sample.white) %>%
 
 #Outlier Detection
 
-
 Conduct array quality metrics to identify outliers  
 Skip this when running - output from array quality metrics provided in Github
+
 ```{r, cache=TRUE}
 real=newCountDataSet(countDataHost,expDesign) 
 real=estimateSizeFactors(real)
@@ -532,7 +533,7 @@ pca.white = prcomp(t(assay(rlogged.white)), center = TRUE, scale. = FALSE)
 
 Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
 ```{r Adonis, cache=TRUE, include=FALSE}
-brown.adonis.output = adonis(pca.brown$x ~ genotype + treatment, data = pcadata.brown, method = 'eu')
+brown.adonis.output = adonis2(pca.brown$x ~ genotype + treatment, data = pcadata.brown, method = 'eu')
 brown.adonis.output
 # Terms added sequentially (first to last)
 # 
@@ -542,7 +543,7 @@ brown.adonis.output
 # Residuals 12     30438  2536.5         0.34333           
 # Total     20     88656                 1.00000           
 
-white.adonis.output = adonis(pca.white$x ~ genotype + treatment, data = pcadata.white, method = 'eu')
+white.adonis.output = adonis2(pca.white$x ~ genotype + treatment, data = pcadata.white, method = 'eu')
 white.adonis.output
 # Terms added sequentially (first to last)
 # 

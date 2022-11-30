@@ -6,21 +6,41 @@ output: html_document
 ---
 
 
-```{r message=FALSE, warning=FALSE}
+### Install and libray packages
+```{r InstallPackages, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# This code is from Colleen Bove, lets us library the old version of DESeq (to do array quality metrics) even running versions of R after 3.6
+
 ## get Bioconductor packages
 if (!requireNamespace("BiocManager"))
 install.packages("BiocManager")
 BiocManager::install("DESeq2")
 
+## installing WGCNA:
+#source("http://bioconductor.org/biocLite.R")
+BiocManager::install(c("AnnotationDbi", "impute", "GO.db", "preprocessCore"))
+BiocManager::install("WGCNA", dependencies=TRUE)
+BiocManager::install("arrayQualityMetrics", dependencies=TRUE) # use this arrayQualityMetrics install if using later versions of R (3.6.3 works)
+BiocManager::install("affycoretools", dependencies=TRUE)
+#repos="http://cran.us.r-project.org"
+## R version 3.6 is funky with arrayQualityMetrics and DESeq so need this work around:
+install.packages("ape", lib = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+library(ape, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+install.packages("magick", lib = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library", dependencies = FALSE)
+library(magick, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+BiocManager::install("arrayQualityMetrics", type = "source", checkBuilt = TRUE, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+BiocManager::install("DESeq", type = "source", checkBuilt = TRUE, lib.loc = "/Library/Frameworks/R.framework/Versions/4.0/Resources/library")
+```
+
+```{r Libraries, message=FALSE, warning=FALSE}
 library(tidyr)
 library(plyr)
 library(dplyr)
 library(DESeq2)
 library(ggplot2)
-#library(affycoretools) no version for R4.0.1
-#library(arrayQualityMetrics) no version for R4.0.1
+library(affycoretools)
+library(arrayQualityMetrics)
 library(genefilter)
-#library(DESeq) no version for R4.0.1
+#library(DESeq)
 library(cowplot)
 library(readr)
 library(RColorBrewer)
@@ -34,9 +54,10 @@ library(prettydoc)
 library(VennDiagram)
 ```
 
-Read in Oculina host and symbiont counts files. Each only include brown hosts
+
+Read in Oculina symbiont counts file
 ```{r,cache=TRUE, echo=FALSE}
-countDataSym <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/CountsFiles/mapping_hannynewref/Oculina_Counts_newref_sym.txt")
+countDataSym <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_Counts_newref_sym.txt")
 ```
 
 
@@ -69,7 +90,7 @@ countDataSym_brown_noclone = countDataSym_brown %>%
   select(-c(OL6_C_B, OL7_F_B, OL8_H_B))
 
 treatmentSym = as.factor(sapply(strsplit(colnames(countDataSym_brown_noclone), split = "_"), "[[", 2)) %>%
-  revalue(c("C" = "control", "F" = "freezing", "H" = "hot"))
+  revalue(c("C" = "control", "F" = "cold", "H" = "heat"))
 
 genotypeSym  = as.factor(sapply(strsplit(colnames(countDataSym_brown_noclone), split = ""), "[[", 2))
 
@@ -95,14 +116,14 @@ stats.per.sample = data.frame(t(do.call(cbind, lapply(countDataSym_brown_noclone
       stats.per.sample$perc95 = apply(countDataSym_brown_noclone, 2, quantile, 0.95)
       stats.per.sample$zeros = apply(countDataSym_brown_noclone==0, 2, sum)
       stats.per.sample$percent.zeros = 100*stats.per.sample$zeros/nrow(countDataSym_brown_noclone)
-write.csv(stats.per.sample, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_brownsym_summary_table.csv", quote = FALSE)
+write.csv(stats.per.sample, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_sym_inhost_summary_table.csv", quote = FALSE)
       
 kable(stats.per.sample) %>%
   kable_styling(bootstrap_options = "striped", full_width = F)
 ```
 
 #Outlier Detection
-Skipping this for now, because arrayqualitymetrics is no longer operational
+Skip while running, but arrayqualitymetrics output can be found on github
 
 Conduct array quality metrics to identify outliers  
 
@@ -148,7 +169,7 @@ Do not need to remove any outliers for the Oculina host or symbiont. This is con
 ***
 
 ```{r warning=FALSE, cache=TRUE}
-dds<-DESeqDataSetFromMatrix(countData=countDataSym_brown_noclone, colData=expDesign_Sym, design=~treatment) #can only test for the main effects of treatment
+dds<-DESeqDataSetFromMatrix(countData=countDataSym_brown_noclone, colData=expDesign_Sym, design=~genotype + treatment) #can only test for the main effects of treatment
 dds = DESeq(dds)
 results = results(dds)
 summary(results)
@@ -164,7 +185,7 @@ head(results)
 
 ```{r echo=FALSE, cache=TRUE}
 norm.counts.sym = counts(dds, normalized = TRUE) # these are the counts DESeq uses
-write.csv(norm.counts.sym,"/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/Oculina_normalized_counts_sym.csv") #these are all counts, not considering treatment comparisons
+write.csv(norm.counts.sym,"/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_syminhost.csv") #these are all counts, not considering treatment comparisons
               
 norm.counts.stats = data.frame(
   min = apply(norm.counts.sym, 2, min),
@@ -188,42 +209,42 @@ rlogged = rlogTransformation(dds, blind = TRUE)
 Hot versus control expression comparison
 ```{r}
 ##second term is the "control"
-res_hot_sym <- results(dds, contrast=c("treatment","hot","control"))
+res_hot_sym <- results(dds, contrast=c("treatment","heat","control"))
 head(res_hot_sym)
 #how many FDR < 10%?
-table(res_hot_sym$padj<0.1)
-# 0.1=75
-# 0.05=28
+table(res_hot_sym$padj<0.01)
+# 0.1=56
+# 0.05=24
 # 0.01=9
 summary(res_hot_sym)
-write.table(res_hot_sym, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_results_sym.txt", quote=F, sep="\t")
+write.table(res_hot_sym, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_syminhost_results.txt", quote=F, sep="\t")
 ```
 
 MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
 
 ```{r, cache=TRUE, fig.align='center'}
-DESeq2::plotMA(res_hot_sym, main = "Hot vs Control, Symbiont")
+DESeq2::plotMA(res_hot_sym, main = "Heat vs Control, Symbiont in Host")
 ```
 
 
 Cold versus control expression comparison
 ```{r}
 ##second term is the "control"
-res_cold_sym <- results(dds, contrast=c("treatment","freezing","control"))
+res_cold_sym <- results(dds, contrast=c("treatment","cold","control"))
 head(res_cold_sym)
 #how many FDR < 10%?
-table(res_cold_sym$padj<0.1)
-# 0.1=13
-# 0.05=9
-# 0.01=3
+table(res_cold_sym$padj<0.01)
+# 0.1=14
+# 0.05=13
+# 0.01=6
 summary(res_cold_sym)
-write.table(res_cold_sym, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_results_sym.txt", quote=F, sep="\t")
+write.table(res_cold_sym, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_syminhost_results.txt", quote=F, sep="\t")
 ```
 
 MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
 
 ```{r, cache=TRUE, fig.align='center'}
-DESeq2::plotMA(res_cold_sym, main = "Freezing vs Control, Symbiont")
+DESeq2::plotMA(res_cold_sym, main = "Cold vs Control, Symbiont in Host")
 ```
 
 
@@ -247,8 +268,8 @@ Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this
 
 First for heat vs. control comparison
 ```{r, cache=TRUE, fig.align='center'}
-norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/Oculina_normalized_counts_sym.csv")
-hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_results_sym.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_syminhost.csv")
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_syminhost_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
   filter(padj < 0.1) %>% # only want the most DEGs
   select(X) %>%
   merge(norm_counts, by.x = "X", by.y = "X")  # turn into a countdatafile
@@ -267,14 +288,12 @@ heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
           dendrogram = "both",
           trace = "none", 
           margin = c(5,15))
-
-
 ```
 
 Now for cold vs. control comparison
 ```{r, cache=TRUE, fig.align='center'}
-norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/Oculina_normalized_counts_sym.csv")
-hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_results_sym.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_syminhost.csv")
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_syminhost_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
   filter(padj < 0.1) %>% # only want the most DEGs
   select(X) %>%
   merge(norm_counts, by.x = "X", by.y = "X")  # turn into a countdatafile
@@ -294,6 +313,54 @@ heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
           trace = "none", 
           margin = c(5,15))
 ```
+
+## Make a barplot of differentially expressed genes
+```{r, cache=TRUE, fig.align='center'}
+summary(res_hot_sym)
+# up = 12
+# down = 44
+summary(res_cold_sym)
+# up = 6
+# down = 8
+
+syminhost_degs = data.frame(
+  temperature = factor(c("Heat", "Heat", "Cold", "Cold")),
+  type = factor(c("Sym_InHost", "Sym_InHost", "Sym_InHost", "Sym_InHost")),
+  direction = factor(c("up","down","up","down")),
+  temperature_direction = factor(c("heat_up","heat_down", "cold_up","cold_down")),
+  number = c(12, -44, 6, -8)
+)
+
+annotate_text = data.frame(
+  label = c("6", "8", "12", "44"),
+  temperature = factor(c("Heat", "Heat", "Cold", "Cold")),
+  type = factor(c("Sym_InHost", "Sym_InHost", "Sym_InHost", "Sym_InHost")),
+  direction = factor(c("up","down","up","down")),
+  temperature_direction = factor(c("heat_up","heat_down", "cold_up","cold_down")),
+  x = c(1,1,2,2),
+  y = c(10,-12,15,-48)
+)
+
+cols = c("cold_up" = "#74c476", "cold_down" =  "#c7e9c0","heat_up" = "#fd8d3c", "heat_down" ="#fdd0a2")
+#cols_sym = c("control" = "#a6611a", "freezing" = "#74c476", "hot" = "#fd8d3c")
+
+deg_barplot = ggplot(syminhost_degs, aes(x = temperature, y = number, fill=temperature_direction)) +
+  geom_bar(stat = "identity", position = position_stack(), color = "black") +
+  scale_fill_manual(values = cols) +
+  xlab("Temperature Treatment") +
+  ylab("Differentially expressed genes") +
+  theme_bw() +
+  ylim(-50,20) +
+  theme(legend.position = "none") +
+  #facet_grid(. ~ type) +
+  #theme(panel.spacing = unit(0, "lines")) +
+  geom_text(data = annotate_text, aes(x = x, y = y, label = label))
+deg_barplot
+
+ggsave(deg_barplot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/syminhost_deg_barplot.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
+```
+
+
 ##Principal Component Analyses 
 
 <br>
@@ -308,6 +375,15 @@ pca = prcomp(t(assay(rlogged)), center = TRUE, scale. = FALSE)
 Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
 ```{r cache=TRUE}
 adonis(pca$x ~ genotype + treatment, data = pcadata, method = 'eu')
+
+# Terms added sequentially (first to last)
+# 
+#           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)    
+# genotype   6      7482  1247.0  1.0378 0.28589  0.226    
+# treatment  2      4270  2135.0  1.7768 0.16315  0.001 ***
+# Residuals 12     14419  1201.6         0.55096           
+# Total     20     26172                 1.00000           
+
 ```
 <br><br>
 Significant effect of treatment (p = 0.001), but not of genotype (p = 0.2)
@@ -316,21 +392,21 @@ Significant effect of treatment (p = 0.001), but not of genotype (p = 0.2)
 # so want filled shape
 # colors are orange/brown/green for temperature treatment
 
-cols_sym = c("control" = "#a6611a", "freezing" = "#74c476", "hot" = "#fd8d3c")
-cols_sym = c("control" = "grey", "freezing" = "#68a2ff", "hot" = "#ea6227")
+cols_sym = c("control" = "#a6611a", "cold" = "#74c476", "heat" = "#fd8d3c")
+#cols_sym = c("control" = "grey", "freezing" = "#68a2ff", "hot" = "#ea6227")
 
-pca_sym = DESeq2::plotPCA(rlogged, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
+pca_syminhost = DESeq2::plotPCA(rlogged, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
       ggplot(aes(x = PC1, y = PC2)) +
       geom_point(aes(colour = treatment), size = 3, shape = 19) +
       scale_colour_manual(values = cols_sym,
                           name = "Treatment") +
-      stat_ellipse(aes(color=rlogged$treatment), type = "t", linetype = 1, lwd = 1) +
+      stat_ellipse(aes(color=rlogged$treatment), type = "t", linetype = 2, lwd = 1) +
       xlab(paste0("PC1: ",percentVar[1],"% variance")) +
       ylab(paste0("PC2: ",percentVar[2],"% variance")) +
       #labs(title = "~ treatment, p<0.001")+
       theme_bw()
-pca_sym
-ggsave(pca_sym, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/Oculina_plots/brown_sym_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
+pca_syminhost
+ggsave(pca_syminhost, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/syminhost_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
 ```
 Principal component analyses highlighting treatment groups. Treatment has a significant affect (p < 0.001) on overall expression
 

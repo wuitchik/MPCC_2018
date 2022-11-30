@@ -352,7 +352,7 @@ deg_barplot = ggplot(syminhost_degs, aes(x = temperature, y = number, fill=tempe
   theme_bw() +
   ylim(-50,20) +
   theme(legend.position = "none") +
-  #facet_grid(. ~ type) +
+  facet_grid(. ~ type) +
   #theme(panel.spacing = unit(0, "lines")) +
   geom_text(data = annotate_text, aes(x = x, y = y, label = label))
 deg_barplot

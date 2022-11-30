@@ -429,17 +429,17 @@ Principal component analyses highlighting genotypes of coral. Genotype does not 
 Read in our result tables and isolate gene lists that are significant in each experiment. 
 
 ```{r cache=TRUE}
-hot = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_results_sym.txt")
-hot = row.names(hot[hot$padj<0.05 & !is.na(hot$padj),])
+heat = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_syminhost_results.txt")
+heat = row.names(heat[heat$padj<0.05 & !is.na(heat$padj),])
 
-freezing = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_results_sym.txt")
-freezing = row.names(freezing[freezing$padj<0.05 & !is.na(freezing$padj),])
+cold = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_syminhost_results.txt")
+cold = row.names(cold[cold$padj<0.05 & !is.na(cold$padj),])
 ```
 <br><br>
 
 Set up a venn diagram looking for similar genes in each experiment. 
 ```{r cache=TRUE}
-all_shared = list("Hot" = hot, "Freezing" = freezing)
+all_shared = list("Heat" = heat, "Cold" = cold)
     prettyvenn=venn.diagram(
       x = all_shared,
       filename=NULL,
@@ -465,7 +465,7 @@ grid.draw(prettyvenn)
 ##Gene Ontology
 Make Gene Ontology input table for MWU for hot treatment
 ```{r message=FALSE, warning=FALSE, eval = FALSE}
-oc_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_results_sym.txt")
+oc_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_syminhost_results.txt")
 head(oc_hot_res)
 oc_hot_res$isogroup=row.names(oc_hot_res)
 
@@ -479,12 +479,12 @@ nrow(go_input_hot_oculina)
 head(go_input_hot_oculina)
 colnames(go_input_hot_oculina) <- c("gene", "pval")
 head(go_input_hot_oculina)
-write.csv(go_input_hot_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/hot_oculina_sym_GO.csv", quote=F, row.names=FALSE)
+write.csv(go_input_hot_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses/oculina_hot_syminhost_GO.csv", quote=F, row.names=FALSE)
 ```
 
 Make Gene Ontology input table for MWU for Oculina cold treatment
 ```{r message=FALSE, warning=FALSE, eval = FALSE}
-oc_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_results_sym.txt")
+oc_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_syminhost_results.txt")
 head(oc_cold_res)
 oc_cold_res$isogroup=row.names(oc_cold_res)
 
@@ -498,5 +498,5 @@ nrow(go_input_cold_oculina)
 head(go_input_cold_oculina)
 colnames(go_input_cold_oculina) <- c("gene", "pval")
 head(go_input_cold_oculina)
-write.csv(go_input_cold_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/cold_oculina_sym_GO.csv", quote=F, row.names=FALSE)
+write.csv(go_input_cold_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses/oculina_cold_syminhost_GO.csv", quote=F, row.names=FALSE)
 ```

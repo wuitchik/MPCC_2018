@@ -49,7 +49,7 @@ mf_hot_brown_host_results=gomwuPlot(input,goAnnotations,goDivision,
                              level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
                              level2=0.01, # FDR cutoff to print in regular (not italic) font.
                              level3=0.001, # FDR cutoff to print in large bold font.
-                             txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                             txtsize=1,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
                              treeHeight=0.5, # height of the hierarchical clustering tree
                              #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
 )
@@ -57,8 +57,7 @@ mf_hot_brown_host_results=gomwuPlot(input,goAnnotations,goDivision,
 # if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
 
 # text representation of results, with actual adjusted p-values
-results[[1]]
-#[1] 1.925315e-05 4.682142e-04
+mf_hot_brown_host_results[[1]]
 write.csv(mf_hot_brown_host_results, "mf_oculina_host_brown_heat_results.csv")
 
 
@@ -71,12 +70,12 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
 )
 # 4  GO terms at 10% FDR
 quartz()
-bp_hot_sym_results=gomwuPlot(input,goAnnotations,goDivision,
+bp_hot_brown_host_results=gomwuPlot(input,goAnnotations,goDivision,
                              absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
                              #absValue=1, # un-remark this if you are using log2-fold changes
-                             level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-                             level2=0.05, # FDR cutoff to print in regular (not italic) font.
-                             level3=0.01, # FDR cutoff to print in large bold font.
+                             level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                             level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                             level3=0.001, # FDR cutoff to print in large bold font.
                              txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
                              treeHeight=0.5, # height of the hierarchical clustering tree
                              #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
@@ -84,7 +83,7 @@ bp_hot_sym_results=gomwuPlot(input,goAnnotations,goDivision,
 # manually rescale the plot so the tree matches the text 
 # if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
 
-write.csv(bp_hot_sym_results, "bp_hot_oculina_sym_results.csv")
+write.csv(bp_hot_brown_host_results, "bp_oculina_host_brown_heat_results.csv")
 
 
 goDivision="CC" 

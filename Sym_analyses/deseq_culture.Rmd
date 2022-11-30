@@ -304,6 +304,50 @@ heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
           trace = "none", 
           margin = c(5,15))
 ```
+## Make a barplot of differentially expressed genes
+```{r, cache=TRUE, fig.align='center'}
+summary(res_hot_culture)
+# up = 2852
+# down = 2563
+summary(res_cold_culture)
+# up = 3963
+# down = 3200
+
+culture_degs = data.frame(
+  temperature = factor(c("Heat", "Heat", "Cold", "Cold")),
+  type = factor(c("Sym_InCulture", "Sym_InCulture", "Sym_InCulture", "Sym_InCulture")),
+  direction = factor(c("up","down","up","down")),
+  temperature_direction = factor(c("heat_up","heat_down", "cold_up","cold_down")),
+  number = c(2852, -2563, 3963, -3200)
+)
+
+annotate_text = data.frame(
+  label = c("2852", "2563", "3963", "3200"),
+  temperature = factor(c("Heat", "Heat", "Cold", "Cold")),
+  type = factor(c("Sym_InCulture", "Sym_InCulture", "Sym_InCulture", "Sym_InCulture")),
+  direction = factor(c("up","down","up","down")),
+  temperature_direction = factor(c("heat_up","heat_down", "cold_up","cold_down")),
+  x = c(1,1,2,2),
+  y = c(4200,-3450,3100,-2900)
+)
+
+cols = c("cold_up" = "#74c476", "cold_down" =  "#c7e9c0","heat_up" = "#fd8d3c", "heat_down" ="#fdd0a2")
+
+deg_barplot = ggplot(culture_degs, aes(x = temperature, y = number, fill=temperature_direction)) +
+  geom_bar(stat = "identity", position = position_stack(), color = "black") +
+  scale_fill_manual(values = cols) +
+  xlab("Temperature Treatment") +
+  ylab("Differentially expressed genes") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  facet_grid(. ~ type) +
+  #theme(panel.spacing = unit(0, "lines")) +
+  geom_text(data = annotate_text, aes(x = x, y = y, label = label))
+deg_barplot
+
+ggsave(deg_barplot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/culture_deg_barplot.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
+```
+
 ##Principal Component Analyses 
 
 <br>
@@ -366,17 +410,17 @@ Principal component analyses highlighting genotypes of coral. Genotype does not 
 Read in our result tables and isolate gene lists that are significant in each experiment. 
 
 ```{r cache=TRUE}
-hot = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_hot_results_sym.txt", header = TRUE)
+hot = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/culture_hot_results.txt", header = TRUE)
 hot = row.names(hot[hot$padj<0.05 & !is.na(hot$padj),])
 
-freezing = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_cold_results_sym.txt", header = TRUE)
-freezing = row.names(freezing[freezing$padj<0.05 & !is.na(freezing$padj),])
+cold = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/culture_cold_results.txt", header = TRUE)
+cold = row.names(cold[cold$padj<0.05 & !is.na(cold$padj),])
 ```
 <br><br>
 
 Set up a venn diagram looking for similar genes in each experiment. 
 ```{r cache=TRUE}
-all_shared = list("Hot" = hot, "Freezing" = freezing)
+all_shared = list("Hot" = hot, "Cold" = cold)
 prettyvenn=venn.diagram(
       x = all_shared,
       filename=NULL,
@@ -402,224 +446,41 @@ grid.draw(prettyvenn)
 ##Gene Ontology
 Make Gene Ontology input table for MWU for hot treatment
 ```{r message=FALSE, warning=FALSE, eval = FALSE}
-oc_hot_res = read.table("tables/oculina_hot_results_sym.txt")
-head(oc_hot_res)
-oc_hot_res$isogroup=row.names(oc_hot_res)
+culture_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/culture_hot_results.txt")
+head(culture_hot_res)
+culture_hot_res$isogroup=row.names(culture_hot_res)
 
-go_input_hot_oculina = oc_hot_res %>%
+go_input_hot_culture = culture_hot_res %>%
   mutate(mutated_p = -log(pvalue)) %>%
   mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
   select(isogroup, mutated_p_updown) %>%
   na.omit()
 
-nrow(go_input_hot_oculina)
-head(go_input_hot_oculina)
-colnames(go_input_hot_oculina) <- c("gene", "pval")
-head(go_input_hot_oculina)
-write.csv(go_input_hot_oculina, file="tables/hot_oculina_sym_GO.csv", quote=F, row.names=FALSE)
+nrow(go_input_hot_culture)
+head(go_input_hot_culture)
+colnames(go_input_hot_culture) <- c("gene", "pval")
+head(go_input_hot_culture)
+write.csv(go_input_hot_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses/hot_oculina_sym_GO.csv", quote=F, row.names=FALSE)
 
 ```
 
-Make Gene Ontology input table for MWU for Oculina cold treatment
+Now for cold treatment
 ```{r message=FALSE, warning=FALSE, eval = FALSE}
-oc_cold_res = read.table("tables/oculina_cold_results_sym.txt")
-head(oc_cold_res)
-oc_cold_res$isogroup=row.names(oc_cold_res)
+culture_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/culture_cold_results.txt")
+head(culture_cold_res)
+culture_cold_res$isogroup=row.names(culture_cold_res)
 
-go_input_cold_oculina = oc_cold_res %>%
+go_input_cold_culture = culture_cold_res %>%
   mutate(mutated_p = -log(pvalue)) %>%
   mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
   select(isogroup, mutated_p_updown) %>%
   na.omit()
 
-nrow(go_input_cold_oculina)
-head(go_input_cold_oculina)
-colnames(go_input_cold_oculina) <- c("gene", "pval")
-head(go_input_cold_oculina)
-write.csv(go_input_cold_oculina, file="tables/cold_oculina_sym_GO.csv", quote=F, row.names=FALSE)
+nrow(go_input_cold_culture)
+head(go_input_cold_culture)
+colnames(go_input_cold_culture) <- c("gene", "pval")
+head(go_input_cold_culture)
+write.csv(go_input_cold_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses/cold_oculina_sym_GO.csv", quote=F, row.names=FALSE)
 ```
 
 
-### Cellular Components
-Hot vs. control comparison first
-```{r, cache=TRUE, eval = FALSE}
-input="hot_oculina_sym_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
-goAnnotations="Brevolium_psyg_iso2go.tab" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
-goDatabase="go.obo" # download from http://www.geneontology.org/GO.downloads.ontology.shtml
-goDivision="CC" # either MF, or BP, or CC
-source("gomwu.functions.R")
-```
-
-```{r cache=TRUE, eval = FALSE}
-gomwuStats(input, goDatabase, goAnnotations, goDivision,
-	perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
-	largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
-	smallest=5,   # a GO category should contain at least this many genes to be considered
-	clusterCutHeight=0.25) # threshold for merging similar (gene-sharing) terms. See README for details.
-#	Alternative="g" # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead. 
-#	Module=TRUE,Alternative="g" # un-remark this if you are analyzing a SIGNED WGCNA module (values: 0 for not in module genes, kME for in-module genes). In the call to gomwuPlot below, specify absValue=0.001 (count number of "good genes" that fall into the module)
-#	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
-
-# do not continue if the printout shows that no GO terms pass 10% FDR.
-
-```
-0 GO terms pass 10% FDR for CC, so not continuing to plot.
-
-
-### Molecular Functions
-
-```{r cache=TRUE, eval = FALSE}
-goDivision="MF" 
-```
-
-```{r cache=TRUE, eval = FALSE}
-gomwuStats(input, goDatabase, goAnnotations, goDivision,
-	perlPath="perl", 
-	largest=0.1, 
-	smallest=5,   
-	clusterCutHeight=0.25 
-)
-```
-
-```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
-pdf("mf_oculina_sym_hot_results.pdf")
-mf_oculina_hot_results=gomwuPlot(input,goAnnotations,goDivision,
-	absValue=1,
-	level1=0.1, 
-	level2=0.05, 
-	level3=0.01, 
-	txtsize=1.2,    
-	treeHeight=0.5, 
-  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") 
-)
-dev.off()
-write.csv(mf_oculina_hot_results, "mf_oculina_hot_sym.csv")
-```
-
-### Biological process
-```{r cache=TRUE, eval = FALSE}
-goDivision="BP"
-```
-
-```{r cache=TRUE, eval = FALSE}
-gomwuStats(input, goDatabase, goAnnotations, goDivision,
-	perlPath="perl", 
-	largest=0.1,  
-	smallest=5,   
-	clusterCutHeight=0.25 
-)
-```
-
-```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
-pdf("bp_oculina_sym_hot_results.pdf")
-bp_oculina_hot_results=gomwuPlot(input,goAnnotations,goDivision,
-	absValue=1,
-	level1=0.1, 
-	level2=0.05, 
-	level3=0.01, 
-	txtsize=1.2,    
-	treeHeight=0.5, 
-  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") 
-)
-dev.off()
-write.csv(bp_oculina_hot_results, "bp_oculina_hot_sym.csv")
-```
-
-
-Now cold vs. control comparison 
-```{r, cache=TRUE, eval = FALSE}
-input="cold_oculina_sym_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
-goAnnotations="Brevolium_psyg_iso2go.tab" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
-goDatabase="go.obo" # download from http://www.geneontology.org/GO.downloads.ontology.shtml
-goDivision="CC" # either MF, or BP, or CC
-source("gomwu.functions.R")
-```
-
-```{r cache=TRUE, eval = FALSE}
-gomwuStats(input, goDatabase, goAnnotations, goDivision,
-	perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
-	largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
-	smallest=5,   # a GO category should contain at least this many genes to be considered
-	clusterCutHeight=0.25) # threshold for merging similar (gene-sharing) terms. See README for details.
-#	Alternative="g" # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead. 
-#	Module=TRUE,Alternative="g" # un-remark this if you are analyzing a SIGNED WGCNA module (values: 0 for not in module genes, kME for in-module genes). In the call to gomwuPlot below, specify absValue=0.001 (count number of "good genes" that fall into the module)
-#	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
-
-# do not continue if the printout shows that no GO terms pass 10% FDR.
-
-```
-
-```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
-pdf("cc_oculina_cold_sym_results.pdf")
-cc_oculina_cold_results=gomwuPlot(input,goAnnotations,goDivision,
-#	absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
-	absValue=1,
-	level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-	level2=0.05, # FDR cutoff to print in regular (not italic) font.
-	level3=0.01, # FDR cutoff to print in large bold font.
-	txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
-	treeHeight=0.5, # height of the hierarchical clustering tree
-  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
-)
-dev.off()
-write.csv(cc_oculina_cold_results, "cc_oculina_cold_sym.csv")
-```
-
-### Molecular Functions
-
-```{r cache=TRUE, eval = FALSE}
-goDivision="MF" 
-```
-
-```{r cache=TRUE, eval = FALSE}
-gomwuStats(input, goDatabase, goAnnotations, goDivision,
-	perlPath="perl", 
-	largest=0.1, 
-	smallest=5,   
-	clusterCutHeight=0.25 
-)
-```
-
-```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
-pdf("mf_oculina_cold_sym_results.pdf")
-mf_oculina_cold_results=gomwuPlot(input,goAnnotations,goDivision,
-	absValue=1,
-	level1=0.1, 
-	level2=0.05, 
-	level3=0.01, 
-	txtsize=1.2,    
-	treeHeight=0.5, 
-  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") 
-)
-dev.off()
-write.csv(mf_oculina_cold_results, "mf_oculina_cold_sym.csv")
-```
-
-### Biological process
-```{r cache=TRUE, eval = FALSE}
-goDivision="BP"
-```
-
-```{r cache=TRUE, eval = FALSE}
-gomwuStats(input, goDatabase, goAnnotations, goDivision,
-	perlPath="perl", 
-	largest=0.1,  
-	smallest=5,   
-	clusterCutHeight=0.25 
-)
-```
-
-```{r cache=TRUE, fig.align='center', out.width="900px", eval = FALSE}
-pdf("bp_oculina_cold_sym_results.pdf")
-bp_oculina_cold_results=gomwuPlot(input,goAnnotations,goDivision,
-	absValue=1,
-	level1=0.1, 
-	level2=0.05, 
-	level3=0.01, 
-	txtsize=1.2,    
-	treeHeight=0.5, 
-  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") 
-)
-dev.off()
-write.csv(bp_oculina_cold_results, "bp_oculina_cold_sym.csv")
-```

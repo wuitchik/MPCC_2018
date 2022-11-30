@@ -91,38 +91,41 @@ Based on clone analysis, there are 3 sets of clones in Oculina individuals:
 N+O+P -> (white) - keep N
 L+M -> (brown) - keep L
 H+K -> (white) - keep H
+Kept the genotype with the highest total read count for all cases.
+
+Genotype A (white) also comes out as an outlier from the SNP analysis, so is removed. 
 
 More details on github: https://github.com/wuitchik/MPCC_2018/tree/main/Host_analyses/Outlier_detection
-But kept the genotype with the highest total read count for all cases.
 
 ```{r ExperimentalDesignMatrix,cache=TRUE}
 treatmentHost_brown = as.factor(sapply(strsplit(colnames(countDataHost_brown), split = "_"), "[[", 2)) %>%
-  revalue(c("C" = "control", "F" = "freezing", "H" = "hot"))
+  revalue(c("C" = "control", "F" = "cold", "H" = "heat"))
 
 treatmentHost_white = as.factor(sapply(strsplit(colnames(countDataHost_white), split = "_"), "[[", 2)) %>%
-  revalue(c("C" = "control", "F" = "freezing", "H" = "hot"))
+  revalue(c("C" = "control", "F" = "cold", "H" = "heat"))
 
 genotypeHost_brown  = as.factor(sapply(strsplit(colnames(countDataHost_brown), split = ""), "[[", 2))
 genotypeHost_white  = as.factor(sapply(strsplit(colnames(countDataHost_white), split = ""), "[[", 2))
 
 expDesign_Host_brown = data.frame(colnames(countDataHost_brown), treatmentHost_brown, genotypeHost_brown)
-expDesign_Host_brown$type = "brown_host"
+expDesign_Host_brown$type = "sym_host"
 expDesign_Host_brown$treat_type = paste(expDesign_Host_brown$treatmentHost_brown,expDesign_Host_brown$type, sep = "_")
 names(expDesign_Host_brown) = c("sample", "treatment", "genotype", "type", "treat_type")
 
 expDesign_Host_white = data.frame(colnames(countDataHost_white), treatmentHost_white, genotypeHost_white)
-expDesign_Host_white$type = "white_host"
+expDesign_Host_white$type = "apo_host"
 expDesign_Host_white$treat_type = paste(expDesign_Host_white$treatmentHost_white,expDesign_Host_white$type, sep = "_")
 names(expDesign_Host_white) = c("sample", "treatment", "genotype", "type", "treat_type")
 
 
-# remove clones from white hosts experimental design and counts
+# remove clones and strange genotype A from white hosts experimental design and counts
 expDesign_Host_white_clones_removed = expDesign_Host_white %>%
   filter(genotype!="H") %>%
-  filter(genotype!="N")
+  filter(genotype!="N") %>%
+  filter(genotype!="A")
 
 countDataHost_white_clones_removed = countDataHost_white %>%
-  select(-c(OH15_H_W, OH1_C_W, OH11_F_W, ON4_C_W, ON5_F_W, ON6_H_W))
+  select(-c(OH15_H_W, OH1_C_W, OH11_F_W, ON4_C_W, ON5_F_W, ON6_H_W, OA4_C_W, OA5_F_W, OA6_H_W))
 
 # remove clones from brown hosts experimental design and counts
 expDesign_Host_brown_clones_removed = expDesign_Host_brown %>%
@@ -287,23 +290,23 @@ rlogged.white = rlogTransformation(dds.white, blind = TRUE)
 Hot versus control expression comparison
 ```{r}
 ##second term is the "control"
-res_hot_brown_host <- results(dds.brown, contrast=c("treatment","hot","control"))
+res_hot_brown_host <- results(dds.brown, contrast=c("treatment","heat","control"))
 head(res_hot_brown_host)
 #how many FDR < 10%?
-table(res_hot_brown_host$padj<0.05) # we actually get more DEGs when genotype is included in model.
+table(res_hot_brown_host$padj<0.01) # we actually get more DEGs when genotype is included in model.
 # 0.1=544
 # 0.05=338
 # 0.01=176
 summary(res_hot_brown_host)
 write.table(res_hot_brown_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_results.txt", quote=F, sep="\t")
 
-res_hot_white_host <- results(dds.white, contrast=c("treatment","hot","control"))
+res_hot_white_host <- results(dds.white, contrast=c("treatment","heat","control"))
 head(res_hot_white_host)
 #how many FDR < 10%?
-table(res_hot_white_host$padj<0.01)
-# 0.1=33
-# 0.05=31
-# 0.01=15
+table(res_hot_white_host$padj<0.05)
+# 0.1=309
+# 0.05=187
+# 0.01=88
 summary(res_hot_white_host)
 write.table(res_hot_white_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_white_host_results.txt", quote=F, sep="\t")
 ```
@@ -311,15 +314,15 @@ write.table(res_hot_white_host, file="/Users/hannahaichelman/Documents/BU/Host_B
 MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
 
 ```{r, cache=TRUE, fig.align='center'}
-DESeq2::plotMA(res_hot_brown_host, main = "Hot vs Control, Brown Host")
-DESeq2::plotMA(res_hot_white_host, main = "Hot vs Control, White Host")
+DESeq2::plotMA(res_hot_brown_host, main = "Heat vs Control, Symbiotic Host")
+DESeq2::plotMA(res_hot_white_host, main = "Heat vs Control, Aposymbiotic Host")
 ```
 
 
 Cold versus control expression comparison
 ```{r}
 ##second term is the "control"
-res_cold_brown_host <- results(dds.brown, contrast=c("treatment","freezing","control"))
+res_cold_brown_host <- results(dds.brown, contrast=c("treatment","cold","control"))
 head(res_cold_brown_host)
 #how many FDR < 10%?
 table(res_cold_brown_host$padj<0.05)
@@ -329,13 +332,13 @@ table(res_cold_brown_host$padj<0.05)
 summary(res_cold_brown_host)
 write.table(res_cold_brown_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_results.txt", quote=F, sep="\t")
 
-res_cold_white_host <- results(dds.white, contrast=c("treatment","freezing","control"))
+res_cold_white_host <- results(dds.white, contrast=c("treatment","cold","control"))
 head(res_cold_white_host)
 #how many FDR < 10%?
-table(res_cold_white_host$padj<0.05)
-# 0.1=2154
-# 0.05=1536
-# 0.01=871
+table(res_cold_white_host$padj<0.1)
+# 0.1=2693
+# 0.05=2070
+# 0.01=1303
 summary(res_cold_white_host)
 write.table(res_cold_white_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_white_host_results.txt", quote=F, sep="\t")
 
@@ -344,8 +347,8 @@ write.table(res_cold_white_host, file="/Users/hannahaichelman/Documents/BU/Host_
 MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
 
 ```{r, cache=TRUE, fig.align='center'}
-DESeq2::plotMA(res_cold_brown_host, main = "Freezing vs Control, Brown Host")
-DESeq2::plotMA(res_cold_white_host, main = "Freezing vs Control, White Host")
+DESeq2::plotMA(res_cold_brown_host, main = "Cold vs Control, Symbiotic Host")
+DESeq2::plotMA(res_cold_white_host, main = "Cold vs Control, Aposymbiotic Host")
 ```
 
 ## Make a barplot of differentially expressed genes
@@ -354,34 +357,34 @@ summary(res_hot_brown_host)
 # up = 225
 # down = 319
 summary(res_hot_white_host)
-# up = 17
-# down = 16
+# up = 125
+# down = 184
 summary(res_cold_brown_host)
 # up = 1964
 # down = 2375
 summary(res_cold_white_host)
-# up = 1143
-# down = 1011
+# up = 1380
+# down = 1313
 
 host_degs = data.frame(
-  temperature = factor(c("hot", "hot", "hot", "hot", "cold", "cold", "cold", "cold")),
-  type = factor(c("brown_host", "brown_host", "white_host", "white_host", "brown_host", "brown_host", "white_host", "white_host")),
+  temperature = factor(c("Heat", "Heat", "Heat", "Heat", "Cold", "Cold", "Cold", "Cold")),
+  type = factor(c("Sym_Host", "Sym_Host", "Apo_Host", "Apo_Host", "Sym_Host", "Sym_Host", "Apo_Host", "Apo_Host")),
   direction = factor(c("up","down","up","down","up","down","up","down")),
-  temperature_direction = factor(c("hot_up","hot_down", "hot_up","hot_down", "cold_up","cold_down","cold_up","cold_down")),
-  number = c(225, -319, 17, -16, 1964, -2375, 1143, -1011)
+  temperature_direction = factor(c("heat_up","heat_down", "heat_up","heat_down", "cold_up","cold_down","cold_up","cold_down")),
+  number = c(225, -319, 125, -184, 1964, -2375, 1380, -1313)
 )
 
 annotate_text = data.frame(
-  label = c("1964", "2375", "1143", "1011","225", "319","17", "16"),
-  temperature = factor(c("hot", "hot", "hot", "hot", "cold", "cold", "cold", "cold")),
-  type = factor(c("brown_host", "brown_host", "white_host", "white_host", "brown_host", "brown_host", "white_host", "white_host")),
+  label = c("1964", "2375", "1380", "1313","225", "319","125", "184"),
+  temperature = factor(c("Heat", "Heat", "Heat", "Heat", "Cold", "Cold", "Cold", "Cold")),
+  type = factor(c("Sym_Host", "Sym_Host", "Apo_Host", "Apo_Host", "Sym_Host", "Sym_Host", "Apo_Host", "Apo_Host")),
   direction = factor(c("up","down","up","down","up","down","up","down")),
-  temperature_direction = factor(c("hot_up","hot_down", "hot_up","hot_down", "cold_up","cold_down","cold_up","cold_down")),
+  temperature_direction = factor(c("heat_up","heat_down", "heat_up","heat_down", "cold_up","cold_down","cold_up","cold_down")),
   x = c(1,1,1,1,2,2,2,2),
-  y = c(1800,-2100,1300,-1200,500,-500,200,-200)
+  y = c(1800,-2150,1500,-1500,400,-450,300,-300)
 )
 
-cols = c("cold_up" = "#3182bd", "cold_down" =  "#9ecae1","hot_up" = "#de2d26", "hot_down" ="#fc9272")
+cols = c("cold_up" = "#3182bd", "cold_down" =  "#9ecae1","heat_up" = "#de2d26", "heat_down" ="#fc9272")
 
 deg_barplot = ggplot(host_degs, aes(x = temperature, y = number, fill=temperature_direction)) +
   geom_bar(stat = "identity", position = position_stack(), color = "black") +
@@ -516,7 +519,7 @@ heatmap.2(hm_white.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
 
 <br>
 First we create a PCA data frame and calculate the variance estimated by PC1 and PC2
-```{r cache=TRUE, fig.align="center"}
+```{r PCA, cache=TRUE, fig.align="center"}
 pcadata.brown = DESeq2::plotPCA(rlogged.brown, intgroup = c("treatment", "genotype"), returnData = TRUE)
 percentVar.brown = round(100 * attr(pcadata.brown, "percentVar"))
 pca.brown = prcomp(t(assay(rlogged.brown)), center = TRUE, scale. = FALSE)
@@ -528,15 +531,32 @@ pca.white = prcomp(t(assay(rlogged.white)), center = TRUE, scale. = FALSE)
 <br><br>
 
 Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
-```{r cache=TRUE}
-adonis(pca.brown$x ~ genotype + treatment, data = pcadata.brown, method = 'eu')
+```{r Adonis, cache=TRUE, include=FALSE}
+brown.adonis.output = adonis(pca.brown$x ~ genotype + treatment, data = pcadata.brown, method = 'eu')
+brown.adonis.output
+# Terms added sequentially (first to last)
+# 
+#           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)    
+# genotype   6     33528  5587.9  2.2030 0.37818  0.001 ***
+# treatment  2     24690 12344.9  4.8668 0.27849  0.001 ***
+# Residuals 12     30438  2536.5         0.34333           
+# Total     20     88656                 1.00000           
 
-adonis(pca.white$x ~ genotype + treatment, data = pcadata.white, method = 'eu')
+white.adonis.output = adonis(pca.white$x ~ genotype + treatment, data = pcadata.white, method = 'eu')
+white.adonis.output
+# Terms added sequentially (first to last)
+# 
+#           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)    
+# genotype   4     17681  4420.2  2.1510 0.36878  0.001 ***
+# treatment  2     15879  7939.3  3.8635 0.33119  0.001 ***
+# Residuals  7     14385  2054.9         0.30003           
+# Total     13     47944                 1.00000           
+
 ```
 <br><br>
 
-```{r cache=TRUE, fig.align="center"}
-cols = c("control" = "grey", "freezing" = "#3182bd", "hot" = "#de2d26")
+```{r PlotPCAs, cache=TRUE, fig.align="center"}
+cols = c("control" = "grey", "cold" = "#3182bd", "heat" = "#de2d26")
 
 pca_brown = DESeq2::plotPCA(rlogged.brown, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
       ggplot(aes(x = PC1, y = PC2)) +
@@ -586,23 +606,23 @@ Principal component analyses highlighting genotypes of coral. Treatment has a si
 Read in our result tables and isolate gene lists that significant in each experiment. 
 
 ```{r cache=TRUE}
-hot.brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_brown_host_results.txt")
+hot.brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_results.txt")
 hot.brown = row.names(hot.brown[hot.brown$padj<0.05 & !is.na(hot.brown$padj),])
 
-freezing.brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_brown_host_results.txt")
+freezing.brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_results.txt")
 freezing.brown = row.names(freezing.brown[freezing.brown$padj<0.05 & !is.na(freezing.brown$padj),])
 
-hot.white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_hot_white_host_results.txt")
+hot.white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_white_host_results.txt")
 hot.white = row.names(hot.white[hot.white$padj<0.05 & !is.na(hot.white$padj),])
 
-freezing.white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/deseq/Oculina/tables/oculina_cold_white_host_results.txt")
+freezing.white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_white_host_results.txt")
 freezing.white = row.names(freezing.white[freezing.white$padj<0.05 & !is.na(freezing.white$padj),])
 ```
 <br><br>
 
 Set up a venn diagram looking for similar genes in each experiment. 
 ```{r cache=TRUE}
-all_shared.brown = list("Hot" = hot.brown, "Freezing" = freezing.brown)
+all_shared.brown = list("Heat" = hot.brown, "Cold" = freezing.brown)
 prettyvenn.brown=venn.diagram(
       x = all_shared.brown,
       filename=NULL,
@@ -649,47 +669,83 @@ grid.draw(prettyvenn.white)
 ##Gene Ontology
 Make Gene Ontology input table for MWU for hot treatment
 ```{r message=FALSE, warning=FALSE, eval = FALSE}
-oc_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_results.txt")
-head(oc_hot_res)
-oc_hot_res$isogroup=row.names(oc_hot_res)
+#sym
+oc_brown_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_results.txt")
+head(oc_brown_hot_res)
+oc_brown_hot_res$isogroup=row.names(oc_brown_hot_res)
 
-go_input_hot_oculina = oc_hot_res %>%
+go_input_brown_hot_oculina = oc_brown_hot_res %>%
   mutate(mutated_p = -log(pvalue)) %>%
   mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
   select(isogroup, mutated_p_updown) %>%
   na.omit()
 
-nrow(go_input_hot_oculina)
-head(go_input_hot_oculina)
-colnames(go_input_hot_oculina) <- c("gene", "pval")
-head(go_input_hot_oculina)
-write.csv(go_input_hot_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_GO.csv", quote=F, row.names=FALSE)
+nrow(go_input_brown_hot_oculina)
+head(go_input_brown_hot_oculina)
+colnames(go_input_brown_hot_oculina) <- c("gene", "pval")
+head(go_input_brown_hot_oculina)
+write.csv(go_input_brown_hot_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses/oculina_hot_brown_host_GO.csv", quote=F, row.names=FALSE)
 
+#apo
+oc_white_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_white_host_results.txt")
+head(oc_white_hot_res)
+oc_white_hot_res$isogroup=row.names(oc_white_hot_res)
+
+go_input_white_hot_oculina = oc_white_hot_res %>%
+  mutate(mutated_p = -log(pvalue)) %>%
+  mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
+  select(isogroup, mutated_p_updown) %>%
+  na.omit()
+
+nrow(go_input_white_hot_oculina)
+head(go_input_white_hot_oculina)
+colnames(go_input_white_hot_oculina) <- c("gene", "pval")
+head(go_input_white_hot_oculina)
+write.csv(go_input_white_hot_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses/oculina_hot_white_host_GO.csv", quote=F, row.names=FALSE)
 ```
 
 Make Gene Ontology input table for MWU for Oculina cold treatment
 ```{r message=FALSE, warning=FALSE, eval = FALSE}
-oc_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_results.txt")
-head(oc_cold_res)
-oc_cold_res$isogroup=row.names(oc_cold_res)
+#sym
+oc_brown_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_results.txt")
+head(oc_brown_cold_res)
+oc_brown_cold_res$isogroup=row.names(oc_brown_cold_res)
 
-go_input_cold_oculina = oc_cold_res %>%
+go_input_brown_cold_oculina = oc_brown_cold_res %>%
   mutate(mutated_p = -log(pvalue)) %>%
   mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
   select(isogroup, mutated_p_updown) %>%
   na.omit()
 
-nrow(go_input_cold_oculina)
-head(go_input_cold_oculina)
-colnames(go_input_cold_oculina) <- c("gene", "pval")
-head(go_input_cold_oculina)
-write.csv(go_input_cold_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_GO.csv", quote=F, row.names=FALSE)
+nrow(go_input_brown_cold_oculina)
+head(go_input_brown_cold_oculina)
+colnames(go_input_brown_cold_oculina) <- c("gene", "pval")
+head(go_input_brown_cold_oculina)
+write.csv(go_input_brown_cold_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses/oculina_cold_brown_host_GO.csv", quote=F, row.names=FALSE)
+
+#apo
+oc_white_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_white_host_results.txt")
+head(oc_white_cold_res)
+oc_white_cold_res$isogroup=row.names(oc_white_cold_res)
+
+go_input_white_cold_oculina = oc_white_cold_res %>%
+  mutate(mutated_p = -log(pvalue)) %>%
+  mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
+  select(isogroup, mutated_p_updown) %>%
+  na.omit()
+
+nrow(go_input_white_cold_oculina)
+head(go_input_white_cold_oculina)
+colnames(go_input_white_cold_oculina) <- c("gene", "pval")
+head(go_input_white_cold_oculina)
+write.csv(go_input_white_cold_oculina, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses/oculina_cold_white_host_GO.csv", quote=F, row.names=FALSE)
 ```
 
 
 ### Cellular Components
 Hot vs. control comparison first
 ```{r, cache=TRUE, eval = FALSE}
+setwd("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses")
 input="hot_oculina_host_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
 goAnnotations="Oculina_arbuscula_iso2go.tab" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
 goDatabase="go.obo" # download from http://www.geneontology.org/GO.downloads.ontology.shtml

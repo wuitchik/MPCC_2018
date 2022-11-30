@@ -561,7 +561,7 @@ cols = c("control" = "grey", "cold" = "#3182bd", "heat" = "#de2d26")
 
 pca_brown = DESeq2::plotPCA(rlogged.brown, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
       ggplot(aes(x = PC1, y = PC2)) +
-      geom_point(aes(colour = treatment), size = 3, shape = 19) +
+      geom_point(aes(colour = treatment), size = 3, shape = 21) +
       scale_colour_manual(values = cols,
                           name = "Treatment") +
       stat_ellipse(aes(color=rlogged.brown$treatment), type = "t", linetype = 2, linewidth = 1) +

@@ -82,11 +82,11 @@ names(countDataHost) = c("OA4_C_W", "OA5_F_W", "OA6_H_W",
                         "OQ11_H_W", "OQ1_C_W", "OQ4_F_W",
                         "OR7_C_B",	"OR8_F_B",	"OR9_H_B")
 
-countDataHost_brown = countDataHost %>%
-  select(-c("OA4_C_W", "OA5_F_W", "OA6_H_W", "OE10_F_W", "OE11_C_W", "OE3_H_W", "OH11_F_W", "OH15_H_W", "OH1_C_W", "OK1_C_W", "OK2_F_W", "OK3_H_W", "ON4_C_W", "ON5_F_W", "ON6_H_W", "OO1_C_W", "OO2_F_W", "OP1_C_W", "OP2_F_W", "OP3_H_W", "OQ11_H_W", "OQ1_C_W", "OQ4_F_W"))
+#countDataHost_brown = countDataHost %>%
+#  select(-c("OA4_C_W", "OA5_F_W", "OA6_H_W", "OE10_F_W", "OE11_C_W", "OE3_H_W", "OH11_F_W", "OH15_H_W", "OH1_C_W", "OK1_C_W", "OK2_F_W", "OK3_H_W", "ON4_C_W", "ON5_F_W", "ON6_H_W", "OO1_C_W", "OO2_F_W", "OP1_C_W", "OP2_F_W", "OP3_H_W", "OQ11_H_W", "OQ1_C_W", "OQ4_F_W"))
 
-countDataHost_white = countDataHost %>%
-  select(c("OA4_C_W", "OA5_F_W", "OA6_H_W", "OE10_F_W", "OE11_C_W", "OE3_H_W", "OH11_F_W", "OH15_H_W", "OH1_C_W", "OK1_C_W", "OK2_F_W", "OK3_H_W", "ON4_C_W", "ON5_F_W", "ON6_H_W", "OO1_C_W", "OO2_F_W", "OP1_C_W", "OP2_F_W", "OP3_H_W", "OQ11_H_W", "OQ1_C_W", "OQ4_F_W"))
+#countDataHost_white = countDataHost %>%
+#  select(c("OA4_C_W", "OA5_F_W", "OA6_H_W", "OE10_F_W", "OE11_C_W", "OE3_H_W", "OH11_F_W", "OH15_H_W", "OH1_C_W", "OK1_C_W", "OK2_F_W", "OK3_H_W", "ON4_C_W", "ON5_F_W", "ON6_H_W", "OO1_C_W", "OO2_F_W", "OP1_C_W", "OP2_F_W", "OP3_H_W", "OQ11_H_W", "OQ1_C_W", "OQ4_F_W"))
 ```
 
 
@@ -102,80 +102,55 @@ Genotype A (white) also comes out as an outlier from the SNP analysis, so is rem
 More details on github: https://github.com/wuitchik/MPCC_2018/tree/main/Host_analyses/Outlier_detection
 
 ```{r ExperimentalDesignMatrix,cache=TRUE}
-treatmentHost_brown = as.factor(sapply(strsplit(colnames(countDataHost_brown), split = "_"), "[[", 2)) %>%
+treatmentHost = as.factor(sapply(strsplit(colnames(countDataHost), split = "_"), "[[", 2)) %>%
   revalue(c("C" = "control", "F" = "cold", "H" = "heat"))
 
-treatmentHost_white = as.factor(sapply(strsplit(colnames(countDataHost_white), split = "_"), "[[", 2)) %>%
-  revalue(c("C" = "control", "F" = "cold", "H" = "heat"))
+genotypeHost  = as.factor(sapply(strsplit(colnames(countDataHost), split = ""), "[[", 2))
 
-genotypeHost_brown  = as.factor(sapply(strsplit(colnames(countDataHost_brown), split = ""), "[[", 2))
-genotypeHost_white  = as.factor(sapply(strsplit(colnames(countDataHost_white), split = ""), "[[", 2))
+symState  = as.factor(sapply(strsplit(colnames(countDataHost), split = "_"), "[[", 3)) %>%
+  revalue(c("B" = "sym", "W" = "apo"))
 
-expDesign_Host_brown = data.frame(colnames(countDataHost_brown), treatmentHost_brown, genotypeHost_brown)
-expDesign_Host_brown$type = "sym_host"
-expDesign_Host_brown$treat_type = paste(expDesign_Host_brown$treatmentHost_brown,expDesign_Host_brown$type, sep = "_")
-names(expDesign_Host_brown) = c("sample", "treatment", "genotype", "type", "treat_type")
-
-expDesign_Host_white = data.frame(colnames(countDataHost_white), treatmentHost_white, genotypeHost_white)
-expDesign_Host_white$type = "apo_host"
-expDesign_Host_white$treat_type = paste(expDesign_Host_white$treatmentHost_white,expDesign_Host_white$type, sep = "_")
-names(expDesign_Host_white) = c("sample", "treatment", "genotype", "type", "treat_type")
+expDesign_Host = data.frame(colnames(countDataHost), treatmentHost, genotypeHost, symState)
+expDesign_Host$type = "host"
+expDesign_Host$treat_type = paste(expDesign_Host$treatmentHost,expDesign_Host$symState, sep = "_")
+names(expDesign_Host) = c("sample", "treatment", "genotype", "sym_state", "type", "treat_type")
 
 
-# remove clones and strange genotype A from white hosts experimental design and counts
-expDesign_Host_white_clones_removed = expDesign_Host_white %>%
+# remove clones and outlier genotype A from experimental design and counts
+expDesign_Host_clones_removed = expDesign_Host %>%
   filter(genotype!="H") %>%
   filter(genotype!="N") %>%
-  filter(genotype!="A")
+  filter(genotype!="A") %>%
+  filter(genotype!="L") %>%
+  filter(genotype!="O") # because we dont have genets represented across treatment
 
-countDataHost_white_clones_removed = countDataHost_white %>%
-  select(-c(OH15_H_W, OH1_C_W, OH11_F_W, ON4_C_W, ON5_F_W, ON6_H_W, OA4_C_W, OA5_F_W, OA6_H_W))
+countDataHost_clones_removed = countDataHost %>%
+  select(-c(OH15_H_W, OH1_C_W, OH11_F_W, ON4_C_W, ON5_F_W, ON6_H_W, OA4_C_W, OA5_F_W, OA6_H_W, OL6_C_B, OL7_F_B, OL8_H_B, OO1_C_W, OO2_F_W))
 
-# remove clones from brown hosts experimental design and counts
-expDesign_Host_brown_clones_removed = expDesign_Host_brown %>%
-  filter(genotype!="L") 
-
-countDataHost_brown_clones_removed = countDataHost_brown %>%
-  select(-c(OL6_C_B, OL7_F_B, OL8_H_B))
 ```
 
 Experimental Design key with sample names 
 ```{r,cache=TRUE, echo=FALSE}
-kable(expDesign_Host_brown_clones_removed) %>%
+kable(expDesign_Host_clones_removed) %>%
   kable_styling(bootstrap_options = "striped", full_width = F)
 
-kable(expDesign_Host_white_clones_removed) %>%
-  kable_styling(bootstrap_options = "striped", full_width = F)
 ```
 Descriptive Summary stats of the mapped reads. 
 
 ```{r echo=FALSE}
-stats.per.sample.brown = data.frame(t(do.call(cbind, lapply(countDataHost_brown_clones_removed, summary))))
-      stats.per.sample.brown$libsum = apply(countDataHost_brown_clones_removed, 2, sum) ## libsum
-      stats.per.sample.brown$perc05 = apply(countDataHost_brown_clones_removed, 2, quantile, 0.05)
-      stats.per.sample.brown$perc10 = apply(countDataHost_brown_clones_removed, 2, quantile, 0.10)
-      stats.per.sample.brown$perc90 = apply(countDataHost_brown_clones_removed, 2, quantile, 0.90)
-      stats.per.sample.brown$perc95 = apply(countDataHost_brown_clones_removed, 2, quantile, 0.95)
-      stats.per.sample.brown$zeros = apply(countDataHost_brown_clones_removed==0, 2, sum)
-      stats.per.sample.brown$percent.zeros = 100*stats.per.sample.brown$zeros/nrow(countDataHost_brown_clones_removed)
-write.csv(stats.per.sample.brown, file= "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_brownhost_summary_table.csv", quote = FALSE)
+stats.per.sample = data.frame(t(do.call(cbind, lapply(countDataHost_clones_removed, summary))))
+      stats.per.sample$libsum = apply(countDataHost_clones_removed, 2, sum) ## libsum
+      stats.per.sample$perc05 = apply(countDataHost_clones_removed, 2, quantile, 0.05)
+      stats.per.sample$perc10 = apply(countDataHost_clones_removed, 2, quantile, 0.10)
+      stats.per.sample$perc90 = apply(countDataHost_clones_removed, 2, quantile, 0.90)
+      stats.per.sample$perc95 = apply(countDataHost_clones_removed, 2, quantile, 0.95)
+      stats.per.sample$zeros = apply(countDataHost_clones_removed==0, 2, sum)
+      stats.per.sample$percent.zeros = 100*stats.per.sample$zeros/nrow(countDataHost_clones_removed)
+write.csv(stats.per.sample, file= "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_host_summary_table.csv", quote = FALSE)
 
-stats.per.sample.white = data.frame(t(do.call(cbind, lapply(countDataHost_white_clones_removed, summary))))
-      stats.per.sample.white$libsum = apply(countDataHost_white_clones_removed, 2, sum) ## libsum
-      stats.per.sample.white$perc05 = apply(countDataHost_white_clones_removed, 2, quantile, 0.05)
-      stats.per.sample.white$perc10 = apply(countDataHost_white_clones_removed, 2, quantile, 0.10)
-      stats.per.sample.white$perc90 = apply(countDataHost_white_clones_removed, 2, quantile, 0.90)
-      stats.per.sample.white$perc95 = apply(countDataHost_white_clones_removed, 2, quantile, 0.95)
-      stats.per.sample.white$zeros = apply(countDataHost_white_clones_removed==0, 2, sum)
-      stats.per.sample.white$percent.zeros = 100*stats.per.sample.white$zeros/nrow(countDataHost_white_clones_removed)
-write.csv(stats.per.sample.white, file= "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_whitehost_summary_table.csv", quote = FALSE)
       
-kable(stats.per.sample.brown) %>%
+kable(stats.per.sample) %>%
   kable_styling(bootstrap_options = "striped", full_width = F)
-
-kable(stats.per.sample.white) %>%
-  kable_styling(bootstrap_options = "striped", full_width = F)
-
 ```
 
 #Outlier Detection
@@ -233,15 +208,10 @@ Do not need to remove any outliers for the Oculina host or symbiont. This is con
 ***
 
 ```{r warning=FALSE, cache=TRUE}
-dds.brown<-DESeqDataSetFromMatrix(countData=countDataHost_brown_clones_removed, colData=expDesign_Host_brown_clones_removed, design=~genotype + treatment) #can only test for the main effects of treatment
-dds.brown = DESeq(dds.brown)
-results.brown = results(dds.brown)
-summary(results.brown)
-
-dds.white<-DESeqDataSetFromMatrix(countData=countDataHost_white_clones_removed, colData=expDesign_Host_white_clones_removed, design=~genotype + treatment) #can only test for the main effects of treatment
-dds.white = DESeq(dds.white)
-results.white = results(dds.white)
-summary(results.white)
+dds<-DESeqDataSetFromMatrix(countData=countDataHost_clones_removed, colData=expDesign_Host_clones_removed, design=~genotype + treat_type) #can only test for the main effects of treatment
+dds = DESeq(dds)
+results = results(dds)
+summary(results)
 ```
 
 
@@ -249,52 +219,37 @@ summary(results.white)
 Let's check to see if we set up our contrast correctly. We should have the treatment condition first and the control second in the log2 fold change (MLE) output. 
 
 ```{r, cache=TRUE}
-head(results.brown)
-head(results.white)
+head(results)
 ```
 
 ```{r echo=FALSE, cache=TRUE}
-norm.counts.brownhost = counts(dds.brown, normalized = TRUE) # these are the counts DESeq uses
-write.csv(norm.counts.brownhost, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_brownhost.csv") #these are all counts, not considering treatment comparisons
+norm.counts.host = counts(dds, normalized = TRUE) # these are the counts DESeq uses
+write.csv(norm.counts.host, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_host.csv") #these are all counts, not considering treatment comparisons
 
-norm.counts.whitehost = counts(dds.white, normalized = TRUE) # these are the counts DESeq uses
-write.csv(norm.counts.whitehost, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_whitehost.csv") #these are all counts, not considering treatment comparisons
-              
-norm.counts.brown.stats = data.frame(
-  min = apply(norm.counts.brownhost, 2, min),
-  mean = apply(norm.counts.brownhost, 2, mean),
-  median = apply(norm.counts.brownhost, 2, median), 
-  max = apply(norm.counts.brownhost, 2, max),
-  zeros = apply(norm.counts.brownhost == 0, 2, sum), 
-  percent.zeros = 100* apply(norm.counts.brownhost == 0, 2, sum) / nrow(norm.counts.brownhost) 
+
+norm.counts.stats = data.frame(
+  min = apply(norm.counts.host, 2, min),
+  mean = apply(norm.counts.host, 2, mean),
+  median = apply(norm.counts.host, 2, median), 
+  max = apply(norm.counts.host, 2, max),
+  zeros = apply(norm.counts.host == 0, 2, sum), 
+  percent.zeros = 100* apply(norm.counts.host == 0, 2, sum) / nrow(norm.counts.host) 
 )
 
-norm.counts.white.stats = data.frame(
-  min = apply(norm.counts.whitehost, 2, min),
-  mean = apply(norm.counts.whitehost, 2, mean),
-  median = apply(norm.counts.whitehost, 2, median), 
-  max = apply(norm.counts.whitehost, 2, max),
-  zeros = apply(norm.counts.whitehost == 0, 2, sum), 
-  percent.zeros = 100* apply(norm.counts.whitehost == 0, 2, sum) / nrow(norm.counts.whitehost) 
-)
-
-kable(norm.counts.brown.stats) %>%
-  kable_styling(bootstrap_options = "striped", full_width = F)
-kable(norm.counts.white.stats) %>%
+kable(norm.counts.stats) %>%
   kable_styling(bootstrap_options = "striped", full_width = F)
 ```
 
 Now do an rlogged transformation, which is useful various unsupervised clustering analyses. Be sure the include blind = TRUE as it doesn't normalize the data with any priors from our experimental design. 
 
 ```{r, cache=TRUE}
-rlogged.brown = rlogTransformation(dds.brown, blind = TRUE)
-rlogged.white = rlogTransformation(dds.white, blind = TRUE)
+rlogged = rlogTransformation(dds, blind = TRUE)
 ```
 
 Hot versus control expression comparison
 ```{r}
 ##second term is the "control"
-res_hot_brown_host <- results(dds.brown, contrast=c("treatment","heat","control"))
+res_hot_brown_host <- results(dds, contrast=c("treat_type","heat_sym","control_sym"))
 head(res_hot_brown_host)
 #how many FDR < 10%?
 table(res_hot_brown_host$padj<0.01) # we actually get more DEGs when genotype is included in model.

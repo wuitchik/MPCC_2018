@@ -2,7 +2,10 @@
 title: "deseqOculina_symbiont"
 author: "Hannah Aichelman"
 date: "11/30/2022"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    theme: united
 ---
 
 

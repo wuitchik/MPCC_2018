@@ -2,7 +2,10 @@
 title: "deseqOculina_symbiont"
 author: "Hannah Aichelman"
 date: "10/22/2019"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    theme: united
 ---
 
 
@@ -58,7 +61,7 @@ library(VennDiagram)
 
 Read in Breviolum psygmophilum symbiont in culture counts file
 ```{r,cache=TRUE, echo=FALSE}
-countDataCulture <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/Huzar_Github_Symbiont-Thermal-Stress-main/B_psygmophilum_counts.txt")
+countDataCulture <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/B_psygmophilum_counts.txt")
 ```
 
 

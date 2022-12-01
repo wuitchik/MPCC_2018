@@ -2,7 +2,10 @@
 title: "OculinaDEseq_host"
 author: "Hannah Aichelman"
 date: "11/29/2022"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    theme: united
 ---
 
 ### Install and libray packages

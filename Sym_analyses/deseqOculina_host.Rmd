@@ -118,14 +118,14 @@ names(expDesign_Host) = c("sample", "treatment", "genotype", "sym_state", "type"
 
 # remove clones and outlier genotype A from experimental design and counts
 expDesign_Host_clones_removed = expDesign_Host %>%
-  filter(genotype!="H") %>%
-  filter(genotype!="N") %>%
-  filter(genotype!="A") %>%
-  filter(genotype!="L") %>%
-  filter(genotype!="O") # because we dont have genets represented across treatment
+  filter(genotype!="P") %>%
+  filter(genotype!="O") %>%
+  filter(genotype!="M") %>%
+  filter(genotype!="K") %>%
+  filter(genotype!="A") #strange on cluster dendrogram
 
 countDataHost_clones_removed = countDataHost %>%
-  select(-c(OH15_H_W, OH1_C_W, OH11_F_W, ON4_C_W, ON5_F_W, ON6_H_W, OA4_C_W, OA5_F_W, OA6_H_W, OL6_C_B, OL7_F_B, OL8_H_B, OO1_C_W, OO2_F_W))
+  select(-c(OP1_C_W, OP2_F_W, OP3_H_W, OO1_C_W, OO2_F_W, OM1_C_B, OM2_F_B, OM3_H_B, OK1_C_W, OK2_F_W, OK3_H_W, OA4_C_W, OA5_F_W, OA6_H_W))
 
 ```
 
@@ -208,7 +208,7 @@ Do not need to remove any outliers for the Oculina host or symbiont. This is con
 ***
 
 ```{r warning=FALSE, cache=TRUE}
-dds<-DESeqDataSetFromMatrix(countData=countDataHost_clones_removed, colData=expDesign_Host_clones_removed, design=~genotype + treat_type) #can only test for the main effects of treatment
+dds<-DESeqDataSetFromMatrix(countData=countDataHost_clones_removed, colData=expDesign_Host_clones_removed, design=~treat_type) #can only test for the main effects of treatment
 dds = DESeq(dds)
 results = results(dds)
 summary(results)
@@ -252,20 +252,20 @@ Hot versus control expression comparison
 res_hot_brown_host <- results(dds, contrast=c("treat_type","heat_sym","control_sym"))
 head(res_hot_brown_host)
 #how many FDR < 10%?
-table(res_hot_brown_host$padj<0.01) # we actually get more DEGs when genotype is included in model.
-# 0.1=544
-# 0.05=338
-# 0.01=176
+table(res_hot_brown_host$padj<0.1) # we actually get more DEGs when genotype is included in model.
+# 0.1=328
+# 0.05=214
+# 0.01=108
 summary(res_hot_brown_host)
 write.table(res_hot_brown_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_results.txt", quote=F, sep="\t")
 
-res_hot_white_host <- results(dds.white, contrast=c("treatment","heat","control"))
+res_hot_white_host <- results(dds, contrast=c("treat_type","heat_apo","control_apo"))
 head(res_hot_white_host)
 #how many FDR < 10%?
-table(res_hot_white_host$padj<0.05)
-# 0.1=309
-# 0.05=187
-# 0.01=88
+table(res_hot_white_host$padj<0.1)
+# 0.1=95
+# 0.05=58
+# 0.01=25
 summary(res_hot_white_host)
 write.table(res_hot_white_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_white_host_results.txt", quote=F, sep="\t")
 ```
@@ -281,23 +281,23 @@ DESeq2::plotMA(res_hot_white_host, main = "Heat vs Control, Aposymbiotic Host")
 Cold versus control expression comparison
 ```{r}
 ##second term is the "control"
-res_cold_brown_host <- results(dds.brown, contrast=c("treatment","cold","control"))
+res_cold_brown_host <- results(dds, contrast=c("treat_type","cold_sym","control_sym"))
 head(res_cold_brown_host)
 #how many FDR < 10%?
-table(res_cold_brown_host$padj<0.05)
-# 0.1=4339
-# 0.05=3536
-# 0.01=2333
+table(res_cold_brown_host$padj<0.1)
+# 0.1=4091
+# 0.05=3280
+# 0.01=2106
 summary(res_cold_brown_host)
 write.table(res_cold_brown_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_results.txt", quote=F, sep="\t")
 
-res_cold_white_host <- results(dds.white, contrast=c("treatment","cold","control"))
+res_cold_white_host <- results(dds, contrast=c("treat_type","cold_apo","control_apo"))
 head(res_cold_white_host)
 #how many FDR < 10%?
-table(res_cold_white_host$padj<0.1)
-# 0.1=2693
-# 0.05=2070
-# 0.01=1303
+table(res_cold_white_host$padj<0.01)
+# 0.1=2354
+# 0.05=1819
+# 0.01=1056
 summary(res_cold_white_host)
 write.table(res_cold_white_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_white_host_results.txt", quote=F, sep="\t")
 
@@ -313,34 +313,34 @@ DESeq2::plotMA(res_cold_white_host, main = "Cold vs Control, Aposymbiotic Host")
 ## Make a barplot of differentially expressed genes
 ```{r, cache=TRUE, fig.align='center'}
 summary(res_hot_brown_host)
-# up = 225
-# down = 319
+# up = 134
+# down = 194
 summary(res_hot_white_host)
-# up = 125
-# down = 184
+# up = 31
+# down = 64
 summary(res_cold_brown_host)
-# up = 1964
-# down = 2375
+# up = 1839
+# down = 2252
 summary(res_cold_white_host)
-# up = 1380
-# down = 1313
+# up = 1096
+# down = 1258
 
 host_degs = data.frame(
   temperature = factor(c("Heat", "Heat", "Heat", "Heat", "Cold", "Cold", "Cold", "Cold")),
   type = factor(c("Sym_Host", "Sym_Host", "Apo_Host", "Apo_Host", "Sym_Host", "Sym_Host", "Apo_Host", "Apo_Host")),
   direction = factor(c("up","down","up","down","up","down","up","down")),
   temperature_direction = factor(c("heat_up","heat_down", "heat_up","heat_down", "cold_up","cold_down","cold_up","cold_down")),
-  number = c(225, -319, 125, -184, 1964, -2375, 1380, -1313)
+  number = c(134, -194, 31, -64, 1839, -2252, 1096, -1258)
 )
 
 annotate_text = data.frame(
-  label = c("1964", "2375", "1380", "1313","225", "319","125", "184"),
+  label = c("1839", "2252", "1096", "1258","134", "194","31", "64"),
   temperature = factor(c("Heat", "Heat", "Heat", "Heat", "Cold", "Cold", "Cold", "Cold")),
   type = factor(c("Sym_Host", "Sym_Host", "Apo_Host", "Apo_Host", "Sym_Host", "Sym_Host", "Apo_Host", "Apo_Host")),
   direction = factor(c("up","down","up","down","up","down","up","down")),
   temperature_direction = factor(c("heat_up","heat_down", "heat_up","heat_down", "cold_up","cold_down","cold_up","cold_down")),
   x = c(1,1,1,1,2,2,2,2),
-  y = c(1800,-2150,1500,-1500,400,-450,300,-300)
+  y = c(1950,-2350,1200,-1400,250,-300,150,-200)
 )
 
 cols = c("cold_up" = "#3182bd", "cold_down" =  "#9ecae1","heat_up" = "#de2d26", "heat_down" ="#fc9272")
@@ -479,37 +479,22 @@ heatmap.2(hm_white.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
 <br>
 First we create a PCA data frame and calculate the variance estimated by PC1 and PC2
 ```{r PCA, cache=TRUE, fig.align="center"}
-pcadata.brown = DESeq2::plotPCA(rlogged.brown, intgroup = c("treatment", "genotype"), returnData = TRUE)
-percentVar.brown = round(100 * attr(pcadata.brown, "percentVar"))
-pca.brown = prcomp(t(assay(rlogged.brown)), center = TRUE, scale. = FALSE)
-
-pcadata.white = DESeq2::plotPCA(rlogged.white, intgroup = c("treatment", "genotype"), returnData = TRUE)
-percentVar.white = round(100 * attr(pcadata.white, "percentVar"))
-pca.white = prcomp(t(assay(rlogged.white)), center = TRUE, scale. = FALSE)
+#pcadata = DESeq2::plotPCA(rlogged, intgroup = c("treat_type"), returnData = TRUE)
+pcadata = DESeq2::plotPCA(rlogged, intgroup = c("treatment","sym_state"), returnData = TRUE)
+percentVar = round(100 * attr(pcadata, "percentVar"))
+pca = prcomp(t(assay(rlogged)), center = TRUE, scale. = FALSE)
 ```
 <br><br>
 
 Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
 ```{r Adonis, cache=TRUE, include=FALSE}
-brown.adonis.output = adonis2(pca.brown$x ~ genotype + treatment, data = pcadata.brown, method = 'eu')
-brown.adonis.output
-# Terms added sequentially (first to last)
-# 
-#           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)    
-# genotype   6     33528  5587.9  2.2030 0.37818  0.001 ***
-# treatment  2     24690 12344.9  4.8668 0.27849  0.001 ***
-# Residuals 12     30438  2536.5         0.34333           
-# Total     20     88656                 1.00000           
+adonis2(pca$x ~ treatment + sym_state, data = pcadata, method = 'eu')
 
-white.adonis.output = adonis2(pca.white$x ~ genotype + treatment, data = pcadata.white, method = 'eu')
-white.adonis.output
-# Terms added sequentially (first to last)
-# 
-#           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)    
-# genotype   4     17681  4420.2  2.1510 0.36878  0.001 ***
-# treatment  2     15879  7939.3  3.8635 0.33119  0.001 ***
-# Residuals  7     14385  2054.9         0.30003           
-# Total     13     47944                 1.00000           
+#           Df SumOfSqs      R2      F Pr(>F)    
+# treatment  2    39640 0.25921 5.3828  0.001 ***
+# sym_state  1     6506 0.04254 1.7670  0.042 *  
+# Residual  29   106781 0.69825                  
+# Total     32   152926 1.00000                  
 
 ```
 <br><br>
@@ -517,31 +502,27 @@ white.adonis.output
 ```{r PlotPCAs, cache=TRUE, fig.align="center"}
 cols = c("control" = "grey", "cold" = "#3182bd", "heat" = "#de2d26")
 
-pca_brown = DESeq2::plotPCA(rlogged.brown, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
+host_pca = DESeq2::plotPCA(rlogged, returnData = TRUE, intgroup = c("treatment", "sym_state","treat_type")) %>% 
       ggplot(aes(x = PC1, y = PC2)) +
-      geom_point(aes(colour = treatment), size = 3, shape = 21) +
-      scale_colour_manual(values = cols,
-                          name = "Treatment") +
-      stat_ellipse(aes(color=rlogged.brown$treatment), type = "t", linetype = 2, linewidth = 1) +
-      xlab(paste0("PC1: ",percentVar.brown[1],"% variance")) +
-      ylab(paste0("PC2: ",percentVar.brown[2],"% variance")) +
-      #labs(title = "~ treatment, p<0.001")+
-      theme_bw()
-pca_brown
-ggsave(pca_brown, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/brown_host_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
+      geom_point(aes(colour = treatment, shape = sym_state), size = 3) +
+      stat_ellipse(aes(x = PC1, y = PC2, color=treatment, group=treat_type, lty = sym_state), 
+                   type = "t", 
+                   lwd = 1)+    
+      scale_color_manual(values = cols,
+                         name = "Treatment") +
+      scale_shape_manual(values = c(19,21),
+                         name = "Sym State",
+                         labels = c("sym","apo"))+
+      scale_linetype_manual(values = c(1,2,1,2,1,2),
+                           name = "Sym State",
+                           labels = c("sym","apo")) +
+      xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+      ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+      #labs(title = "rlog, batch corr, plotPCA")+
+      theme_bw() 
+host_pca
 
-pca_white = DESeq2::plotPCA(rlogged.white, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
-      ggplot(aes(x = PC1, y = PC2)) +
-      geom_point(aes(colour = treatment), size = 3, shape = 19) +
-      scale_colour_manual(values = cols,
-                          name = "Treatment") +
-      stat_ellipse(aes(color=rlogged.white$treatment), type = "t", linewidth = 1) +
-      xlab(paste0("PC1: ",percentVar.white[1],"% variance")) +
-      ylab(paste0("PC2: ",percentVar.white[2],"% variance")) +
-      #labs(title = "~ treatment, p<0.001")+
-      theme_bw()
-pca_white
-ggsave(pca_white, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/white_host_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
+ggsave(host_pca, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/host_pca.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
 
 ```
 Principal component analyses highlighting treatment groups. Treatment has a significant affect (p < 0.001) on overall expression
@@ -549,15 +530,171 @@ Principal component analyses highlighting treatment groups. Treatment has a sign
 <br><br>
 
 ```{r cache=TRUE, fig.align="center"}
-DESeq2::plotPCA(rlogged.brown, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
+DESeq2::plotPCA(rlogged, returnData = TRUE, intgroup = c("treatment", "genotype") ) %>% 
       ggplot(aes(x = PC1, y = PC2)) +
       geom_point(aes(colour = genotype), size = 3) +
       #xlab(paste0("PC1: ",percentVar[1],"% variance")) +
       #ylab(paste0("PC2: ",percentVar[2],"% variance")) +
-      labs(title = "~ genotype, p<0.001")+
       theme_cowplot()
 ```
-Principal component analyses highlighting genotypes of coral. Treatment has a significant affect (p < 0.001) on overall expression
+
+### PCA Plasticity 
+
+PCA plasticity functions written by C. Bove.
+
+This function allows you to save all principal components 
+```{r}
+plotPCA_allPCs <- function (object, intgroup = "condition", ntop = 500, returnData = FALSE)
+{
+  rv <- rowVars(assay(object)) # Variance estimates for each row (column) in a matrix.
+  select <- order(rv, decreasing = TRUE)[seq_len(min(ntop, length(rv)))] # orders genes from largest -> smallest and pulls ntop (default 500) genes
+  pca <- prcomp(t(assay(object)[select, ]), center = TRUE, scale. = FALSE) # performs PCA on ntop (default 500) from dataset
+  percentVar <- pca$sdev^2/sum(pca$sdev^2)
+  if (!all(intgroup %in% names(colData(object)))) {
+    stop("the argument 'intgroup' should specify columns of colData(dds)")
+  }
+  intgroup.df <- as.data.frame(colData(object)[, intgroup, drop = FALSE])
+  group <- if (length(intgroup) > 1) {
+    factor(apply(intgroup.df, 1, paste, collapse = ":"))
+  }
+  else {
+    colData(object)[[intgroup]]
+  }
+  d <- data.frame(group = group, intgroup.df, name = colnames(object), pca$x)
+  if (returnData) {
+    attr(d, "percentVar") <- percentVar[1:2]
+    return(d)
+  }
+  ggplot(data = d, aes_string(x = "PC1", y = "PC2", color = "group")) +
+    geom_point(size = 3) + xlab(paste0("PC1: ", round(percentVar[1] *
+                                                        100), "% variance")) + ylab(paste0("PC2: ", round(percentVar[2] *
+                                                                                                            100), "% variance")) + coord_fixed()
+}
+```
+
+
+```{r eval=FALSE, include=FALSE}
+# source the script Colleen wrote with the different functions to calculate plasticity
+source("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/PlasticityCustomFunctions_means.R")
+
+# use modified plotPCA function to give you all PCs
+pcadata.plast = plotPCA_allPCs(rlogged, intgroup = c("treat_type","sym_state"), returnData = TRUE)
+
+pcadata.sym.plast = pcadata.plast %>%
+  dplyr::filter(sym_state == "sym")
+
+pcadata.apo.plast = pcadata.plast %>%
+  dplyr::filter(sym_state == "apo")
+
+
+pca_plast_sym <-  PCAplast(pca = pcadata.sym.plast[,c(5:ncol(pcadata.sym.plast))], # PCA dataframe containing the PCA eigenvalues
+                data = pcadata.sym.plast[,c(1:4)], # condition/treatment data 
+                sample_ID = "name", # name of column with unique ID per sample (if blank, will pull rownames for this)
+                num_pca = "2", # number of PCs to include in measure (default is 'all' if left blank)
+                control_col = "treat_type", # name of 'treatment' column
+                control_lvl = "control_sym") # control level of the treatment 
+
+pca_plast_apo <-  PCAplast(pca = pcadata.apo.plast[,c(5:ncol(pcadata.apo.plast))], # PCA dataframe containing the PCA eigenvalues
+                data = pcadata.apo.plast[,c(1:4)], # condition/treatment data 
+                sample_ID = "name", # name of column with unique ID per sample (if blank, will pull rownames for this)
+                num_pca = "2", # number of PCs to include in measure (default is 'all' if left blank)
+                control_col = "treat_type", # name of 'treatment' column
+                control_lvl = "control_apo") # control level of the treatment 
+
+```
+
+
+Now plot PCA plasticity, separately for host and symbiont
+```{r}
+all_plast = rbind(pca_plast_sym, pca_plast_apo) # re-combine host and symbiont plasticity for plotting
+
+dist_summ = summarySE(data = all_plast, measurevar = "dist", groupvars = c("treat_type","sym_state"))
+
+lm = lm(dist ~ treat_type, data = all_plast)
+summary(lm)
+# Coefficients:
+#                       Estimate Std. Error t value Pr(>|t|)    
+# (Intercept)             20.569      1.934  10.635 3.73e-11 ***
+# treat_typecold_sym       6.699      2.425   2.763 0.010186 *  
+# treat_typecontrol_apo   -7.714      2.735  -2.820 0.008883 ** 
+# treat_typecontrol_sym  -14.200      2.425  -5.857 3.09e-06 ***
+# treat_typeheat_apo     -11.367      2.735  -4.156 0.000293 ***
+# treat_typeheat_sym     -13.828      2.425  -5.704 4.64e-06 ***
+
+aov = aov(dist ~ treat_type, data = all_plast)
+summary(aov)
+#             Df Sum Sq Mean Sq F value   Pr(>F)    
+# treat_type   5   2276   455.3   30.43 2.73e-10 ***
+# Residuals   27    404    15.0                     
+
+TukeyHSD(aov)
+# $treat_type
+#                                diff         lwr         upr     p adj
+# cold_sym-cold_apo         6.6988164  -0.7295874  14.1272202 0.0951206
+# control_apo-cold_apo     -7.7142377 -16.0946075   0.6661320 0.0844709
+# control_sym-cold_apo    -14.1995227 -21.6279265  -6.7711189 0.0000421
+# heat_apo-cold_apo       -11.3665248 -19.7468945  -2.9861550 0.0035859
+# heat_sym-cold_apo       -13.8284324 -21.2568363  -6.4000286 0.0000628
+# control_apo-cold_sym    -14.4130541 -21.8414579  -6.9846503 0.0000334
+# control_sym-cold_sym    -20.8983391 -27.2333031 -14.5633750 0.0000000
+# heat_apo-cold_sym       -18.0653411 -25.4937450 -10.6369373 0.0000007
+# heat_sym-cold_sym       -20.5272488 -26.8622129 -14.1922848 0.0000000
+# control_sym-control_apo  -6.4852850 -13.9136888   0.9431189 0.1136883
+# heat_apo-control_apo     -3.6522870 -12.0326568   4.7280827 0.7632909
+# heat_sym-control_apo     -6.1141947 -13.5425985   1.3142091 0.1531168
+# heat_apo-control_sym      2.8329979  -4.5954059  10.2614018 0.8476250
+# heat_sym-control_sym      0.3710903  -5.9638738   6.7060543 0.9999709
+# heat_sym-heat_apo        -2.4619077  -9.8903115   4.9664961 0.9087069
+
+# host GE plasticity
+cols = c("grey", "grey", "#3182bd", "#3182bd", "#de2d26", "#de2d26")
+
+plast_plot = ggplot(dist_summ, aes(x = treat_type, y = dist)) +
+      geom_point(aes(colour = treat_type, shape = sym_state, size = 4)) +
+      geom_errorbar(aes(x = treat_type, ymin = dist - sd, ymax = dist + sd, colour = treat_type), width = 0.2) +
+      scale_color_manual(values = cols) +
+      scale_fill_manual(values = cols) +
+      xlab("Treatment") +
+      ylab("Plasticity") +
+      labs(title = "Gene Expression Plasticity") +
+      theme_cowplot() +
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), legend.position = "none")
+       
+plast_plot
+ggsave(plast_plot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_2PCs_host.pdf", width=6, height=5, units=c("in"), useDingbats=FALSE)
+
+
+cols_nocontrol = c("#3182bd", "#3182bd", "#de2d26", "#de2d26")
+
+# boxplot with points overlaid
+all_plast_nocontrol = all_plast %>%
+  dplyr::filter(treat_type != "control_apo") %>%
+  dplyr::filter(treat_type != "control_sym")
+
+plast_boxplot <- ggplot(all_plast_nocontrol, aes(x = treat_type, y = dist)) +
+   geom_boxplot(outlier.shape = NA,
+               alpha = 0.8,
+               aes(fill = treat_type))+
+  scale_fill_manual(values = cols_nocontrol) + # for boxplot
+  geom_jitter(size = 2,
+              position=position_jitter(0.2), 
+              alpha=0.99,
+              color = "black",
+              aes(shape = sym_state)) +
+  scale_shape_manual(values = c(19,21)) +
+  scale_color_manual(values = cols_nocontrol) + # for jittered points
+   ylab("Gene Expression Plasticity") +
+  #xlab("Site") +
+  #theme(axis.text.x = element_text(angle = 45, vjust=0.7, hjust=.6)) +
+  theme_bw() +
+  #theme(legend.position = "none") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, face ="bold"), legend.position = "none") +
+  theme(axis.title.x = element_blank())
+plast_boxplot
+
+ggsave(plast_boxplot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_boxplot_host.pdf", width=3, height=3, units=c("in"), useDingbats=FALSE)
+
+```
 
 
 ##Venn Diagrams
@@ -601,13 +738,13 @@ prettyvenn.brown=venn.diagram(
     );
 grid.draw(prettyvenn.brown)
     
-all_shared.white = list("Hot" = hot.white, "Freezing" = freezing.white)
+all_shared.white = list("Heat" = hot.white, "Cold" = freezing.white)
 prettyvenn.white=venn.diagram(
       x = all_shared.white,
       filename=NULL,
-      #col = "transparent",
+      col = "transparent",
       fill = c("#ea6227", "#68a2ff"),
-      #alpha = 0.5,
+      alpha = 0.5,
       # label.col = c("darkred", "white", "darkgreen", "white", "white", "white", "blue4"),
       cex = 2.5,
       fontfamily = "sans",

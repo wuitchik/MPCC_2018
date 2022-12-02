@@ -34,7 +34,7 @@ BiocManager::install("DESeq", type = "source", checkBuilt = TRUE, lib.loc = "/Li
 
 ```{r message=FALSE, warning=FALSE}
 library(arrayQualityMetrics)
-library(DESeq)
+#library(DESeq)
 library(DESeq2)
 library(WGCNA)
 
@@ -495,11 +495,11 @@ plotPCA_rlog_batchcorr = DESeq2::plotPCA(rlogged.corr, returnData = TRUE, intgro
                    lwd = 1)+    
       scale_color_manual(values = cols_sym,
                          name = "Treatment") +
-      scale_shape_manual(values = c(19,21),
+      scale_shape_manual(values = c(21,19),
                          name = "Location",
                          labels = c("in culture","in host"))+
       
-      scale_linetype_manual(values = c(1,2,1,2,1,2),
+      scale_linetype_manual(values = c(2,1,2,1,2,1),
                            name = "Location",
                            labels = c("in culture","in host")) +
       xlab(paste0("PC1: ",percentVar.corr.rlog[1],"% variance")) +
@@ -635,13 +635,13 @@ Could repeat for in host heatmaps but skipping for now
 ### Log2 Fold Change Density Plots
 
 ```{r}
-culture_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/culture_cold_corr_results.txt", header=TRUE) %>%
+culture_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_culture_results.txt", header=TRUE) %>%
   mutate(type = "culture_cold")
-culture_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/culture_hot_corr_results.txt", header=TRUE) %>%
+culture_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_culture_results.txt", header=TRUE) %>%
   mutate(type = "culture_hot")
-host_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/inhost_cold_corr_results.txt", header=TRUE) %>%
+host_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_inhost_results.txt", header=TRUE) %>%
   mutate(type = "host_cold")
-host_hot_res= read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/tables/inhost_hot_corr_results.txt", header=TRUE) %>%
+host_hot_res= read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_inhost_results.txt", header=TRUE) %>%
   mutate(type = "host_hot")
 
 # all types combined
@@ -730,7 +730,7 @@ plotPCA_allPCs <- function (object, intgroup = "condition", ntop = 500, returnDa
 
 ```{r eval=FALSE, include=FALSE}
 # source the script Colleen wrote with the different functions to calculate plasticity
-source("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/PlasticityCustomFunctions_means.R")
+source("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GE_Plasticity/PlasticityCustomFunctions_means.R")
 
 # use modified plotPCA function to give you all PCs
 pcadata.plast = plotPCA_allPCs(rlogged.corr, intgroup = c("treat_type", "type"), returnData = TRUE)
@@ -761,34 +761,160 @@ Now plot PCA plasticity, separately for host and symbiont
 ```{r}
 all_plast = rbind(pca_plast_host, pca_plast_culture) # re-combine host and symbiont plasticity for plotting
 
-cols = c("grey46", "grey80", "#2166ac", "#67a9cf", "#b2182b", "#ef8a62")
-
 dist_summ = summarySE(data = all_plast, measurevar = "dist", groupvars = c("treat_type","type"))
 
-# in host plasticity
+lm = lm(dist ~ treat_type, data = all_plast)
+summary(lm)
+# Coefficients:
+#                           Estimate Std. Error t value Pr(>|t|)    
+# (Intercept)                3.92633    0.32685  12.012 1.65e-14 ***
+# treat_typecold_inhost     -2.88986    0.40031  -7.219 1.25e-08 ***
+# treat_typecontrol_culture -2.52672    0.40031  -6.312 2.13e-07 ***
+# treat_typecontrol_inhost  -3.34095    0.40031  -8.346 4.03e-10 ***
+# treat_typeheat_culture    -0.08823    0.40031  -0.220 0.826741    
+# treat_typeheat_inhost     -1.64548    0.40031  -4.110 0.000203 ***
+
+aov = aov(dist ~ treat_type, data = all_plast)
+summary(aov)
+#             Df Sum Sq Mean Sq F value  Pr(>F)    
+# treat_type   5  68.81  13.761    32.2 1.1e-12 ***
+# Residuals   38  16.24   0.427                    
+
+TukeyHSD(aov)
+# $treat_type
+#                                       diff         lwr        upr     p adj
+# cold_inhost-cold_culture       -2.88985740 -4.09078090 -1.6889339 0.0000002
+# control_culture-cold_culture   -2.52672359 -3.72764709 -1.3258001 0.0000031
+# control_inhost-cold_culture    -3.34094803 -4.54187154 -2.1400245 0.0000000
+# heat_culture-cold_culture      -0.08822862 -1.28915213  1.1126949 0.9999223
+# heat_inhost-cold_culture       -1.64547971 -2.84640322 -0.4445562 0.0026051
+# control_culture-cold_inhost     0.36313381 -0.61741613  1.3436837 0.8737968
+# control_inhost-cold_inhost     -0.45109064 -1.43164058  0.5294593 0.7383410
+# heat_culture-cold_inhost        2.80162878  1.82107884  3.7821787 0.0000000
+# heat_inhost-cold_inhost         1.24437768  0.26382775  2.2249276 0.0061565
+# control_inhost-control_culture -0.81422445 -1.79477439  0.1663255 0.1523457
+# heat_culture-control_culture    2.43849497  1.45794503  3.4190449 0.0000001
+# heat_inhost-control_culture     0.88124387 -0.09930606  1.8617938 0.0995753
+# heat_culture-control_inhost     3.25271941  2.27216948  4.2332694 0.0000000
+# heat_inhost-control_inhost      1.69546832  0.71491838  2.6760183 0.0001023
+# heat_inhost-heat_culture       -1.55725109 -2.53780103 -0.5767012 0.0003742
+
+cols_sym = c("#a6611a","#a6611a", "#74c476","#74c476", "#fd8d3c", "#fd8d3c")
+
+# symbiont in host GE plasticity plot
 plast_plot = ggplot(dist_summ, aes(x = treat_type, y = dist)) +
       geom_point(aes(colour = treat_type, shape = type), size = 4) +
       geom_errorbar(aes(x = treat_type, ymin = dist - sd, ymax = dist + sd, colour = treat_type), width = 0.2) +
-      scale_color_manual(values = cols) +
-      scale_fill_manual(values = cols) +
+      scale_color_manual(values = cols_sym) +
+      scale_fill_manual(values = cols_sym) +
       xlab("Treatment") +
       ylab("Plasticity") +
       labs(title = "Gene Expression Plasticity") +
       theme_cowplot() +
       theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), legend.position = "none")
-       
-  
 plast_plot
-ggsave(plast_plot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/PCA_plasticity_2PCs.pdf", width=6, height=5, units=c("in"), useDingbats=FALSE)
 
+ggsave(plast_plot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_2PCs_symcombined.pdf", width=6, height=5, units=c("in"), useDingbats=FALSE)
+
+# boxplot with points overlaid
+all_plast_nocontrol = all_plast %>%
+  dplyr::filter(treat_type != "control_inhost") %>%
+  dplyr::filter(treat_type != "control_culture")
+
+cols_nocontrol = c("#74c476","#74c476", "#fd8d3c", "#fd8d3c")
+
+plast_boxplot <- ggplot(all_plast_nocontrol, aes(x = treat_type, y = dist)) +
+  geom_boxplot(outlier.shape = NA,
+               alpha = 0.8,
+               aes(fill = treat_type))+
+  scale_fill_manual(values = cols_nocontrol) + # for boxplot
+  geom_jitter(size = 2,
+              position=position_jitter(0.2), 
+              alpha=0.99,
+              aes(shape = type),
+              color = 'black') +
+  scale_shape_manual(values = c(21,19)) +
+  scale_color_manual(values = cols_nocontrol) + # for jittered points
+  ylab("Gene Expression Plasticity") +
+  #xlab("Site") +
+  #theme(axis.text.x = element_text(angle = 45, vjust=0.7, hjust=.6)) +
+  theme_bw() +
+  #theme(legend.position = "none") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, face ="bold"), legend.position = "none") +
+  theme(axis.title.x = element_blank())
+plast_boxplot
+
+ggsave(plast_boxplot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_boxplot_symcombined.pdf", width=3, height=3, units=c("in"), useDingbats=FALSE)
 
 ```
 
+### Venn Diagrams
+
+Read in our result tables and isolate gene lists that are significant in each experiment. 
+
+```{r eval=FALSE, cache=TRUE, include=FALSE}
+culture_hot = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_culture_results.txt", header = TRUE)
+culture_hot = row.names(culture_hot[culture_hot$padj<0.05 & !is.na(culture_hot$padj),])
+
+culture_cold = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_culture_results.txt", header = TRUE)
+culture_cold = row.names(culture_cold[culture_cold$padj<0.05 & !is.na(culture_cold$padj),])
+
+inhost_hot = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_inhost_results.txt", header = TRUE)
+inhost_hot = row.names(inhost_hot[inhost_hot$padj<0.05 & !is.na(inhost_hot$padj),])
+
+inhost_cold = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_inhost_results.txt", header = TRUE)
+inhost_cold = row.names(inhost_cold[inhost_cold$padj<0.05 & !is.na(inhost_cold$padj),])
+
+```
+<br><br>
+
+Set up a venn diagram looking for similar genes in each experiment. 
+```{r eval=FALSE, cache=TRUE, include=FALSE}
+all_shared.culture = list("Heat" = culture_hot, "Cold" = culture_cold)
+prettyvenn.culture=venn.diagram(
+      x = all_shared.culture,
+      filename=NULL,
+      col = "transparent",
+      fill = c("#fd8d3c", "#74c476"),
+      alpha = 0.5,
+      #label.col = c("darkred", "white", "darkgreen", "white", "white", "white", "blue4"),
+      cex = 2.5,
+      fontfamily = "sans",
+      fontface = "bold",
+      cat.default.pos = "text",
+      cat.col = "black",
+      cat.cex = 2.5,
+      cat.fontfamily = "sans",
+      cat.dist = c(0.08, 0.08),
+      cat.pos = 1
+    );
+grid.draw(prettyvenn.culture)
+    
+all_shared.inhost = list("Heat" = inhost_hot, "Cold" = inhost_cold)
+prettyvenn.inhost=venn.diagram(
+      x = all_shared.inhost,
+      filename=NULL,
+      col = "transparent",
+      fill = c("#fd8d3c", "#74c476"),
+      # label.col = c("darkred", "white", "darkgreen", "white", "white", "white", "blue4"),
+      cex = 2.5,
+      fontfamily = "sans",
+      fontface = "bold",
+      cat.default.pos = "text",
+      cat.col = "black",
+      cat.cex = 2.5,
+      cat.fontfamily = "sans",
+      cat.dist = c(0.08, 0.08),
+      cat.pos = 1
+    );
+grid.draw(prettyvenn.inhost)
+```
+
 ### DAPC
-So looking at that, you will probably only want to run your DAPC with like 3ish PC (if that many) just a heads up.  If you just run:
-dapc(ge_matrix, grp_pca$symb_reef)
+Looks like I want to run the DAPC with 3ish PC (if that many) just a heads up.  
+If you just run: dapc(ge_matrix, grp_pca$symb_reef)
 then it will prompt you to select your number of PCs (from a plot) and you can type the number there. Then it will do the same for DAs
-YOu may use more, but just make sure when you run it first, you don’t specify the PC or DA numbers like it did. But you can specify them once you select!
+You may use more, but just make sure when you run it first, you don’t specify the PC or DA numbers like it did. But you can specify them once you select!
 
 ```{r eval=FALSE, include=FALSE}
 
@@ -817,41 +943,7 @@ scatter(dapc2,1,1, cols = cols, bg = "white", scree.da = FALSE, legend = TRUE, s
 
 
 
-### Venn Diagrams
 
-Read in our result tables and isolate gene lists that are significant in each experiment. 
-
-```{r eval=FALSE, cache=TRUE, include=FALSE}
-hot = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_hot_results_sym.txt", header = TRUE)
-hot = row.names(hot[hot$padj<0.05 & !is.na(hot$padj),])
-
-freezing = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/Sym_TagSeq/MyAnalysis/tables/culture_cold_results_sym.txt", header = TRUE)
-freezing = row.names(freezing[freezing$padj<0.05 & !is.na(freezing$padj),])
-```
-<br><br>
-
-Set up a venn diagram looking for similar genes in each experiment. 
-```{r eval=FALSE, cache=TRUE, include=FALSE}
-all_shared = list("Hot" = hot, "Freezing" = freezing)
-prettyvenn=venn.diagram(
-      x = all_shared,
-      filename=NULL,
-      col = "transparent",
-      fill = c("#ea6227", "#68a2ff"),
-      alpha = 0.5,
-      # label.col = c("darkred", "white", "darkgreen", "white", "white", "white", "blue4"),
-      cex = 2.5,
-      fontfamily = "sans",
-      fontface = "bold",
-      cat.default.pos = "text",
-      cat.col = "black",
-      cat.cex = 2.5,
-      cat.fontfamily = "sans",
-      cat.dist = c(0.08, 0.08),
-      cat.pos = 1
-    );
-grid.draw(prettyvenn)
-```
 
 
 

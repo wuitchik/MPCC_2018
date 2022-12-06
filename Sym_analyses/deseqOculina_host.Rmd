@@ -93,8 +93,12 @@ names(countDataHost) = c("OA4_C_W", "OA5_F_W", "OA6_H_W",
 Set up experimental design matrix
 Based on clone analysis, there are 3 sets of clones in Oculina individuals:
 N+O+P -> (apo) - keep N
-L+M -> (sym) - keep L
+  1847248 = N, 1164431 = P, O has 2 samples only
+L+M -> (sym) - keep M
+  919394 = L, 933227 = M
 H+K -> (apo) - keep H
+  1047752 = H, 633670 = K
+
 Kept the genotype with the highest total read count for all cases.
 
 Genotype A (white) also comes out as an outlier from the SNP analysis, so is removed. 
@@ -115,17 +119,17 @@ expDesign_Host$type = "host"
 expDesign_Host$treat_type = paste(expDesign_Host$treatmentHost,expDesign_Host$symState, sep = "_")
 names(expDesign_Host) = c("sample", "treatment", "genotype", "sym_state", "type", "treat_type")
 
-
+colSums(countDataHost)
 # remove clones and outlier genotype A from experimental design and counts
 expDesign_Host_clones_removed = expDesign_Host %>%
   filter(genotype!="P") %>%
   filter(genotype!="O") %>%
-  filter(genotype!="M") %>%
+  filter(genotype!="L") %>%
   filter(genotype!="K") %>%
   filter(genotype!="A") #strange on cluster dendrogram
 
 countDataHost_clones_removed = countDataHost %>%
-  select(-c(OP1_C_W, OP2_F_W, OP3_H_W, OO1_C_W, OO2_F_W, OM1_C_B, OM2_F_B, OM3_H_B, OK1_C_W, OK2_F_W, OK3_H_W, OA4_C_W, OA5_F_W, OA6_H_W))
+  select(-c(OP1_C_W, OP2_F_W, OP3_H_W, OO1_C_W, OO2_F_W, OL6_C_B, OL7_F_B, OL8_H_B, OK1_C_W, OK2_F_W, OK3_H_W, OA4_C_W, OA5_F_W, OA6_H_W))
 
 ```
 
@@ -252,20 +256,20 @@ Hot versus control expression comparison
 res_hot_brown_host <- results(dds, contrast=c("treat_type","heat_sym","control_sym"))
 head(res_hot_brown_host)
 #how many FDR < 10%?
-table(res_hot_brown_host$padj<0.1) # we actually get more DEGs when genotype is included in model.
-# 0.1=328
-# 0.05=214
-# 0.01=108
+table(res_hot_brown_host$padj<0.01) # we actually get more DEGs when genotype is included in model.
+# 0.1=327
+# 0.05=218
+# 0.01=110
 summary(res_hot_brown_host)
 write.table(res_hot_brown_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_results.txt", quote=F, sep="\t")
 
 res_hot_white_host <- results(dds, contrast=c("treat_type","heat_apo","control_apo"))
 head(res_hot_white_host)
 #how many FDR < 10%?
-table(res_hot_white_host$padj<0.1)
-# 0.1=95
-# 0.05=58
-# 0.01=25
+table(res_hot_white_host$padj<0.01)
+# 0.1=105
+# 0.05=66
+# 0.01=29
 summary(res_hot_white_host)
 write.table(res_hot_white_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_white_host_results.txt", quote=F, sep="\t")
 ```
@@ -284,20 +288,20 @@ Cold versus control expression comparison
 res_cold_brown_host <- results(dds, contrast=c("treat_type","cold_sym","control_sym"))
 head(res_cold_brown_host)
 #how many FDR < 10%?
-table(res_cold_brown_host$padj<0.1)
-# 0.1=4091
-# 0.05=3280
-# 0.01=2106
+table(res_cold_brown_host$padj<0.01)
+# 0.1=4095
+# 0.05=3259
+# 0.01=2077
 summary(res_cold_brown_host)
 write.table(res_cold_brown_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_results.txt", quote=F, sep="\t")
 
 res_cold_white_host <- results(dds, contrast=c("treat_type","cold_apo","control_apo"))
 head(res_cold_white_host)
 #how many FDR < 10%?
-table(res_cold_white_host$padj<0.01)
-# 0.1=2354
-# 0.05=1819
-# 0.01=1056
+table(res_cold_white_host$padj<0.05)
+# 0.1=2352
+# 0.05=1779
+# 0.01=1033
 summary(res_cold_white_host)
 write.table(res_cold_white_host, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_white_host_results.txt", quote=F, sep="\t")
 
@@ -313,24 +317,24 @@ DESeq2::plotMA(res_cold_white_host, main = "Cold vs Control, Aposymbiotic Host")
 ## Make a barplot of differentially expressed genes
 ```{r, cache=TRUE, fig.align='center'}
 summary(res_hot_brown_host)
-# up = 134
-# down = 194
+# up = 140
+# down = 187
 summary(res_hot_white_host)
-# up = 31
-# down = 64
+# up = 35
+# down = 70
 summary(res_cold_brown_host)
-# up = 1839
-# down = 2252
+# up = 1786
+# down = 2309
 summary(res_cold_white_host)
-# up = 1096
-# down = 1258
+# up = 1070
+# down = 1282
 
 host_degs = data.frame(
   temperature = factor(c("Heat", "Heat", "Heat", "Heat", "Cold", "Cold", "Cold", "Cold")),
   type = factor(c("Sym_Host", "Sym_Host", "Apo_Host", "Apo_Host", "Sym_Host", "Sym_Host", "Apo_Host", "Apo_Host")),
   direction = factor(c("up","down","up","down","up","down","up","down")),
   temperature_direction = factor(c("heat_up","heat_down", "heat_up","heat_down", "cold_up","cold_down","cold_up","cold_down")),
-  number = c(134, -194, 31, -64, 1839, -2252, 1096, -1258)
+  number = c(140, -187, 35, -70, 1786, -2309, 1070, -1282)
 )
 
 annotate_text = data.frame(
@@ -340,7 +344,7 @@ annotate_text = data.frame(
   direction = factor(c("up","down","up","down","up","down","up","down")),
   temperature_direction = factor(c("heat_up","heat_down", "heat_up","heat_down", "cold_up","cold_down","cold_up","cold_down")),
   x = c(1,1,1,1,2,2,2,2),
-  y = c(1950,-2350,1200,-1400,250,-300,150,-200)
+  y = c(1950,-2450,1200,-1400,250,-300,150,-200)
 )
 
 cols = c("cold_up" = "#3182bd", "cold_down" =  "#9ecae1","heat_up" = "#de2d26", "heat_down" ="#fc9272")
@@ -368,13 +372,8 @@ ggsave(deg_barplot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/M
 Overall expression, sample by distance. 
 
 ```{r, cache=TRUE, fig.align="center"}
-sampleDists.brown <- as.matrix(dist(t(assay(rlogged.brown))))
-heatmap.2(as.matrix(sampleDists.brown), key=F, trace="none",
-          col=colorpanel(100, "black", "white"),
-          margin=c(10, 10))
-
-sampleDists.white <- as.matrix(dist(t(assay(rlogged.white))))
-heatmap.2(as.matrix(sampleDists.white), key=F, trace="none",
+sampleDists <- as.matrix(dist(t(assay(rlogged))))
+heatmap.2(as.matrix(sampleDists), key=F, trace="none",
           col=colorpanel(100, "black", "white"),
           margin=c(10, 10))
 ```
@@ -386,11 +385,11 @@ Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this
 
 First for heat vs. control comparison
 ```{r, cache=TRUE, fig.align='center'}
-norm_counts_brown = read.csv("//Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_brownhost.csv")
+norm_counts_host = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_host.csv")
 hm_brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
   filter(padj < 0.1) %>% # only want the most DEGs
   select(X) %>%
-  merge(norm_counts_brown, by.x = "X", by.y = "X")  # turn into a countdatafile
+  merge(norm_counts_host, by.x = "X", by.y = "X")  # turn into a countdatafile
   row.names(hm_brown) = hm_brown$X
   hm_brown$X = NULL
 
@@ -408,11 +407,10 @@ heatmap.2(hm_brown.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
           margin = c(5,15))
 
 
-norm_counts_white = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_whitehost.csv")
 hm_white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_white_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
   filter(padj < 0.1) %>% # only want the most DEGs
   select(X) %>%
-  merge(norm_counts_white, by.x = "X", by.y = "X")  # turn into a countdatafile
+  merge(norm_counts_host, by.x = "X", by.y = "X")  # turn into a countdatafile
   row.names(hm_white) = hm_white$X
   hm_white$X = NULL
 
@@ -427,16 +425,15 @@ heatmap.2(hm_white.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
           dendrogram = "both",
           trace = "none", 
           margin = c(5,15))
-
 ```
 
 Now for cold vs. control comparison
 ```{r, cache=TRUE, fig.align='center'}
-norm_counts_brown = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_brownhost.csv")
+norm_counts_host = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_host.csv")
 hm_brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
   filter(padj < 0.1) %>% # only want the most DEGs
   select(X) %>%
-  merge(norm_counts_brown, by.x = "X", by.y = "X")  # turn into a countdatafile
+  merge(norm_counts_host, by.x = "X", by.y = "X")  # turn into a countdatafile
   row.names(hm_brown) = hm_brown$X
   hm_brown$X = NULL
 
@@ -454,11 +451,10 @@ heatmap.2(hm_brown.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
           margin = c(5,15))
 
 
-norm_counts_white = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_whitehost.csv")
 hm_white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_white_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
   filter(padj < 0.1) %>% # only want the most DEGs
   select(X) %>%
-  merge(norm_counts_white, by.x = "X", by.y = "X")  # turn into a countdatafile
+  merge(norm_counts_host, by.x = "X", by.y = "X")  # turn into a countdatafile
   row.names(hm_white) = hm_white$X
   hm_white$X = NULL
 
@@ -479,8 +475,8 @@ heatmap.2(hm_white.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
 <br>
 First we create a PCA data frame and calculate the variance estimated by PC1 and PC2
 ```{r PCA, cache=TRUE, fig.align="center"}
-#pcadata = DESeq2::plotPCA(rlogged, intgroup = c("treat_type"), returnData = TRUE)
-pcadata = DESeq2::plotPCA(rlogged, intgroup = c("treatment","sym_state"), returnData = TRUE)
+pcadata = DESeq2::plotPCA(rlogged, intgroup = c("treat_type"), returnData = TRUE)
+#pcadata = DESeq2::plotPCA(rlogged, intgroup = c("treatment","sym_state"), returnData = TRUE)
 percentVar = round(100 * attr(pcadata, "percentVar"))
 pca = prcomp(t(assay(rlogged)), center = TRUE, scale. = FALSE)
 ```
@@ -488,7 +484,12 @@ pca = prcomp(t(assay(rlogged)), center = TRUE, scale. = FALSE)
 
 Using adonis from library(vegan) we can see if there are any significant differences based on treatment (as is illustrated in the model displayed below) 
 ```{r Adonis, cache=TRUE, include=FALSE}
-adonis2(pca$x ~ treatment + sym_state, data = pcadata, method = 'eu')
+adonis2(pca$x ~ treat_type, data = pcadata, method = 'eu')
+#            Df SumOfSqs      R2     F Pr(>F)    
+# treat_type  5    51354 0.32969 2.656  0.001 ***
+# Residual   27   104411 0.67031                 
+# Total      32   155766 1.00000                 
+
 
 #           Df SumOfSqs      R2      F Pr(>F)    
 # treatment  2    39640 0.25921 5.3828  0.001 ***
@@ -606,6 +607,7 @@ pca_plast_apo <-  PCAplast(pca = pcadata.apo.plast[,c(5:ncol(pcadata.apo.plast))
 
 Now plot PCA plasticity, separately for host and symbiont
 ```{r}
+library(Rmisc)
 all_plast = rbind(pca_plast_sym, pca_plast_apo) # re-combine host and symbiont plasticity for plotting
 
 dist_summ = summarySE(data = all_plast, measurevar = "dist", groupvars = c("treat_type","sym_state"))
@@ -614,37 +616,37 @@ lm = lm(dist ~ treat_type, data = all_plast)
 summary(lm)
 # Coefficients:
 #                       Estimate Std. Error t value Pr(>|t|)    
-# (Intercept)             20.569      1.934  10.635 3.73e-11 ***
-# treat_typecold_sym       6.699      2.425   2.763 0.010186 *  
-# treat_typecontrol_apo   -7.714      2.735  -2.820 0.008883 ** 
-# treat_typecontrol_sym  -14.200      2.425  -5.857 3.09e-06 ***
-# treat_typeheat_apo     -11.367      2.735  -4.156 0.000293 ***
-# treat_typeheat_sym     -13.828      2.425  -5.704 4.64e-06 ***
+# (Intercept)             20.050      2.227   9.002 1.29e-09 ***
+# treat_typecold_sym       6.502      2.792   2.329  0.02761 *  
+# treat_typecontrol_apo   -8.668      3.150  -2.752  0.01046 *  
+# treat_typecontrol_sym  -13.726      2.792  -4.916 3.82e-05 ***
+# treat_typeheat_apo     -11.514      3.150  -3.655  0.00109 ** 
+# treat_typeheat_sym     -13.103      2.792  -4.693 6.95e-05 ***
 
 aov = aov(dist ~ treat_type, data = all_plast)
 summary(aov)
-#             Df Sum Sq Mean Sq F value   Pr(>F)    
-# treat_type   5   2276   455.3   30.43 2.73e-10 ***
-# Residuals   27    404    15.0                     
+#            Df Sum Sq Mean Sq F value   Pr(>F)    
+# treat_type   5 2140.2   428.0   21.57 1.16e-08 ***
+# Residuals   27  535.8    19.8                     
 
 TukeyHSD(aov)
 # $treat_type
-#                                diff         lwr         upr     p adj
-# cold_sym-cold_apo         6.6988164  -0.7295874  14.1272202 0.0951206
-# control_apo-cold_apo     -7.7142377 -16.0946075   0.6661320 0.0844709
-# control_sym-cold_apo    -14.1995227 -21.6279265  -6.7711189 0.0000421
-# heat_apo-cold_apo       -11.3665248 -19.7468945  -2.9861550 0.0035859
-# heat_sym-cold_apo       -13.8284324 -21.2568363  -6.4000286 0.0000628
-# control_apo-cold_sym    -14.4130541 -21.8414579  -6.9846503 0.0000334
-# control_sym-cold_sym    -20.8983391 -27.2333031 -14.5633750 0.0000000
-# heat_apo-cold_sym       -18.0653411 -25.4937450 -10.6369373 0.0000007
-# heat_sym-cold_sym       -20.5272488 -26.8622129 -14.1922848 0.0000000
-# control_sym-control_apo  -6.4852850 -13.9136888   0.9431189 0.1136883
-# heat_apo-control_apo     -3.6522870 -12.0326568   4.7280827 0.7632909
-# heat_sym-control_apo     -6.1141947 -13.5425985   1.3142091 0.1531168
-# heat_apo-control_sym      2.8329979  -4.5954059  10.2614018 0.8476250
-# heat_sym-control_sym      0.3710903  -5.9638738   6.7060543 0.9999709
-# heat_sym-heat_apo        -2.4619077  -9.8903115   4.9664961 0.9087069
+#                                diff        lwr         upr     p adj
+# cold_sym-cold_apo         6.5018177  -2.052844  15.0564796 0.2176093
+# control_apo-cold_apo     -8.6684502 -18.319410   0.9825101 0.0972875
+# control_sym-cold_apo    -13.7260587 -22.280721  -5.1713967 0.0004974
+# heat_apo-cold_apo       -11.5137918 -21.164752  -1.8628315 0.0125421
+# heat_sym-cold_apo       -13.1033968 -21.658059  -4.5487349 0.0008924
+# control_apo-cold_sym    -15.1702678 -23.724930  -6.6156059 0.0001276
+# control_sym-cold_sym    -20.2278763 -27.523317 -12.9324361 0.0000001
+# heat_apo-cold_sym       -18.0156095 -26.570271  -9.4609475 0.0000090
+# heat_sym-cold_sym       -19.6052145 -26.900655 -12.3097743 0.0000001
+# control_sym-control_apo  -5.0576085 -13.612270   3.4970535 0.4755715
+# heat_apo-control_apo     -2.8453416 -12.496302   6.8056186 0.9422982
+# heat_sym-control_apo     -4.4349467 -12.989609   4.1197153 0.6127535
+# heat_apo-control_sym      2.2122669  -6.342395  10.7669288 0.9664504
+# heat_sym-control_sym      0.6226618  -6.672778   7.9181021 0.9998131
+# heat_sym-heat_apo        -1.5896050 -10.144267   6.9650569 0.9922428
 
 # host GE plasticity
 cols = c("grey", "grey", "#3182bd", "#3182bd", "#de2d26", "#de2d26")

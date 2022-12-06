@@ -91,7 +91,7 @@ countDataSym_brown = countDataSym %>%
 colSums(countDataSym_brown)
 
 countDataSym_brown_noclone = countDataSym_brown %>%
-  select(-c(OM1_C_B, OM2_F_B, OM3_H_B))
+  select(-c(OL6_C_B,  OL7_F_B,  OL8_H_B))
 
 treatmentSym = as.factor(sapply(strsplit(colnames(countDataSym_brown_noclone), split = "_"), "[[", 2)) %>%
   revalue(c("C" = "control", "F" = "cold", "H" = "heat"))

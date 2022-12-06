@@ -130,7 +130,6 @@ expDesign_Host_clones_removed = expDesign_Host %>%
 
 countDataHost_clones_removed = countDataHost %>%
   select(-c(OP1_C_W, OP2_F_W, OP3_H_W, OO1_C_W, OO2_F_W, OL6_C_B, OL7_F_B, OL8_H_B, OK1_C_W, OK2_F_W, OK3_H_W, OA4_C_W, OA5_F_W, OA6_H_W))
-
 ```
 
 Experimental Design key with sample names 

@@ -87,9 +87,7 @@ names(countDataSym) = c("OA4", "OA5", "OA6",
 countDataSym_brown = countDataSym %>%
   select(-c(OA4, OA5, OA6, OE10, OE11, OE3, OH11, OH15, OH1, OK1, OK2, OK3, ON4, ON5, ON6, OO1, OO2, OP1, OP2, OP3, OQ11, OQ1, OQ4))
 
-# We found a pair of clones in the symbiotic Oculina dataset, M's and L's, so removing lowest read count clone pair (L's)
-colSums(countDataSym_brown)
-
+# We found a pair of clones in the symbiotic Oculina dataset, M's and L's, so removing same clone pair from the host and other analyses (L's)
 countDataSym_brown_noclone = countDataSym_brown %>%
   select(-c(OL6_C_B,  OL7_F_B,  OL8_H_B))
 
@@ -216,7 +214,7 @@ Hot versus control expression comparison
 res_hot_sym <- results(dds, contrast=c("treatment","heat","control"))
 head(res_hot_sym)
 #how many FDR < 10%?
-table(res_hot_sym$padj<0.05)
+table(res_hot_sym$padj<0.1)
 # 0.1=75
 # 0.05=28
 # 0.01=9

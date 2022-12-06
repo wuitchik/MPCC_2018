@@ -574,15 +574,47 @@ summary(resSymInHostF.SymInHostC)
 
 res.brownhost_v_syminhost_heat <- prop.test(x = c(18, 7), n = c(137, 137), alternative = 'greater')
 res.brownhost_v_syminhost_heat 
+# data:  c(18, 7) out of c(137, 137)
+# X-squared = 4.4016, df = 1, p-value = 0.01795
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.0163246 1.0000000
+# sample estimates:
+#     prop 1     prop 2 
+# 0.13138686 0.05109489 
 
 res.brownhost_v_syminhost_cold <- prop.test(x = c(56, 5), n = c(137, 137), alternative = 'greater')
 res.brownhost_v_syminhost_cold
+# data:  c(56, 5) out of c(137, 137)
+# X-squared = 52.721, df = 1, p-value = 1.923e-13
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.2910232 1.0000000
+# sample estimates:
+#     prop 1     prop 2 
+# 0.40875912 0.03649635 
 
 res.whitehost_v_syminhost_heat <- prop.test(x = c(7, 7), n = c(137, 137), alternative = 'greater')
 res.whitehost_v_syminhost_heat 
+# data:  c(7, 7) out of c(137, 137)
+# X-squared = 0, df = 1, p-value = 0.5
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  -0.04376048  1.00000000
+# sample estimates:
+#     prop 1     prop 2 
+# 0.05109489 0.05109489 
 
 res.whitehost_v_syminhost_cold <- prop.test(x = c(42, 5), n = c(137, 137), alternative = 'greater')
 res.whitehost_v_syminhost_cold
+# data:  c(42, 5) out of c(137, 137)
+# X-squared = 33.284, df = 1, p-value = 3.982e-09
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.1928261 1.0000000
+# sample estimates:
+#     prop 1     prop 2 
+# 0.30656934 0.03649635 
 
 ```
 

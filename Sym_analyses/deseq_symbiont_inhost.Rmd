@@ -361,7 +361,29 @@ deg_barplot
 
 ggsave(deg_barplot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/syminhost_deg_barplot.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
 ```
+##Test for differences in # of DE genes
+```{r, cache=TRUE, fig.align='center'}
+summary(res_hot_sym)
+# up = 14
+# down = 61
+summary(res_cold_sym)
+# up = 8
+# down = 5
 
+# These results are out of 18443 nonzero read counts
+
+res.hot_v_cold_sym <- prop.test(x = c(75, 13), n = c(18443, 18443), alternative = 'greater')
+res.hot_v_cold_sym 
+# data:  c(75, 13) out of c(18443, 18443)
+# X-squared = 42.385, df = 1, p-value = 3.748e-11
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.002472346 1.000000000
+# sample estimates:
+#       prop 1       prop 2 
+# 0.0040665835 0.0007048745 
+
+```
 
 ##Principal Component Analyses 
 
@@ -538,7 +560,7 @@ plast_boxplot <- ggplot(plast_nocontrol, aes(x = treatment, y = dist)) +
   theme(axis.title.x = element_blank())
 plast_boxplot
 
-ggsave(plast_boxplot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_boxplot_syminhost.pdf", width=2.8, height=3, units=c("in"), useDingbats=FALSE)
+ggsave(plast_boxplot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_boxplot_syminhost.pdf", width=2.5, height=4, units=c("in"), useDingbats=FALSE)
 
 ```
 

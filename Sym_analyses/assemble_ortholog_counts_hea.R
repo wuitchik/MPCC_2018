@@ -53,7 +53,7 @@ colnames(hostCounts)[2:48] <- paste(colnames(hostCounts)[2:48], "host", sep = ".
 hostCounts_clones_removed = hostCounts %>%
   select(-c(OP1_C_W.host, OP2_F_W.host, OP3_H_W.host, 
             OO1_C_W.host, OO2_F_W.host, 
-            OM1_C_B.host, OM2_F_B.host, OM3_H_B.host, 
+            OL6_C_B.host, OL7_F_B.host, OL8_H_B.host, 
             OK1_C_W.host, OK2_F_W.host, OK3_H_W.host, 
             OA4_C_W.host, OA5_F_W.host, OA6_H_W.host))
 
@@ -93,23 +93,23 @@ head(symCounts)
 
 # remove clones that are removed in the host analyses.
 symCounts_clones_removed = symCounts %>%
-  select(-c(OM1_C_B.sym, OM2_F_B.sym, OM3_H_B.sym))
+  select(-c(OL6_C_B.sym, OL7_F_B.sym, OL8_H_B.sym))
 
 # separate out culture counts from bit counts dataset
-cultureCounts = all_counts[, c(1, grep("Culture", colnames(all_counts)))] 
-cultureCounts = cultureCounts[cultureCounts$contig %like% "BPSG", ]  
+#cultureCounts = all_counts[, c(1, grep("Culture", colnames(all_counts)))] 
+#cultureCounts = cultureCounts[cultureCounts$contig %like% "BPSG", ]  
 
 # remove annoying parts of the column names
-for ( col in 1:ncol(cultureCounts)){
-  colnames(cultureCounts)[col] <-  sub(".fastq.trim.sam.counts", "", colnames(cultureCounts)[col])
-}
+#for ( col in 1:ncol(cultureCounts)){
+#  colnames(cultureCounts)[col] <-  sub(".fastq.trim.sam.counts", "", colnames(cultureCounts)[col])
+#}
 
 
 dim(hostCounts_clones_removed)
 # [1] 1917   34
 dim(symCounts_clones_removed)
 # [1] 1919   22
-dim(cultureCounts)
+#dim(cultureCounts)
 # [1] 1919   21
 
 #filter contigs for mean read count greater than CUTOFF
@@ -129,14 +129,14 @@ filter_by_mean = function(countdf){
 rhostCounts = filter_by_mean(hostCounts_clones_removed)
 # [1] "removed genes with mean count less than 2"
 # [1] "before = 1917"
-# [1] "after = 1379"
+# [1] "after = 1381"
 
 rsymCounts = filter_by_mean(symCounts_clones_removed)
 # [1] "removed genes with mean count less than 2"
 # [1] "before = 1919"
-# [1] "after = 247"
+# [1] "after = 250"
 
-rcultureCounts = filter_by_mean(cultureCounts)
+#rcultureCounts = filter_by_mean(cultureCounts)
 # [1] "removed genes with mean count less than 2"
 # [1] "before = 1919"
 # [1] "after = 1306"
@@ -152,21 +152,21 @@ msymCounts = rsymCounts %>%
   inner_join(sOrthos, by='contig') %>% 
   dplyr::select(-contig)
 
-mcultureCounts = rcultureCounts %>% 
-  inner_join(sOrthos, by='contig') %>% 
-  dplyr::select(-contig)
+#mcultureCounts = rcultureCounts %>% 
+#  inner_join(sOrthos, by='contig') %>% 
+#  dplyr::select(-contig)
 
 
-dim(mhostCounts) #[1] 1379   34
-dim(msymCounts) #[1] 247  22
-dim(mcultureCounts) #[1] 1306   21
+dim(mhostCounts) #[1] 1381   34
+dim(msymCounts) #[1] 250  22
+#dim(mcultureCounts) #[1] 1306   21
 
-#now merge the four datasets together
+#now merge the datasets together
 counts0 = mhostCounts %>% 
-  inner_join(msymCounts, by = 'orthoGroup') %>%
-  inner_join(mcultureCounts, by = 'orthoGroup')
+  inner_join(msymCounts, by = 'orthoGroup')
+  #inner_join(mcultureCounts, by = 'orthoGroup')
 
-nrow(counts0) #175
+nrow(counts0) #185
 
 #put columns in order and convert to dataframe for DESEQ
 counts = counts0[,order(colnames(counts0))] %>% 
@@ -182,7 +182,7 @@ write.table(counts, "OrthoCounts_deseq.txt", sep="\t") #this is the counts file 
 # RUN DESEQ TO CHECK EXPRESSION AGREEMENT ---------------------------------
 library(DESeq2)
 
-expDesign = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/ExpDesign_orthos.csv")
+expDesign = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/ExpDesign_orthos_noculture.csv")
 expDesign$treat_type = as.factor(paste(expDesign$temp,expDesign$type, sep = "_"))
 
 #run DESeq
@@ -207,10 +207,10 @@ resHostH.HostC=results(dds, contrast=c("treat_type","heat_brown_host","control_b
 resHostH.HostC
 table(resHostH.HostC$pvalue<0.05)
 #FALSE  TRUE 
-#127    48
+#151    34
 table(resHostH.HostC$padj<0.05)
 #FALSE  TRUE 
-#154    21 
+#177    8 
 summary(resHostH.HostC)
 
 #can make a volcano plot with this code:
@@ -232,70 +232,70 @@ resHostF.HostC=results(dds, contrast=c("treat_type","cold_brown_host","control_b
 resHostF.HostC
 table(resHostF.HostC$pvalue<0.05)
 #FALSE  TRUE 
-#84    91 
+#114   71 
 table(resHostF.HostC$padj<0.05)
 #FALSE  TRUE 
-#98    77 
+#129    56 
 summary(resHostF.HostC)
 
 resHostF.sig = subset(resHostF.HostC, resHostF.HostC$padj<0.05)
-write.table(resHostF.sig, "HostFreezingSigOrthos.txt", sep="\t")
+#write.table(resHostF.sig, "HostFreezingSigOrthos.txt", sep="\t")
 
 #compare symbiont hot to symbiont control
 resSymH.SymC=results(dds, contrast=c("treat_type","heat_sym_inhost","control_sym_inhost"), independentFiltering = F)
 resSymH.SymC
 table(resSymH.SymC$pvalue<0.05)
 #FALSE  TRUE 
-#149    26 
+#162    23 
 table(resSymH.SymC$padj<0.05)
 #FALSE  TRUE 
-#173     2 
+#179     6 
 summary(resSymH.SymC)
 
 resSymH.sig = subset(resSymH.SymC, resSymH.SymC$padj<0.05)
-write.table(resSymH.sig, "SymHeatSigOrthos.txt", sep="\t")
+#write.table(resSymH.sig, "SymHeatSigOrthos.txt", sep="\t")
 
 #compare symbiont freezing to symbiont control
 resSymF.SymC=results(dds, contrast=c("treat_type","cold_sym_inhost","control_sym_inhost"), independentFiltering = F)
 resSymF.SymC
 table(resSymF.SymC$pvalue<0.05)
 #FALSE  TRUE 
-#157    18 
+#173    12 
 table(resSymF.SymC$padj<0.05)
 #FALSE  TRUE 
-#172     3 
+#181     4 
 summary(resSymF.SymC)
 
 resSymF.sig = subset(resSymF.SymC, resSymF.SymC$padj<0.05)
 write.table(resSymF.SymC, "SymFreezingSigOrthos.txt", sep="\t")
 
 #compare culture hot to culture control
-resCultureH.CultureC=results(dds, contrast=c("treat_type","heat_culture","control_culture"), independentFiltering = F)
-resCultureH.CultureC
-table(resCultureH.CultureC$pvalue<0.05)
+#resCultureH.CultureC=results(dds, contrast=c("treat_type","heat_culture","control_culture"), independentFiltering = F)
+#resCultureH.CultureC
+#table(resCultureH.CultureC$pvalue<0.05)
 #FALSE  TRUE 
 #117    58 
-table(resCultureH.CultureC$padj<0.05)
+#table(resCultureH.CultureC$padj<0.05)
 #FALSE  TRUE 
 #136     39 
-summary(resCultureH.CultureC)
+#summary(resCultureH.CultureC)
 
-resCultureH.sig = subset(resCultureH.CultureC, resCultureH.CultureC$padj<0.05)
-write.table(resCultureH.CultureC, "SymHeatSigOrthos.txt", sep="\t")
+#resCultureH.sig = subset(resCultureH.CultureC, resCultureH.CultureC$padj<0.05)
+#write.table(resCultureH.CultureC, "SymHeatSigOrthos.txt", sep="\t")
 
 #compare symbiont freezing to symbiont control
-resCultureF.CultureC=results(dds, contrast=c("treat_type","cold_culture","control_culture"), independentFiltering = F)
-resCultureF.CultureC
-table(resCultureF.CultureC$pvalue<0.05)
+#resCultureF.CultureC=results(dds, contrast=c("treat_type","cold_culture","control_culture"), independentFiltering = F)
+#resCultureF.CultureC
+#table(resCultureF.CultureC$pvalue<0.05)
 #FALSE  TRUE 
 #120    55 
-table(resCultureF.CultureC$padj<0.05)
+#table(resCultureF.CultureC$padj<0.05)
 #FALSE  TRUE 
 #149     26 
-summary(resCultureF.CultureC)
+#summary(resCultureF.CultureC)
 
-resCultureF.sig = subset(resCultureF.CultureC, resCultureF.CultureC$padj<0.05)
-write.table(resCultureF.CultureC, "SymFreezingSigOrthos.txt", sep="\t")
+#resCultureF.sig = subset(resCultureF.CultureC, resCultureF.CultureC$padj<0.05)
+#write.table(resCultureF.CultureC, "SymFreezingSigOrthos.txt", sep="\t")
 
 # GET PVALS AND MAKE TABLE ------------
 head(resHostH.HostC) #host heat vs. control
@@ -326,19 +326,19 @@ colnames(valsSymF)=c("pval.symF", "padj.symF")
 length(valsSymF[,1])
 table(complete.cases(valsSymF))
 
-head(resCultureH.CultureC) #culture heat vs. control
-valsCultureH=cbind(resCultureH.CultureC$pvalue, resCultureH.CultureC$padj)
-head(valsCultureH)
-colnames(valsCultureH)=c("pval.symH", "padj.symH")
-length(valsCultureH[,1])
-table(complete.cases(valsCultureH))
+#head(resCultureH.CultureC) #culture heat vs. control
+#valsCultureH=cbind(resCultureH.CultureC$pvalue, resCultureH.CultureC$padj)
+#head(valsCultureH)
+#colnames(valsCultureH)=c("pval.symH", "padj.symH")
+#length(valsCultureH[,1])
+#table(complete.cases(valsCultureH))
 
-head(resCultureF.CultureC) #culture freezing vs. control
-valsCultureF=cbind(resCultureF.CultureC$pvalue, resCultureF.CultureC$padj)
-head(valsCultureF)
-colnames(valsCultureF)=c("pval.symF", "padj.symF")
-length(valsCultureF[,1])
-table(complete.cases(valsCultureF))
+#head(resCultureF.CultureC) #culture freezing vs. control
+#valsCultureF=cbind(resCultureF.CultureC$pvalue, resCultureF.CultureC$padj)
+#head(valsCultureF)
+#colnames(valsCultureF)=c("pval.symF", "padj.symF")
+#length(valsCultureF[,1])
+#table(complete.cases(valsCultureF))
 
 #rlog transform data
 rlog=rlogTransformation(dds, blind=TRUE) 
@@ -359,12 +359,12 @@ hostdat = vsdf %>%
   dplyr::select(contains('.host'))
 symdat = vsdf %>% 
   dplyr::select(contains('.sym'))
-culturedat = vsdf %>% 
-  dplyr::select(contains('Culture'))
+#culturedat = vsdf  
+#  dplyr::select(contains('Culture'))
 
 mnhost = apply(hostdat, 1, function(x) mean(x, na.rm=TRUE))
 mnsym = apply(symdat, 1, function(x) mean(x, na.rm=TRUE))
-mnculture = apply(culturedat, 1, function(x) mean(x, na.rm=TRUE))
+#mnculture = apply(culturedat, 1, function(x) mean(x, na.rm=TRUE))
 
 mdat = data.frame(mnhost, mnsym)
 mdat %>% 
@@ -373,12 +373,4 @@ mdat %>%
 lm1=lm(mnhost~mnsym)
 summary(lm1)
 cor(x=mnhost, y=mnsym)
-
-mdat = data.frame(mnhost, mnculture)
-mdat %>% 
-  ggplot(aes(x=mnhost,y=mnculture)) +
-  geom_point(alpha=0.3)
-lm1=lm(mnhost~mnculture)
-summary(lm1)
-cor(x=mnhost, y=mnculture)
 

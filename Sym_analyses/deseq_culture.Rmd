@@ -583,7 +583,7 @@ nrow(go_input_hot_culture)
 head(go_input_hot_culture)
 colnames(go_input_hot_culture) <- c("gene", "pval")
 head(go_input_hot_culture)
-write.csv(go_input_hot_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses/hot_oculina_sym_GO.csv", quote=F, row.names=FALSE)
+write.csv(go_input_hot_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses/culture_hot_GO.csv", quote=F, row.names=FALSE)
 
 ```
 
@@ -603,7 +603,7 @@ nrow(go_input_cold_culture)
 head(go_input_cold_culture)
 colnames(go_input_cold_culture) <- c("gene", "pval")
 head(go_input_cold_culture)
-write.csv(go_input_cold_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses/cold_oculina_sym_GO.csv", quote=F, row.names=FALSE)
+write.csv(go_input_cold_culture, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses/culture_cold_GO.csv", quote=F, row.names=FALSE)
 ```
 
 

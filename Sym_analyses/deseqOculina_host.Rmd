@@ -363,7 +363,48 @@ deg_barplot
 ggsave(deg_barplot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/host_deg_barplot.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
 ```
 
+##Test for differences in # of DE genes
+```{r, cache=TRUE, fig.align='center'}
+summary(res_hot_brown_host)
+# up = 140
+# down = 187
+summary(res_hot_white_host)
+# up = 35
+# down = 70
+summary(res_cold_brown_host)
+# up = 1786
+# down = 2309
+summary(res_cold_white_host)
+# up = 1070
+# down = 1282
 
+# These results are out of 24400 nonzero read counts
+
+res.brownhost_v_apohost_heat <- prop.test(x = c(327, 105), n = c(24400, 24400), alternative = 'greater')
+res.brownhost_v_apohost_heat 
+# data:  c(4095, 2352) out of c(24400, 24400)
+# X-squared = 542.34, df = 1, p-value < 2.2e-16
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.06637904 1.00000000
+# sample estimates:
+#     prop 1     prop 2 
+# 0.16782787 0.09639344 
+
+
+res.brownhost_v_apohost_cold <- prop.test(x = c(4095, 2352), n = c(24400, 24400), alternative = 'greater')
+res.brownhost_v_apohost_cold 
+# data:  c(56, 5) out of c(137, 137)
+# X-squared = 52.721, df = 1, p-value = 1.923e-13
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.2910232 1.0000000
+# sample estimates:
+#     prop 1     prop 2 
+# 0.40875912 0.03649635 
+
+
+```
 ##Heatmaps
 ***
 <br> <br> 
@@ -693,7 +734,7 @@ plast_boxplot <- ggplot(all_plast_nocontrol, aes(x = treat_type, y = dist)) +
   theme(axis.title.x = element_blank())
 plast_boxplot
 
-ggsave(plast_boxplot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_boxplot_host.pdf", width=3, height=3, units=c("in"), useDingbats=FALSE)
+ggsave(plast_boxplot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_boxplot_host.pdf", width=2.5, height=4, units=c("in"), useDingbats=FALSE)
 
 ```
 

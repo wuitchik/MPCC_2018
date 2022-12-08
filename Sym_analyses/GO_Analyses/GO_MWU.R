@@ -15,7 +15,7 @@
 ################################################################
 # First, press command-D on mac or ctrl-shift-H in Rstudio and navigate to the directory containing scripts and input files. Then edit, mark and execute the following bits of code, one after another.
 
-setwd("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses")
+#setwd("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GO_Analyses")
 
 # Edit these to match your data file names: 
 #goAnnotations="B_psygmophilum_isogroup_to_GOterm.tab" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
@@ -23,7 +23,7 @@ goAnnotations="O_arbuscula_isogroup_to_GOterm.tab" # two-column, tab-delimited, 
 goDatabase="go.obo" # download from http://www.geneontology.org/GO.downloads.ontology.shtml
 source("gomwu.functions.R")
 
-#### Oculina Symbiotic Heat GO Terms ####
+#### Oculina Symbiotic Host Heat GO Terms ####
 input="oculina_hot_brown_host_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
 goDivision="MF" # either MF, or BP, or CC
 
@@ -40,7 +40,7 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
            #	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
 )
 # do not continue if the printout shows that no GO terms pass 10% FDR.
-# 167 GO terms at 10% FDR
+# 159 GO terms at 10% FDR
 
 quartz()
 mf_hot_brown_host_results=gomwuPlot(input,goAnnotations,goDivision,
@@ -68,7 +68,7 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
            smallest=5,   
            clusterCutHeight=0.25 
 )
-# 4  GO terms at 10% FDR
+# 434  GO terms at 10% FDR
 quartz()
 bp_hot_brown_host_results=gomwuPlot(input,goAnnotations,goDivision,
                              absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
@@ -93,15 +93,15 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
            smallest=5,   
            clusterCutHeight=0.25 
 )
-# 2 GO terms at 10% FDR
+# 112 GO terms at 10% FDR
 # Plot results
 quartz()
 cc_hot_sym_results=gomwuPlot(input,goAnnotations,goDivision,
                              absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
                              #	absValue=1, # un-remark this if you are using log2-fold changes
-                             level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-                             level2=0.05, # FDR cutoff to print in regular (not italic) font.
-                             level3=0.01, # FDR cutoff to print in large bold font.
+                             level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                             level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                             level3=0.001, # FDR cutoff to print in large bold font.
                              txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
                              treeHeight=0.5, # height of the hierarchical clustering tree
                              #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
@@ -112,11 +112,288 @@ cc_hot_sym_results=gomwuPlot(input,goAnnotations,goDivision,
 # text representation of results, with actual adjusted p-values
 results[[1]]
 
-write.csv(cc_hot_sym_results, "cc_hot_oculina_sym_results.csv")
+write.csv(cc_hot_sym_results, "cc_oculina_host_brown_heat_results.csv")
+
+#### Oculina Symbiotic Host Cold GO Terms ####
+input="oculina_cold_brown_host_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+goDivision="MF" # either MF, or BP, or CC
+
+# ------------- Calculating stats
+# It might take a few minutes for MF and BP. Do not rerun it if you just want to replot the data with different cutoffs, go straight to gomwuPlot. If you change any of the numeric values below, delete the files that were generated in previos runs first.
+
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
+           largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
+           smallest=5,   # a GO category should contain at least this many genes to be considered
+           clusterCutHeight=0.25, # threshold for merging similar (gene-sharing) terms. See README for details.
+           #	Alternative="g" # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead. 
+           #	Module=TRUE,Alternative="g" # un-remark this if you are analyzing a SIGNED WGCNA module (values: 0 for not in module genes, kME for in-module genes). In the call to gomwuPlot below, specify absValue=0.001 (count number of "good genes" that fall into the module)
+           #	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
+)
+# do not continue if the printout shows that no GO terms pass 10% FDR.
+# 179 GO terms at 10% FDR
+
+quartz()
+mf_cold_brown_host_results=gomwuPlot(input,goAnnotations,goDivision,
+                                    absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                                    #absValue=1, # un-remark this if you are using log2-fold changes
+                                    level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                                    level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                                    level3=0.001, # FDR cutoff to print in large bold font.
+                                    txtsize=1,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                                    treeHeight=0.5, # height of the hierarchical clustering tree
+                                    #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+# text representation of results, with actual adjusted p-values
+mf_cold_brown_host_results[[1]]
+write.csv(mf_cold_brown_host_results, "mf_oculina_host_brown_cold_results.csv")
+
+
+goDivision="BP" 
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1, 
+           smallest=5,   
+           clusterCutHeight=0.25 
+)
+# 600  GO terms at 10% FDR
+quartz()
+# too insane to make this tree, way too many go's
+bp_cold_brown_host_results=gomwuPlot(input,goAnnotations,goDivision,
+                                    absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                                    #absValue=1, # un-remark this if you are using log2-fold changes
+                                    level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                                    level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                                    level3=0.001, # FDR cutoff to print in large bold font.
+                                    txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                                    treeHeight=0.5, # height of the hierarchical clustering tree
+                                    #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+write.csv(bp_cold_brown_host_results, "bp_oculina_host_brown_cold_results.csv")
+
+
+goDivision="CC" 
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1, 
+           smallest=5,   
+           clusterCutHeight=0.25 
+)
+# 289 GO terms at 10% FDR
+# Plot results
+quartz()
+cc_cold_sym_results=gomwuPlot(input,goAnnotations,goDivision,
+                             absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                             #	absValue=1, # un-remark this if you are using log2-fold changes
+                             level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                             level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                             level3=0.001, # FDR cutoff to print in large bold font.
+                             txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                             treeHeight=0.5, # height of the hierarchical clustering tree
+                             #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+# text representation of results, with actual adjusted p-values
+results[[1]]
+
+write.csv(cc_cold_sym_results, "cc_oculina_host_brown_cold_results.csv")
+
+#### Oculina Aposymbiotic Host Heat GO Terms ####
+input="oculina_hot_white_host_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+goDivision="MF" # either MF, or BP, or CC
+
+# ------------- Calculating stats
+# It might take a few minutes for MF and BP. Do not rerun it if you just want to replot the data with different cutoffs, go straight to gomwuPlot. If you change any of the numeric values below, delete the files that were generated in previos runs first.
+
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
+           largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
+           smallest=5,   # a GO category should contain at least this many genes to be considered
+           clusterCutHeight=0.25, # threshold for merging similar (gene-sharing) terms. See README for details.
+           #	Alternative="g" # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead. 
+           #	Module=TRUE,Alternative="g" # un-remark this if you are analyzing a SIGNED WGCNA module (values: 0 for not in module genes, kME for in-module genes). In the call to gomwuPlot below, specify absValue=0.001 (count number of "good genes" that fall into the module)
+           #	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
+)
+# do not continue if the printout shows that no GO terms pass 10% FDR.
+# 61 GO terms at 10% FDR
+
+quartz()
+mf_hot_white_host_results=gomwuPlot(input,goAnnotations,goDivision,
+                                    absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                                    #absValue=1, # un-remark this if you are using log2-fold changes
+                                    level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                                    level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                                    level3=0.001, # FDR cutoff to print in large bold font.
+                                    txtsize=1,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                                    treeHeight=0.5, # height of the hierarchical clustering tree
+                                    #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+# text representation of results, with actual adjusted p-values
+mf_hot_white_host_results[[1]]
+write.csv(mf_hot_white_host_results, "mf_oculina_host_white_heat_results.csv")
+
+
+goDivision="BP" 
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1, 
+           smallest=5,   
+           clusterCutHeight=0.25 
+)
+# 166  GO terms at 10% FDR
+quartz()
+bp_hot_white_host_results=gomwuPlot(input,goAnnotations,goDivision,
+                                    absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                                    #absValue=1, # un-remark this if you are using log2-fold changes
+                                    level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                                    level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                                    level3=0.001, # FDR cutoff to print in large bold font.
+                                    txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                                    treeHeight=0.5, # height of the hierarchical clustering tree
+                                    #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+write.csv(bp_hot_white_host_results, "bp_oculina_host_white_heat_results.csv")
+
+
+goDivision="CC" 
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1, 
+           smallest=5,   
+           clusterCutHeight=0.25 
+)
+# 55 GO terms at 10% FDR
+# Plot results
+quartz()
+cc_hot_white_host_results=gomwuPlot(input,goAnnotations,goDivision,
+                             absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                             #	absValue=1, # un-remark this if you are using log2-fold changes
+                             level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                             level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                             level3=0.001, # FDR cutoff to print in large bold font.
+                             txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                             treeHeight=0.5, # height of the hierarchical clustering tree
+                             #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+# text representation of results, with actual adjusted p-values
+results[[1]]
+
+write.csv(cc_hot_white_host_results, "cc_oculina_host_white_heat_results.csv")
+
+#### Oculina Aposymbiotic Host Cold GO Terms ####
+input="oculina_cold_white_host_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+goDivision="MF" # either MF, or BP, or CC
+
+# ------------- Calculating stats
+# It might take a few minutes for MF and BP. Do not rerun it if you just want to replot the data with different cutoffs, go straight to gomwuPlot. If you change any of the numeric values below, delete the files that were generated in previos runs first.
+
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
+           largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
+           smallest=5,   # a GO category should contain at least this many genes to be considered
+           clusterCutHeight=0.25, # threshold for merging similar (gene-sharing) terms. See README for details.
+           #	Alternative="g" # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead. 
+           #	Module=TRUE,Alternative="g" # un-remark this if you are analyzing a SIGNED WGCNA module (values: 0 for not in module genes, kME for in-module genes). In the call to gomwuPlot below, specify absValue=0.001 (count number of "good genes" that fall into the module)
+           #	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
+)
+# do not continue if the printout shows that no GO terms pass 10% FDR.
+# 144 GO terms at 10% FDR
+
+quartz()
+mf_cold_white_host_results=gomwuPlot(input,goAnnotations,goDivision,
+                                     absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                                     #absValue=1, # un-remark this if you are using log2-fold changes
+                                     level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                                     level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                                     level3=0.001, # FDR cutoff to print in large bold font.
+                                     txtsize=1,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                                     treeHeight=0.5, # height of the hierarchical clustering tree
+                                     #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+# text representation of results, with actual adjusted p-values
+mf_cold_white_host_results[[1]]
+write.csv(mf_cold_white_host_results, "mf_oculina_host_white_cold_results.csv")
+
+
+goDivision="BP" 
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1, 
+           smallest=5,   
+           clusterCutHeight=0.25 
+)
+# 411  GO terms at 10% FDR
+quartz()
+# too insane to make this tree, way too many go's
+bp_cold_white_host_results=gomwuPlot(input,goAnnotations,goDivision,
+                                     absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                                     #absValue=1, # un-remark this if you are using log2-fold changes
+                                     level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                                     level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                                     level3=0.001, # FDR cutoff to print in large bold font.
+                                     txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                                     treeHeight=0.5, # height of the hierarchical clustering tree
+                                     #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+write.csv(bp_cold_white_host_results, "bp_oculina_host_white_cold_results.csv")
+
+
+goDivision="CC" 
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1, 
+           smallest=5,   
+           clusterCutHeight=0.25 
+)
+# 254 GO terms at 10% FDR
+# Plot results
+quartz()
+cc_cold_white_host_results=gomwuPlot(input,goAnnotations,goDivision,
+                              absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                              #	absValue=1, # un-remark this if you are using log2-fold changes
+                              level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                              level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                              level3=0.001, # FDR cutoff to print in large bold font.
+                              txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                              treeHeight=0.5, # height of the hierarchical clustering tree
+                              #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+# text representation of results, with actual adjusted p-values
+results[[1]]
+
+write.csv(cc_cold_white_host_results, "cc_oculina_host_white_cold_results.csv")
+
 
 
 #### Symbiont Hot In Host GO Terms ####
-input="hot_oculina_sym_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+goAnnotations="B_psygmophilum_isogroup_to_GOterm.tab" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
+input="oculina_hot_syminhost_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
 goDivision="MF" # either MF, or BP, or CC
 
 # ------------- Calculating stats
@@ -138,9 +415,9 @@ quartz()
 mf_hot_sym_results=gomwuPlot(input,goAnnotations,goDivision,
                   absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
                   #absValue=1, # un-remark this if you are using log2-fold changes
-                  level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-                  level2=0.05, # FDR cutoff to print in regular (not italic) font.
-                  level3=0.01, # FDR cutoff to print in large bold font.
+                  level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                  level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                  level3=0.001, # FDR cutoff to print in large bold font.
                   txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
                   treeHeight=0.5, # height of the hierarchical clustering tree
                   #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
@@ -151,7 +428,7 @@ mf_hot_sym_results=gomwuPlot(input,goAnnotations,goDivision,
 # text representation of results, with actual adjusted p-values
 results[[1]]
 #[1] 1.925315e-05 4.682142e-04
-write.csv(mf_hot_sym_results, "mf_hot_oculina_sym_results.csv")
+write.csv(mf_hot_sym_results, "mf_hot_syminhost_results.csv")
 
 
 goDivision="BP" 
@@ -166,9 +443,9 @@ quartz()
 bp_hot_sym_results=gomwuPlot(input,goAnnotations,goDivision,
                   absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
                   #absValue=1, # un-remark this if you are using log2-fold changes
-                  level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-                  level2=0.05, # FDR cutoff to print in regular (not italic) font.
-                  level3=0.01, # FDR cutoff to print in large bold font.
+                  level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                  level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                  level3=0.001, # FDR cutoff to print in large bold font.
                   txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
                   treeHeight=0.5, # height of the hierarchical clustering tree
                   #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
@@ -176,7 +453,7 @@ bp_hot_sym_results=gomwuPlot(input,goAnnotations,goDivision,
 # manually rescale the plot so the tree matches the text 
 # if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
 
-write.csv(bp_hot_sym_results, "bp_hot_oculina_sym_results.csv")
+write.csv(bp_hot_sym_results, "bp_hot_syminhost_results.csv")
 
 
 goDivision="CC" 
@@ -192,9 +469,9 @@ quartz()
 cc_hot_sym_results=gomwuPlot(input,goAnnotations,goDivision,
                   absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
                   #	absValue=1, # un-remark this if you are using log2-fold changes
-                  level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-                  level2=0.05, # FDR cutoff to print in regular (not italic) font.
-                  level3=0.01, # FDR cutoff to print in large bold font.
+                  level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                  level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                  level3=0.001, # FDR cutoff to print in large bold font.
                   txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
                   treeHeight=0.5, # height of the hierarchical clustering tree
                   #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
@@ -205,10 +482,10 @@ cc_hot_sym_results=gomwuPlot(input,goAnnotations,goDivision,
 # text representation of results, with actual adjusted p-values
 results[[1]]
 
-write.csv(cc_hot_sym_results, "cc_hot_oculina_sym_results.csv")
+write.csv(cc_hot_sym_results, "cc_hot_syminhost_results.csv")
 
 #### Symbiont Cold In Host GO Terms ####
-input="cold_oculina_sym_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+input="oculina_cold_syminhost_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
 goDivision="MF" # either MF, or BP, or CC
 
 # ------------- Calculating stats
@@ -224,7 +501,7 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
            #	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
 )
 # do not continue if the printout shows that no GO terms pass 10% FDR.
-# 167 GO terms at 10% FDR
+# 11 GO terms at 10% FDR
 
 quartz()
 mf_cold_sym_results=gomwuPlot(input,goAnnotations,goDivision,
@@ -242,7 +519,7 @@ mf_cold_sym_results=gomwuPlot(input,goAnnotations,goDivision,
 
 # text representation of results, with actual adjusted p-values
 results[[1]]
-write.csv(mf_cold_sym_results, "mf_cold_oculina_sym_results.csv")
+write.csv(mf_cold_sym_results, "mf_cold_syminhost_results.csv")
 
 goDivision="BP" 
 gomwuStats(input, goDatabase, goAnnotations, goDivision,
@@ -256,9 +533,9 @@ quartz()
 bp_cold_sym_results=gomwuPlot(input,goAnnotations,goDivision,
                   absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
                   #absValue=1, # un-remark this if you are using log2-fold changes
-                  level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-                  level2=0.05, # FDR cutoff to print in regular (not italic) font.
-                  level3=0.01, # FDR cutoff to print in large bold font.
+                  level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                  level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                  level3=0.001, # FDR cutoff to print in large bold font.
                   txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
                   treeHeight=0.5, # height of the hierarchical clustering tree
                   #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
@@ -266,7 +543,7 @@ bp_cold_sym_results=gomwuPlot(input,goAnnotations,goDivision,
 # manually rescale the plot so the tree matches the text 
 # if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
 
-write.csv(bp_cold_sym_results, "bp_cold_oculina_sym_results.csv")
+write.csv(bp_cold_sym_results, "bp_cold_syminhost_results.csv")
 
 goDivision="CC" 
 gomwuStats(input, goDatabase, goAnnotations, goDivision,
@@ -281,9 +558,9 @@ quartz()
 cc_cold_sym_results=gomwuPlot(input,goAnnotations,goDivision,
                   absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
                   #	absValue=1, # un-remark this if you are using log2-fold changes
-                  level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
-                  level2=0.05, # FDR cutoff to print in regular (not italic) font.
-                  level3=0.01, # FDR cutoff to print in large bold font.
+                  level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                  level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                  level3=0.001, # FDR cutoff to print in large bold font.
                   txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
                   treeHeight=0.5, # height of the hierarchical clustering tree
                   #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
@@ -293,8 +570,187 @@ cc_cold_sym_results=gomwuPlot(input,goAnnotations,goDivision,
 
 # text representation of results, with actual adjusted p-values
 results[[1]]
-write.csv(cc_cold_sym_results, "cc_cold_oculina_sym_results.csv")
+write.csv(cc_cold_sym_results, "cc_cold_syminhost_results.csv")
 
+#### Symbiont Culture Hot GO Terms ####
+input="culture_hot_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+goDivision="MF" # either MF, or BP, or CC
+
+# ------------- Calculating stats
+# It might take a few minutes for MF and BP. Do not rerun it if you just want to replot the data with different cutoffs, go straight to gomwuPlot. If you change any of the numeric values below, delete the files that were generated in previos runs first.
+
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
+           largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
+           smallest=5,   # a GO category should contain at least this many genes to be considered
+           clusterCutHeight=0.25, # threshold for merging similar (gene-sharing) terms. See README for details.
+           #	Alternative="g" # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead. 
+           #	Module=TRUE,Alternative="g" # un-remark this if you are analyzing a SIGNED WGCNA module (values: 0 for not in module genes, kME for in-module genes). In the call to gomwuPlot below, specify absValue=0.001 (count number of "good genes" that fall into the module)
+           #	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
+)
+# do not continue if the printout shows that no GO terms pass 10% FDR.
+# 7 GO terms at 10% FDR
+
+quartz()
+mf_hot_culture_results=gomwuPlot(input,goAnnotations,goDivision,
+                             absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                             #absValue=1, # un-remark this if you are using log2-fold changes
+                             level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                             level2=0.05, # FDR cutoff to print in regular (not italic) font.
+                             level3=0.01, # FDR cutoff to print in large bold font.
+                             txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                             treeHeight=0.5, # height of the hierarchical clustering tree
+                             #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+# text representation of results, with actual adjusted p-values
+results[[1]]
+#[1] 1.925315e-05 4.682142e-04
+write.csv(mf_hot_culture_results, "mf_hot_culture_results.csv")
+
+
+goDivision="BP" 
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1, 
+           smallest=5,   
+           clusterCutHeight=0.25 
+)
+# 27  GO terms at 10% FDR
+quartz()
+bp_hot_culture_results=gomwuPlot(input,goAnnotations,goDivision,
+                             absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                             #absValue=1, # un-remark this if you are using log2-fold changes
+                             level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                             level2=0.05, # FDR cutoff to print in regular (not italic) font.
+                             level3=0.01, # FDR cutoff to print in large bold font.
+                             txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                             treeHeight=0.5, # height of the hierarchical clustering tree
+                             #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+write.csv(bp_hot_culture_results, "bp_hot_culture_results.csv")
+
+
+goDivision="CC" 
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1, 
+           smallest=5,   
+           clusterCutHeight=0.25 
+)
+# 24 GO terms at 10% FDR
+# Plot results
+quartz()
+cc_hot_culture_results=gomwuPlot(input,goAnnotations,goDivision,
+                             absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                             #	absValue=1, # un-remark this if you are using log2-fold changes
+                             level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                             level2=0.05, # FDR cutoff to print in regular (not italic) font.
+                             level3=0.01, # FDR cutoff to print in large bold font.
+                             txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                             treeHeight=0.5, # height of the hierarchical clustering tree
+                             #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+# text representation of results, with actual adjusted p-values
+results[[1]]
+
+write.csv(cc_hot_culture_results, "cc_hot_culture_results.csv")
+
+#### Symbiont Culture Cold GO Terms ####
+input="culture_cold_GO.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+goDivision="MF" # either MF, or BP, or CC
+
+# ------------- Calculating stats
+# It might take a few minutes for MF and BP. Do not rerun it if you just want to replot the data with different cutoffs, go straight to gomwuPlot. If you change any of the numeric values below, delete the files that were generated in previos runs first.
+
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
+           largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
+           smallest=5,   # a GO category should contain at least this many genes to be considered
+           clusterCutHeight=0.25, # threshold for merging similar (gene-sharing) terms. See README for details.
+           #	Alternative="g" # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead. 
+           #	Module=TRUE,Alternative="g" # un-remark this if you are analyzing a SIGNED WGCNA module (values: 0 for not in module genes, kME for in-module genes). In the call to gomwuPlot below, specify absValue=0.001 (count number of "good genes" that fall into the module)
+           #	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
+)
+# do not continue if the printout shows that no GO terms pass 10% FDR.
+# 48 GO terms at 10% FDR
+
+quartz()
+mf_cold_culture_results=gomwuPlot(input,goAnnotations,goDivision,
+                              absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                              #absValue=1, # un-remark this if you are using log2-fold changes
+                              level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                              level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                              level3=0.001, # FDR cutoff to print in large bold font.
+                              txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                              treeHeight=0.5, # height of the hierarchical clustering tree
+                              #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+# text representation of results, with actual adjusted p-values
+results[[1]]
+write.csv(mf_cold_culture_results, "mf_cold_culture_results.csv")
+
+goDivision="BP" 
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1, 
+           smallest=5,   
+           clusterCutHeight=0.25 
+)
+# 43 GO terms at 10% FDR
+quartz()
+bp_cold_culture_results=gomwuPlot(input,goAnnotations,goDivision,
+                              absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                              #absValue=1, # un-remark this if you are using log2-fold changes
+                              level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                              level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                              level3=0.001, # FDR cutoff to print in large bold font.
+                              txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                              treeHeight=0.5, # height of the hierarchical clustering tree
+                              #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+write.csv(bp_cold_culture_results, "bp_cold_culture_results.csv")
+
+goDivision="CC" 
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1, 
+           smallest=5,   
+           clusterCutHeight=0.25 
+)
+# 36 GO terms at 10% FDR
+# Plot results
+quartz()
+cc_cold_culture_results=gomwuPlot(input,goAnnotations,goDivision,
+                              absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                              #	absValue=1, # un-remark this if you are using log2-fold changes
+                              level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                              level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                              level3=0.001, # FDR cutoff to print in large bold font.
+                              txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                              treeHeight=0.5, # height of the hierarchical clustering tree
+                              #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+# text representation of results, with actual adjusted p-values
+results[[1]]
+write.csv(cc_cold_culture_results, "cc_cold_culture_results.csv")
 
 ####extracting representative GOs ####
 

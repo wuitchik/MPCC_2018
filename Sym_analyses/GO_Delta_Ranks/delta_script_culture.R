@@ -166,3 +166,35 @@ HotvCold_CC_culture_plot =
 
 ggplotly(HotvCold_CC_culture_plot)
 
+
+#### Heat Maps of Interesting GOs ####
+## Symbionts in Host ##
+# read in go.obo database to figure out the go category id's that we want to pull.
+
+go.obo = read.delim("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/Oculina_GO_Analyses/go.obo")
+
+# these terms are visually pulled from the Cold GO tree outputs, all terms related to photosynthesis 
+inds = c(which(go.obo$format.version..1.2 == "name: tetrapyrrole binding"), # MF
+         which(go.obo$format.version..1.2 == "name: chlorophyll binding"), # MF
+         which(go.obo$format.version..1.2 == "name: photosystem"), # CC
+         which(go.obo$format.version..1.2 == "name: thylakoid membrane"), # CC
+         which(go.obo$format.version..1.2 == "name: photosynthesis, light harvesting"), # BP
+         which(go.obo$format.version..1.2 == "name: protein-chromophore linkage") # BP
+         ) 
+
+want.go.obo = go.obo %>% 
+  slice(sort(unique(c(inds - 1)))) %>%
+  mutate_at("format.version..1.2", str_replace, "id: ", "")
+
+##pulling all of the immunity terms and making a data frame
+rldpval = read.delim("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_syminhost_results.txt", header = TRUE) %>%
+  rownames_to_column(var = "gene")
+
+iso2go_sym = read.delim("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/Oculina_GO_Analyses/B_psygmophilum_isogroup_to_GOterm.tab", sep = "\t", header = FALSE) %>%
+  dplyr::rename("gene" = "V1") %>%
+  dplyr::rename("GO_ID" = "V2")
+  
+photo_genes = iso2go_sym %>%
+  filter(grepl("GO:0009521|GO:0009765|GO:0016168|GO:0018298|GO:0042651|GO:0046906", GO_ID)) %>%
+  left_join(rldpval)
+head(photo_genes)

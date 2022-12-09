@@ -186,7 +186,7 @@ want.go.obo = go.obo %>%
   slice(sort(unique(c(inds - 1)))) %>%
   mutate_at("format.version..1.2", str_replace, "id: ", "")
 
-##pulling all of the immunity terms and making a data frame
+##pulling all of the photosynthesis terms and making a data frame
 rldpval = read.delim("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_syminhost_results.txt", header = TRUE) %>%
   rownames_to_column(var = "gene")
 

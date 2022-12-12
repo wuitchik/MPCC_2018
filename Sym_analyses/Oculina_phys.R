@@ -102,7 +102,7 @@ temp.pam.plot = day_temps_to_merge %>%
   scale_x_continuous(breaks = c(2,5,8,11,14))
 #theme(legend.position = 'none')
 temp.pam.plot
-ggsave(temp.pam.plot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/temps.fvfm.pdf", width=3, height=2, units=c("in"), useDingbats=FALSE)
+ggsave(temp.pam.plot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/temps.fvfm.pdf", width=5, height=2, units=c("in"), useDingbats=FALSE)
 
 
 

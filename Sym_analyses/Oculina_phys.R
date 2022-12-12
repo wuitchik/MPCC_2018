@@ -21,10 +21,14 @@ pam2 = pam %>%
   filter(complete.cases(avgfvfm))
 
 pam.sym = pam2 %>%
-  subset(sym_state == 'Sym')
+  subset(sym_state == 'Sym') %>%
+  filter(genet == "C" | genet == "D" | genet == "F" | genet == "I" | genet == "J" | genet == "M" | genet == "R")
 
 pam.apo = pam2 %>%
   subset(sym_state == 'Apo')
+
+# remove POLKA genotypes from dataset
+
 
 # Read in temperature data
 host_exp_temp = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/Oculina_temperature.csv") %>%

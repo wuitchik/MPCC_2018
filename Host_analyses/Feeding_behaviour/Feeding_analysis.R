@@ -5,6 +5,7 @@ library(reshape2)
 library(tidyverse)
 library(cowplot)
 library(ordinal)
+library(report)
 
 # data loading and tidying 
 as_feeding = read.csv("Astrangia_files/Feeding_data.csv") %>%
@@ -44,15 +45,26 @@ as_feeding_data = as_feeding %>%
          Genotype = as.factor(Genotype), 
          system = as.factor(system))
 
-as_model = clmm(polyp_behaviour ~ Treatment * Sym.Status + (1 | system) + (1 | Genotype), data = as_feeding_data)
+as_model = clmm(polyp_behaviour ~ Treatment * Sym.Status * Day + (1 | system) + (1 | Genotype) , data = as_feeding_data)
 as_summary = summary(as_model) # note, object is saved for inspection at end of script
+
+# post hoc test
+library(emmeans)
+
+post_hoc = emmeans(as_model, ~ Day+Sym.Status+Treatment)
+
+pairs(post_hoc)
 
 # Astrangia reduced model, no interaction
 as_reduced_model = clmm(polyp_behaviour ~ Treatment + Sym.Status + (1 | system) + (1 | Genotype), data = as_feeding_data)
 summary(as_reduced_model)
 
+
+
 # Astrangia interaction by likelihood ratio test
 as_comparison = anova(as_model, as_reduced_model)
+summary(as_comparison)
+
 
 ## Oculina full Model 
 oc_feeding_data = oc_feeding %>%

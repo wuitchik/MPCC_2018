@@ -4,6 +4,9 @@ library(DESeq2)
 library(tidyverse)
 
 counts = read.csv("Astrangia/outlier_removed_host_counts.csv", row.names = 1)
+filtered_counts = counts[rowSums(counts) > 3,]
+
+raw.counts.rounded = raw.counts.rounded[rowSums(raw.counts.rounded) > 0,]
 expDesign = read.csv("Astrangia/outlier_removed_expDesign.csv") %>%
   select(-X)
 

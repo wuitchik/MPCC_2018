@@ -3,6 +3,7 @@ library(tidyverse)
 library(patchwork)
 library(cowplot)
 library(ggrepel)
+library(GOfuncR)
 
 # set ggrepel to not remove points due to overlap
 options(ggrepel.max.overlaps = Inf)
@@ -26,6 +27,9 @@ Heat_apo_CC = read.table("../GO_DEGs/Astrangia/MWU_CC_apo_control_vs_hot_results
 stress = read.csv("stress_list.csv") %>%
   group_by(summary)
 
+children_oxidative = get_child_nodes("GO:0006979") 
+children_oxidative_list = children_oxidative$child_go_id
+
 
 
 #### Heat Treatment ####
@@ -40,8 +44,7 @@ Dixon_BP_set = Dixon_BP[Dixon_BP$term %in% heat_sym_goods,]
 # Combine them
 heat_sym_BP_data = merge(heat_sym, Dixon_BP_set, by="term")
 
-heat_sym_stress_data = heat_sym_BP_data[heat_sym_BP_data$term %in% stress$term,] %>%
-  left_join(stress)
+#heat_sym_oxidative_data = heat_sym_BP_data[heat_sym_BP_data$term %in% children_oxidative_list,] 
 
 # build hex plot with select Dixon GO's over top
 
@@ -53,9 +56,9 @@ heat_sym_BP_plot = ggplot(heat_sym_BP_data, aes(delta.rank.x, delta.rank.y)) +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
   geom_smooth(method=lm, color="black", se =FALSE) +
-  geom_point(data = heat_sym_stress_data) + 
+  #geom_point(data = heat_sym_oxidative_data, size = 3) + 
   xlim(-6000,6000) +
-  geom_text_repel(data = heat_sym_stress_data, aes(label = summary)) +
+  #geom_text_repel(data = heat_sym_oxidative_data, aes(label = name.y)) +
   theme_cowplot()
 
 # Molecular Function
@@ -106,8 +109,8 @@ Dixon_BP_set = Dixon_BP[Dixon_BP$term %in% heat_apo_goods,]
 # Combine them
 heat_apo_BP_data = merge(heat_apo, Dixon_BP_set, by="term")
 
-heat_apo_stress_data = heat_apo_BP_data[heat_apo_BP_data$term %in% stress$term,] %>%
-  left_join(stress)
+#heat_apo_oxidative_data = heat_apo_BP_data[heat_apo_BP_data$term %in% children_oxidative_list,] 
+
 
 heat_apo_BP_plot = ggplot(heat_apo_BP_data, aes(delta.rank.x, delta.rank.y)) +
   scale_fill_distiller(palette = "Reds", direction = 1) +
@@ -118,8 +121,8 @@ heat_apo_BP_plot = ggplot(heat_apo_BP_data, aes(delta.rank.x, delta.rank.y)) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
   geom_smooth(method=lm, color="black", se =FALSE) +
   xlim(-6000,6000) +
-  geom_point(data = heat_apo_stress_data) + 
-  geom_text_repel(data = heat_apo_stress_data, aes(label = summary)) +
+  #geom_point(data = heat_apo_oxidative_data, size = 3) + 
+  #geom_text_repel(data = heat_apo_stress_data, aes(label = summary)) +
   theme_cowplot()
 
 
@@ -189,8 +192,8 @@ Dixon_BP_set = Dixon_BP[Dixon_BP$term %in% Cold_sym_goods,]
 
 # Combine them
 Cold_sym_BP_data = merge(Cold_sym, Dixon_BP_set, by="term")
-cold_sym_stress_data = Cold_sym_BP_data[Cold_sym_BP_data$term %in% stress$term,] %>%
-  left_join(stress)
+#Cold_sym_oxidative_data = Cold_sym_BP_data[Cold_sym_BP_data$term %in% children_oxidative_list,] 
+
 
 Cold_sym_BP_plot = ggplot(Cold_sym_BP_data, aes(delta.rank.x, delta.rank.y, label = name.y)) +
   scale_fill_distiller(palette = "Blues", direction = 1) +
@@ -199,8 +202,8 @@ Cold_sym_BP_plot = ggplot(Cold_sym_BP_data, aes(delta.rank.x, delta.rank.y, labe
         y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
-  geom_point(data = cold_sym_stress_data) + 
-  geom_text_repel(data = cold_sym_stress_data, aes(label = summary)) +
+  #geom_point(data = Cold_sym_oxidative_data, size = 3) + 
+  #geom_text_repel(data = cold_sym_stress_data, aes(label = summary)) +
   geom_smooth(method=lm, color="black", se =FALSE) +
   xlim(-6000,6000) +
   theme_cowplot()
@@ -252,8 +255,8 @@ Dixon_BP_set = Dixon_BP[Dixon_BP$term %in% Cold_apo_goods,]
 
 # Combine them
 Cold_apo_BP_data = merge(Cold_apo, Dixon_BP_set, by="term")
-cold_apo_stress_data = Cold_apo_BP_data[Cold_apo_BP_data$term %in% stress$term,] %>%
-  left_join(stress)
+#Cold_apo_oxidative_data = Cold_apo_BP_data[Cold_apo_BP_data$term %in% children_oxidative_list,] 
+
 
 Cold_apo_BP_plot = ggplot(Cold_apo_BP_data, aes(delta.rank.x, delta.rank.y, label = name.y)) +
   scale_fill_distiller(palette = "Blues", direction = 1) +
@@ -262,8 +265,8 @@ Cold_apo_BP_plot = ggplot(Cold_apo_BP_data, aes(delta.rank.x, delta.rank.y, labe
         y = "Dixon Delta Rank") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
-  geom_point(data = cold_apo_stress_data) + 
-  geom_text_repel(data = cold_apo_stress_data, aes(label = summary)) +
+  #geom_point(data = Cold_apo_oxidative_data, size = 3) + 
+  #geom_text_repel(data = cold_apo_stress_data, aes(label = summary)) +
   geom_smooth(method=lm, color="black", se =FALSE) +
   geom_smooth(method=lm, color="black", se =FALSE) +
   xlim(-6000,6000) +
@@ -320,7 +323,10 @@ ggsave("Astrangia_cold_within_sym.pdf",
 
 # make biological process plot
 
-(heat_sym_BP_plot + Cold_sym_BP_plot) / ( heat_apo_BP_plot + Cold_apo_BP_plot)
+Figure_3 = ((heat_sym_BP_plot | Cold_sym_BP_plot) / ( heat_apo_BP_plot | Cold_apo_BP_plot)) 
 
-ggsave("BP_annotate.pdf", plot = last_plot())
+Figure_3 + plot_annotation(tag_levels = 'A')
+
+ggsave("Figure_3.pdf", plot = last_plot(), width = 8, units = "in")
+ggsave("Figure_3.jpg", plot = last_plot(), width = 8, units = "in")
 

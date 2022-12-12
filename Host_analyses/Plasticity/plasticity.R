@@ -3,6 +3,7 @@
 library(tidyverse)
 library(ggpubr)
 library(performance)
+library(report)
 
 # load PCA data
 load("../PCA/PCA.Rdata")
@@ -81,7 +82,11 @@ shapiro.test(plast_out$dist)
 bartlett.test(dist ~ Phenotype_within_treatment, data = plast_out)
 
 plasticity.aov = aov(dist ~ Phenotype_within_treatment, data = plast_out)
+report(plasticity.aov)
 check_model(plasticity.aov)
+
+main_effect = aov(dist ~ Treatment + Phenotype + Phenotype:Treatment + Phenotype_within_treatment, data = plast_out)
+report(main_effect)
 
 TukeyHSD(plasticity.aov, conf.level = 0.95)
 summary(plasticity.aov)

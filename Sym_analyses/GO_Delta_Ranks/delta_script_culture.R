@@ -190,8 +190,6 @@ want.go.obo = go.obo %>%
 rldpval = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/SymInHost_RLDandPVALS.csv", header = TRUE) %>%
   dplyr::rename("gene" = "X")
 
-col0=colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
-
 # read in iso2go file for the algae
 iso2go_sym = read.delim("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/Oculina_GO_Analyses/B_psygmophilum_isogroup_to_GOterm.tab", sep = "\t", header = FALSE) %>%
   dplyr::rename("gene" = "V1") %>%
@@ -202,30 +200,58 @@ photo_genes = iso2go_sym %>%
   filter(grepl("GO:0009521|GO:0009765|GO:0016168|GO:0018298|GO:0042651|GO:0046906", GO_ID)) %>%
   left_join(rldpval)
 head(photo_genes)
+str(photo_genes)
 
-# add gene name to this df
-iso2gene = read.delim("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/B_psygmophilum_transcriptome/B_psygmophilum_isogroup_to_genename.tab", sep = "\t", header = FALSE) %>%
+# add gene name to this df - trim down names and add to photo_genes
+iso2gene = read.delim("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/References/B_psygmophilum_transcriptome/B_psygmophilum_isogroup_to_genename.tab", sep = "\t", header = FALSE) %>%
   dplyr::rename("gene" = "V1") %>%
   dplyr::rename("gene_name" = "V2")
-head(iso2gene)
 
-row.names(photo_genes)=photo_genes$gene
-photo_genes1=photo_genes[,3:27]
+iso2gene$gene_name = gsub("OS=.*", "", iso2gene$gene_name)
+
+#iso2gene$gene_name = substr(iso2gene$gene_name, 0,40)
+head(iso2gene)
+str(iso2gene)
+
+photo_genes_anno = photo_genes %>%
+  left_join(iso2gene)
+head(photo_genes_anno)
 
 
 p.val = 0.10 # raw p-value for GO enriched
 
 # filter based on p-values from deseq results
-conds=photo_genes1[photo_genes1$pval.cold.syminhost<=p.val & !is.na(photo_genes1$pval.cold.syminhost),]
+conds=photo_genes_anno[photo_genes_anno$pval.cold.syminhost<=p.val & !is.na(photo_genes_anno$pval.cold.syminhost),]
 length(conds[,1])
 #6
 head(conds)
 
-# remove p-values from dataframe
-exp=conds[,1:21]
+# add annotation as row names and remove p-values and identifying info from dataframe
+row.names(conds)=conds$gene_name
+exp = conds[, c(3:23)]
 head(exp)
+
 means=apply(exp,1,mean) # calculate means of rows
 explc=exp-means # subtracting them
 head(explc)
+# this explc object is what we can use to make our heatmap
 
-head(gg)
+# now make heatmap
+# set color palette
+col0=colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+
+# make treatment data frame
+treatment = as.factor(sapply(strsplit(colnames(explc), split = "_"), "[[", 2)) %>%
+  revalue(c("C" = "control", "F" = "cold", "H" = "heat"))
+expDesign = data.frame(colnames(explc), treatment)
+expDesign = expDesign %>%
+  column_to_rownames(var = "colnames.explc.")
+
+my_colour = list(treatment = c(cold = "#74c476", heat = "#fd8d3c", control = "#a6611a"))
+
+#heat map of all photosynthesis genes
+library(pheatmap)
+
+pdf("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/syminhost_heatmap_photosynthesis.pdf", height = 6, width = 9, onefile = F)
+pheatmap(explc, cluster_cols = TRUE, scale = "row", color = col0, annotation_col = expDesign, annotation_colors = my_colour, show_rownames = TRUE, show_colnames = FALSE, border_color = "NA")
+dev.off()

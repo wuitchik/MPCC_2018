@@ -242,6 +242,11 @@ head(exp)
 means=apply(exp,1,mean) # calculate means of rows
 explc=exp-means # subtracting them
 head(explc)
+
+# order column names of explc so we can group columns by treatment
+explc = explc %>%
+  select("OC9_C_B",  "OD4_C_B",  "OF7_C_B",  "OI1_C_B",  "OJ13_C_B", "OM1_C_B",  "OR7_C_B",  "OC4_F_B",  "OD5_F_B",  "OF8_F_B" , "OI2_F_B" , "OJ14_F_B" ,
+         "OM2_F_B",  "OR8_F_B",  "OC5_H_B",  "OD6_H_B",  "OF9_H_B", "OI3_H_B",  "OJ15_H_B", "OM3_H_B",  "OR9_H_B")
 # this explc object is what we can use to make our heatmap
 
 # now make heatmap
@@ -255,19 +260,21 @@ expDesign = data.frame(colnames(explc), treatment)
 expDesign = expDesign %>%
   column_to_rownames(var = "colnames.explc.")
 
-expDesign$treatment <- ordered(expDesign$treatment, levels = c("control", "cold", "heat"))
-expDesign2 = expDesign[order(expDesign$treatment), , drop = FALSE]
+expDesign$treatment = ordered(expDesign$treatment, levels = c("control", "cold", "heat"))
+#expDesign = expDesign[order(expDesign$treatment), , drop = FALSE]
 
+# check that our input dataframes match before making heatmap
+colnames(explc) == row.names(expDesign)
 
 my_colour = list(treatment = c(cold = "#74c476", heat = "#fd8d3c", control = "#a6611a"))
 
 #heat map of all photosynthesis genes and save
 library(pheatmap)
 
-photo.heatmap = pheatmap(explc, cluster_cols = FALSE, scale = "row", color = col0, annotation_col = expDesign2, annotation_colors = my_colour, show_rownames = TRUE, show_colnames = FALSE, border_color = "NA")
-ggsave(photo.heatmap, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/syminhost_heatmap_photosynthesis.pdf", width=8, height=3, units=c("in"), useDingbats=FALSE)
+photo.heatmap = pheatmap(explc, cluster_cols = F, scale = "row", color = col0, annotation_col = expDesign, annotation_colors = my_colour, show_rownames = TRUE, show_colnames = FALSE, border_color = "NA")
+ggsave(photo.heatmap, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/syminhost_heatmap_photosynthesis_p=.1.pdf", width=8, height=2.5, units=c("in"), useDingbats=FALSE)
 
-#### Heat Maps of Interesting GOs - Syms in Culture ####
+#### Heat Maps of Interesting Photosynthesis GOs - Syms in Culture ####
 ## Symbionts in Culture ##
 # Photosynthesis genes first
 # read in go.obo database to figure out the go category id's that we want to pull.
@@ -346,6 +353,11 @@ head(exp)
 means=apply(exp,1,mean) # calculate means of rows
 explc=exp-means # subtracting them
 head(explc)
+
+# reorganize column names to make heatmap clustered by treatment
+explc = explc %>%
+  select("Control_1.1","Control_1","Control_2.1","Control_2","Control_3.1","Control_3","Control_4.1","Control_4","Cool_1","Cool_2",
+         "Cool_3","Cool_4","Heat_1.1","Heat_1","Heat_2.1","Heat_2","Heat_3.1","Heat_3","Heat_4.1","Heat_4")
 # this explc object is what we can use to make our heatmap
 
 # now make heatmap
@@ -359,16 +371,18 @@ expDesign = data.frame(colnames(explc), treatment)
 expDesign = expDesign %>%
   column_to_rownames(var = "colnames.explc.")
 
+expDesign$treatment = ordered(expDesign$treatment, levels = c("control", "cold", "heat"))
+
 my_colour = list(treatment = c(cold = "#74c476", heat = "#fd8d3c", control = "#a6611a"))
 
 #heat map of all photosynthesis genes and save
 library(pheatmap)
 
-photo.heatmap = pheatmap(explc, cluster_cols = TRUE, scale = "row", color = col0, annotation_col = expDesign, annotation_colors = my_colour, show_rownames = TRUE, show_colnames = FALSE, border_color = "NA")
+photo.heatmap = pheatmap(explc, cluster_cols = FALSE, scale = "row", color = col0, annotation_col = expDesign, annotation_colors = my_colour, show_rownames = TRUE, show_colnames = FALSE, border_color = "NA")
 ggsave(photo.heatmap, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/culture_heatmap_photosynthesis_p=.01.pdf", width=9, height=7, units=c("in"), useDingbats=FALSE)
 
 
-## Symbionts in Culture ##
+#### Heat Maps of Interesting Stress GOs - Syms in Culture ####
 # Stress genes
 # read in go.obo database to figure out the go category id's that we want to pull.
 
@@ -378,7 +392,8 @@ go.obo = read.delim("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_201
 inds = c(which(go.obo$format.version..1.2 == "name: cellular response to chemical stress"), # BP
          which(go.obo$format.version..1.2 == "name: cellular response to oxidative stress"), # BP
          which(go.obo$format.version..1.2 == "name: hydrogen peroxide metabolic process"), # BP
-         which(go.obo$format.version..1.2 == "name: proteasomal ubiquitin−independent protein catabolic process") # BP
+         which(go.obo$format.version..1.2 == "name: proteasomal ubiquitin−independent protein catabolic process"), # BP
+         which(go.obo$format.version..1.2 == "name: oxidoreductase, acting on peroxide as acceptor") # MF
 ) 
 
 want.go.obo = go.obo %>% 
@@ -443,6 +458,11 @@ head(exp)
 means=apply(exp,1,mean) # calculate means of rows
 explc=exp-means # subtracting them
 head(explc)
+
+# reorganize column names to make heatmap clustered by treatment
+explc = explc %>%
+  select("Control_1.1","Control_1","Control_2.1","Control_2","Control_3.1","Control_3","Control_4.1","Control_4","Cool_1","Cool_2",
+         "Cool_3","Cool_4","Heat_1.1","Heat_1","Heat_2.1","Heat_2","Heat_3.1","Heat_3","Heat_4.1","Heat_4")
 # this explc object is what we can use to make our heatmap
 
 # now make heatmap
@@ -456,10 +476,12 @@ expDesign = data.frame(colnames(explc), treatment)
 expDesign = expDesign %>%
   column_to_rownames(var = "colnames.explc.")
 
+expDesign$treatment = ordered(expDesign$treatment, levels = c("control", "cold", "heat"))
+
 my_colour = list(treatment = c(cold = "#74c476", heat = "#fd8d3c", control = "#a6611a"))
 
 #heat map of all photosynthesis genes and save
 library(pheatmap)
 
-stress.heatmap = pheatmap(explc, cluster_cols = TRUE, scale = "row", color = col0, annotation_col = expDesign, annotation_colors = my_colour, show_rownames = TRUE, show_colnames = FALSE, border_color = "NA")
+stress.heatmap = pheatmap(explc, cluster_cols = FALSE, scale = "row", color = col0, annotation_col = expDesign, annotation_colors = my_colour, show_rownames = TRUE, show_colnames = FALSE, border_color = "NA")
 ggsave(stress.heatmap, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/culture_heatmap_stress_p=.01.pdf", width=9, height=5, units=c("in"), useDingbats=FALSE)

@@ -208,9 +208,8 @@ iso2gene = read.delim("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_T
   dplyr::rename("gene" = "V1") %>%
   dplyr::rename("gene_name" = "V2")
 
+# add annotation as row names and remove p-values and identifying info from dataframe
 iso2gene$gene_name = gsub("OS=.*", "", iso2gene$gene_name)
-
-#iso2gene$gene_name = substr(iso2gene$gene_name, 0,40)
 head(iso2gene)
 str(iso2gene)
 
@@ -219,21 +218,26 @@ photo_genes_anno = photo_genes %>%
 head(photo_genes_anno)
 
 # set raw p-value for GO enriched
-p.val = 0.20 
+p.val = 0.10 
 
 # filter based on p-values from deseq results
 conds=photo_genes_anno[photo_genes_anno$pval.cold.syminhost<=p.val & !is.na(photo_genes_anno$pval.cold.syminhost),]
 length(conds[,1])
 #6
 head(conds)
+rownames(conds)<-NULL
 
-# remove duplicate row for p=0.2
-rownames(conds) <- make.unique(conds$gene_name)
+# make gene names row names
+conds2 = conds %>%   
+  column_to_rownames(var = "gene_name")
+head(conds2)
+# make unique rows for p=0.2
+#rownames(conds) <- make.unique(conds$gene_name)
 
-# add annotation as row names and remove p-values and identifying info from dataframe
 #row.names(conds)=conds$gene_name
-exp = conds[, c(3:23)]
+exp = conds2[, c(3:23)]
 head(exp)
+
 
 means=apply(exp,1,mean) # calculate means of rows
 explc=exp-means # subtracting them
@@ -251,13 +255,16 @@ expDesign = data.frame(colnames(explc), treatment)
 expDesign = expDesign %>%
   column_to_rownames(var = "colnames.explc.")
 
+expDesign = expDesign[order(expDesign$treatment), , drop = FALSE]
+
+
 my_colour = list(treatment = c(cold = "#74c476", heat = "#fd8d3c", control = "#a6611a"))
 
 #heat map of all photosynthesis genes and save
 library(pheatmap)
 
-photo.heatmap = pheatmap(explc, cluster_cols = TRUE, scale = "row", color = col0, annotation_col = expDesign, annotation_colors = my_colour, show_rownames = TRUE, show_colnames = FALSE, border_color = "NA")
-ggsave(photo.heatmap, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/syminhost_heatmap_photosynthesis_p=.2.pdf", width=9, height=4, units=c("in"), useDingbats=FALSE)
+photo.heatmap = pheatmap(explc, cluster_cols = FALSE, scale = "row", color = col0, annotation_col = expDesign, annotation_colors = my_colour, show_rownames = TRUE, show_colnames = FALSE, border_color = "NA")
+ggsave(photo.heatmap, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/syminhost_heatmap_photosynthesis.pdf", width=9, height=4, units=c("in"), useDingbats=FALSE)
 
 #### Heat Maps of Interesting GOs - Syms in Culture ####
 ## Symbionts in Culture ##

@@ -100,6 +100,7 @@ explc = explc %>%
 # now make heatmap
 # set color palette
 #col0=colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+col0=colorRampPalette(rev(c("#c51b7d","#e9a3c9","#ffffff", "#5ab4ac","#01665e")))(100)
 col0=colorRampPalette(rev(c("#c51b7d","#e9a3c9","grey10", "#5ab4ac","#01665e")))(100)
 
 # make treatment data frame
@@ -212,7 +213,7 @@ explc = explc %>%
 # now make heatmap
 # set color palette
 #col0=colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
-col0=colorRampPalette(rev(c("#c51b7d","#e9a3c9","grey10", "#5ab4ac","#01665e")))(100)
+col0=colorRampPalette(rev(c("#c51b7d","#e9a3c9","#ffffff", "#5ab4ac","#01665e")))(100)
 
 # make treatment data frame
 treatment = as.factor(sapply(strsplit(colnames(explc), split = "_"), "[[", 1)) %>%
@@ -329,7 +330,7 @@ explc = explc %>%
 # now make heatmap
 # set color palette
 #col0=colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
-col0=colorRampPalette(rev(c("#c51b7d","#e9a3c9","grey10", "#5ab4ac","#01665e")))(100)
+col0=colorRampPalette(rev(c("#c51b7d","#e9a3c9","#ffffff", "#5ab4ac","#01665e")))(100)
 
 # make treatment data frame
 treatment = as.factor(sapply(strsplit(colnames(explc), split = "_"), "[[", 1)) %>%

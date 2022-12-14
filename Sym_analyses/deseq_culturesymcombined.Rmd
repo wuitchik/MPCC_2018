@@ -766,6 +766,7 @@ pca_plast_culture <-  PCAplast(pca = pcadata.culture.plast[,c(5:ncol(pcadata.cul
 ```
 Now plot PCA plasticity, separately for host and symbiont
 ```{r}
+library(Rmisc)
 all_plast = rbind(pca_plast_host, pca_plast_culture) # re-combine host and symbiont plasticity for plotting
 
 dist_summ = summarySE(data = all_plast, measurevar = "dist", groupvars = c("treat_type","type"))
@@ -851,7 +852,7 @@ plast_boxplot <- ggplot(all_plast_nocontrol, aes(x = treat_type, y = dist)) +
   theme(axis.title.x = element_blank())
 plast_boxplot
 
-ggsave(plast_boxplot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_boxplot_symcombined.pdf", width=3, height=3, units=c("in"), useDingbats=FALSE)
+ggsave(plast_boxplot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_boxplot_symcombined.pdf", width=3, height=4, units=c("in"), useDingbats=FALSE)
 
 ```
 

@@ -573,31 +573,6 @@ module load fastortho
 
 #figure out how many protein groups we have
 #the -cut argument here means that an ortholog has to be in two taxa to include it. This is necessary because the orthologous groups output from FastOrtho don't have to include both species. 
-[haich@scc1 output_seqs1]$ output_seqs_step1.py -orthos run1.end -prot *.pep.fas -cut 2
-
-Results stored in Orthologs_12_12
-
-Reading in fasta files...
-Brevolium_psyg_transcriptomesta_longest.fa.transdecoder.pep.fas...
-Oculina_arbuscula_transcriptomesta_longest.fa.transdecoder.pep.fas...
-
- total orthogroups found in 11726
-9775 groups had total taxa below 2 and were skipped
-1951 total protein groups written to Orthologs_12_12/protein_sequences
-
-#here is the output after re-starting from the tdec1 -m 50 
-#got us 1970 total protein groups
-[haich@scc1 output_seqs1]$ output_seqs_step1.py -orthos run1.end -prot *.pep.fas -cut 2
-
-Results stored in Orthologs_12_18
-
-Reading in fasta files...
-Brevolium_psyg_transcriptomesta_longest.fa.transdecoder.pep.fas...
-Oculina_arbuscula_transcriptomesta_longest.fa.transdecoder.pep.fas...
-
- total orthogroups found in 11939
-9969 groups had total taxa below 2 and were skipped
-1970 total protein groups written to Orthologs_12_18/protein_sequences
 
 #back to 1951 with the new reference
 [haich@scc1 output_seqs1]$ output_seqs_step1.py -orthos run1.end -prot *.pep.fas -cut 2

@@ -108,9 +108,7 @@ module load picard
 #end tests from first reference
 
 #now after mapping to new reference, trying to remove all A genotypes, because the original dendrogram they are weirdos
-#removing A (white) really fixes the dendrogram
-#final dendrogram for me is with brown genotypes only
-
+#removing A (white) really fixes the dendrogr
 ###############################################################################
 
 ### angsd genotyping - initial quality check 

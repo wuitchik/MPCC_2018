@@ -210,8 +210,8 @@ plotDispEsts(dds.corr)
 Let's check to see if we set up our contrast correctly. We should have the treatment condition first and the control second in the log2 fold change (MLE) output. 
 
 ```{r, cache=TRUE}
-head(results)
-resultsNames(dds)
+head(results.corr)
+resultsNames(dds.corr)
 ```
 
 

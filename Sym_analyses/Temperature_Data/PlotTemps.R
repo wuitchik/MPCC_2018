@@ -78,7 +78,29 @@ str(host_exp)
 host_temps = summarySE(data = host_exp, measurevar = "temp_C", groupvars = c("treatment","day"))
 host_temps_fullavg = summarySE(data = host_exp, measurevar = "temp_C", groupvars = c("treatment"))
 
+# treatment  N   temp_C        sd         se       ci
+# 1      cold 81 11.26914 3.4784207 0.38649119 0.769142
+# 2   control 81 17.86914 0.6653274 0.07392526 0.147116
+# 3       hot 84 24.48690 4.1919826 0.45738280 0.909716
+
+max(host_exp$temp_C)
+#[1] 31.2
+min(host_exp$temp_C)
+#[1] 6.3
+
+# take a look at salinity
+host_exp_sal = host_exp %>%
+  drop_na(salinity)
+host_sal = summarySE(data = host_exp_sal, measurevar = "salinity")
+# .id   N salinity        sd         se         ci
+# 1 <NA> 243 33.98724 0.2279123 0.01462058 0.02879984
+
+
 str(culture_exp)
 culture_temps = summarySE(data = culture_exp, measurevar = "TempC", groupvars = c("Incubator","Date"))
 culture_temps_fullavg = summarySE(data = culture_exp, measurevar = "TempC", groupvars = c("Incubator"))
 
+max(culture_exp$TempC)
+#[1] 31.14
+min(culture_exp$TempC)
+#[1] 5.4

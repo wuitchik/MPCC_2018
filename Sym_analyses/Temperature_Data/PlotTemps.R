@@ -26,7 +26,7 @@ culture_exp$DateTime<-strptime(culture_exp$DateTime, format="%m/%d/%y %H:%M")
 culture_exp$datetime_ct <- as.POSIXct(culture_exp$DateTime, format="%Y-%m-%dT%H:%M:%S")
 
 culture_exp$Date<-format(culture_exp$datetime_ct,"%D")
-culture_exp$Date<-as.POSIXct(culture_exp$Day, format="%m/%d/%y")
+culture_exp$Date<-as.POSIXlt(culture_exp$Day, format="%m/%d/%y")
 culture_exp$Day = as.factor(culture_exp$Day)
 
 #### Make plots ####
@@ -54,7 +54,7 @@ ggsave(host.plot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering
 cols_sym = c("control" = "#a6611a", "cool" = "#74c476", "heat" = "#fd8d3c")
 
 culture.plot = culture_exp %>%
-  ggplot(aes(x = Date, y = TempC, color = Incubator))+
+  ggplot(aes(x = Day, y = TempC, color = Incubator))+
   theme_bw() +
   geom_point(aes(color = Incubator), size=2, alpha = 0.9, shape = 21)+
   scale_color_manual(name = "Treatment", values = cols_sym)+
@@ -72,6 +72,29 @@ ggsave(culture.plot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffer
 # combine host and symbiont plots
 figs.combined = ggarrange(host.plot, culture.plot, ncol = 2, nrow = 1)
 ggsave(figs.combined, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/Combined_Temp_Plot.pdf", width=8, height=4, units=c("in"), useDingbats=FALSE)
+
+
+#### Ribbon plot experiments together ####
+culture_exp_tomerge = culture_exp %>%
+  select(Day, TempC) %>%
+  dplyr::rename("TempC_culture" = "TempC")
+
+str(culture_exp_tomerge)
+dim(culture_exp_tomerge)
+
+
+
+host_exp_tomerge = host_exp %>%
+  select(day, temp_C) %>%
+  dplyr::rename("Day"="day") %>%
+  dplyr::rename("TempC_host" = "temp_C")
+
+host_exp_tomerge$Day = as.factor(host_exp_tomerge$Day)  
+str(host_exp_tomerge)
+dim(host_exp_tomerge)
+
+temps_combined = left_join(culture_exp_tomerge, host_exp_tomerge, by = "Day")
+
 
 #### Summarize temperatures ####
 str(host_exp)

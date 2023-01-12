@@ -210,13 +210,14 @@ ritemp_plot = ggplot(data = boing, aes(x = datetime, y = WTMP.degC)) +
                                 as.POSIXct("2017-12-31 23:54:00 EST"),
                                 "1 month"),
                    date_labels = "%b-%Y") +
-  geom_hline(yintercept = 32, linetype = "solid", color = "black", size = .5, alpha = 0.5) +
-  geom_hline(yintercept = 18, linetype = "solid", color = "black", size = .5, alpha = 0.5) +
-  geom_hline(yintercept = 6, linetype = "solid", color = "black", size = .5, alpha = 0.5) +
+  geom_hline(yintercept = 31.8, linetype = "solid", color = "#de2d26", size = .5, alpha = 0.8) +
+  geom_hline(yintercept = 32.2, linetype = "dashed", color = "#fd8d3c", size = .5, alpha = 0.8) +
+  geom_hline(yintercept = 17.8, linetype = "solid", color = "grey", size = .5, alpha = 0.8) +
+  geom_hline(yintercept = 18.2, linetype = "dashed", color = "#a6611a", size = .5, alpha = 0.8) +
+  geom_hline(yintercept = 5.8, linetype = "solid", color = "#3182bd", size = .5, alpha = 0.8) +
+  geom_hline(yintercept = 6.2, linetype = "dashed", color = "#74c476", size = .5, alpha = 0.8) +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5),
         axis.title.x = element_blank())
 
 ritemp_plot 
 ggsave(ritemp_plot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/RadioIsland_Temp_Plot.pdf", width=4, height=3.5, units=c("in"), useDingbats=FALSE)
-
-

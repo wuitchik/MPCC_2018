@@ -56,7 +56,10 @@ iso2gene = read.delim("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_T
   dplyr::rename("gene_name" = "V2")
 
 # add annotation as row names and remove p-values and identifying info from dataframe
-iso2gene$gene_name = gsub("OS=.*", "", iso2gene$gene_name)
+iso2gene$gene_name = str_extract(iso2gene$gene_name, "GN=.* PE")
+iso2gene$gene_name = gsub(" PE","",as.character(iso2gene$gene_name))
+iso2gene$gene_name = gsub("GN=","",as.character(iso2gene$gene_name))
+
 head(iso2gene)
 str(iso2gene)
 

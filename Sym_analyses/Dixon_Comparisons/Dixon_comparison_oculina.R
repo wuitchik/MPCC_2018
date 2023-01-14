@@ -3,6 +3,7 @@ library(tidyverse)
 library(patchwork)
 library(cowplot)
 library(ggpubr)
+library(plotly)
 
 setwd("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/Dixon_Comparisons/")
 
@@ -13,10 +14,10 @@ Dixon_CC = read.table("Dixon_CC.csv", header = T)
 
 #### Biological Processes ####
 # Read in MWU GO files
-Ocu_SymHost_Heat_BP = read.table("../GO_Analyses/MWU_BP_oculina_hot_brown_host_GO.csv", header = T)
-Ocu_SymHost_Cold_BP = read.table("../GO_Analyses/MWU_BP_oculina_cold_brown_host_GO.csv", header = T)
-Ocu_ApoHost_Heat_BP = read.table("../GO_Analyses/MWU_BP_oculina_hot_white_host_GO.csv", header = T)
-Ocu_ApoHost_Cold_BP = read.table("../GO_Analyses/MWU_BP_oculina_cold_white_host_GO.csv", header = T)
+Ocu_SymHost_Heat_BP = read.table("../Oculina_GO_Analyses/MWU_BP_oculina_hot_brown_host_GO.csv", header = T)
+Ocu_SymHost_Cold_BP = read.table("../Oculina_GO_Analyses/MWU_BP_oculina_cold_brown_host_GO.csv", header = T)
+Ocu_ApoHost_Heat_BP = read.table("../Oculina_GO_Analyses/MWU_BP_oculina_hot_white_host_GO.csv", header = T)
+Ocu_ApoHost_Cold_BP = read.table("../Oculina_GO_Analyses/MWU_BP_oculina_cold_white_host_GO.csv", header = T)
 
 
 ## heat symbiotic host
@@ -36,6 +37,7 @@ heat_symhost_BP_plot = ggplot(heat_symhost_BP_data, aes(delta.rank.x, delta.rank
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
   geom_smooth(method=lm, color="black", se =FALSE) +
+  xlim(c(-6000,6000)) +
   theme_bw()
 heat_symhost_BP_plot
 
@@ -46,7 +48,7 @@ heat_symhost_plotly = ggplot(heat_symhost_BP_data, aes(x = delta.rank.x, y = del
   geom_point()
 ggplotly(heat_symhost_plotly)
 
-# and then filter data to figure out who is who:
+# and then filter data to figure out who is who from the plotly:
 heat_symhost_BP_neat_up = heat_symhost_BP_data %>%
   filter(delta.rank.x > 3000 & delta.rank.y > 1000)
 
@@ -70,7 +72,8 @@ heat_apohost_BP_plot = ggplot(heat_apohost_BP_data, aes(delta.rank.x, delta.rank
         y = "Dixon") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
-  geom_smooth(method=lm, color="black", se =FALSE) +
+  geom_smooth(method=lm, lty = 2, color="black", se =FALSE) +
+  xlim(c(-6000,6000)) +
   theme_bw()
 heat_apohost_BP_plot
 
@@ -104,6 +107,7 @@ cold_symhost_BP_plot = ggplot(cold_symhost_BP_data, aes(delta.rank.x, delta.rank
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
   geom_smooth(method=lm, color="black", se =FALSE) +
+  xlim(c(-6000,6000)) +
   theme_bw()
 cold_symhost_BP_plot
 
@@ -136,7 +140,8 @@ cold_apohost_BP_plot = ggplot(cold_apohost_BP_data, aes(delta.rank.x, delta.rank
         y = "Dixon") +
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.75) +
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.75) +
-  geom_smooth(method=lm, color="black", se =FALSE) +
+  geom_smooth(method=lm, lty = 2, color="black", se =FALSE) +
+  xlim(c(-6000,6000)) +
   theme_bw()
 cold_apohost_BP_plot
 

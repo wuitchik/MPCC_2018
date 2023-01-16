@@ -240,7 +240,7 @@ photo.heatmap = pheatmap(explc, cluster_cols = FALSE, scale = "row", color = col
 ggsave(photo.heatmap, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/culture_heatmap_photosynthesis_p=.01.pdf", width=9, height=7, units=c("in"), useDingbats=FALSE)
 
 
-#### Heat Maps of Interesting Stress GOs - Syms in Culture ####
+ #### Heat Maps of Interesting Stress GOs - Syms in Culture ####
 # Stress genes
 # read in go.obo database to figure out the go category id's that we want to pull.
 

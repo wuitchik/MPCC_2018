@@ -4,7 +4,9 @@ library(tidyverse)
 library(Rmisc)
 library(lme4)
 library(car)
+library(emmeans)
 
+#### Read in & organize data ####
 # Read in Fv/Fm data and separate by symbiotic and aposybiotic
 
 pam = read.csv('/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Phys_data/Oculina/Oculina_PAM.csv')
@@ -12,7 +14,7 @@ pam = read.csv('/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Phy
 str(pam)
 head(pam)
 #pam$day = as.factor(pam$day)
-pam$treatment = as.factor(pam$treatment)
+pam$treatment = factor(pam$treatment, levels = c("control","cold","heat"))
 pam$sym_state = as.factor(pam$sym_state)
 pam$genet = as.factor(str_sub(pam$coral_id, start = 1, end = 1))
 
@@ -48,6 +50,7 @@ day_temps_to_merge = day_temps %>%
 # merge temp and pam
 pam_temps = merge(pam.sym, day_temps_to_merge, by = c("day","treatment"))
 
+#### Plot Data ####
 # plot fv/fm data
 pam.sym.summary = summarySE(data = pam_temps, measurevar = "avgfvfm", groupvars = c("day", "treatment", "temp_C"))
 
@@ -145,37 +148,5 @@ pairs(emms, interaction = "pairwise") %>% rbind(adjust="fdr")
 # 14  cold - heat        -0.161264 0.0208 409  -7.745  <.0001
 # 14  control - heat      0.076778 0.0208 409   3.686  0.0006
 
-# plot Fv/Fm with temperature
-ggplot() + 
-  geom_point(mapping = aes(x = pam.sym.summary$day, y = pam.sym.summary$avgfvfm), color = pam.sym.summary$treatment) +
-  geom_line(mapping = aes(x = host_exp$day, y = host_exp$temp_C), size = 2, color = host_exp$treatment, aes = 0.5) #+ 
-scale_x_date(name = "Day", labels = NULL) +
-  scale_y_continuous(name = "Interruptions/day", 
-                     sec.axis = sec_axis(~./5, name = "Productivity % of best", 
-                                         labels = function(b) { paste0(round(b * 100, 0), "%")})) + 
-  theme(
-    axis.title.y = element_text(color = "grey"),
-    axis.title.y.right = element_text(color = "blue"))
 
-
-
-
-
-
-
-
-
-#  convert time into columns so we can find difference across time points in Fv/Fm
-pam.sym.long = pam.sym %>%
-  select(day, treatment, coral_id, avgfvfm) %>%
-  group_by(treatment) %>%
-  spread(key = 'day', value = 'avgfvfm')
-
-pam.sym %>% pivot_wider(names_from = c("day"), values_from = "avgfvfm")
-
-pam.sym.long = spread(pam.sym, key = c("day","coral_id"), value = "avgfvfm")
-
-
-
-  
   

@@ -1,0 +1,100 @@
+name	term	lev	seq	value
+"protein binding"	GO:0005515	2	Sym_140163_c0_g1	-11.3986798721351
+"protein binding"	GO:0005515	2	Sym_125225_c1_g2	-0.323566618750436
+"protein binding"	GO:0005515	2	Sym_311128_c0_g1	3.14915168358391
+"protein binding"	GO:0005515	2	Sym_103763_c6_g1	2.2759053557689
+"protein binding"	GO:0005515	2	Sym_117960_c0_g3	30.521553601231
+"protein binding"	GO:0005515	2	Sym_123848_c1_g2	4.04715288338913
+"protein binding"	GO:0005515	2	Sym_100802_c0_g1	-2.79014613724277
+"protein binding"	GO:0005515	2	Sym_130891_c0_g1	2.37315502727221
+"protein binding"	GO:0005515	2	Sym_120913_c7_g2	-1.60887445975445
+"protein binding"	GO:0005515	2	Sym_117960_c0_g2	2.29349408252029
+"ligase activity"	GO:0016874	2	Sym_105819_c0_g1	-2.59237749579384
+"ligase activity"	GO:0016874	2	Sym_140883_c1_g1	2.77537520244029
+"ligase activity"	GO:0016874	2	Sym_126375_c0_g3	-0.269672620765704
+"ligase activity"	GO:0016874	2	Sym_101543_c0_g2	-11.641997577127
+"ligase activity"	GO:0016874	2	Sym_101543_c0_g3	-4.18470600370284
+"ligase activity"	GO:0016874	2	Sym_120676_c2_g1	-3.88496000417377
+"cation transmembrane transporter activity"	GO:0022890;GO:0008324	4	Sym_105819_c0_g1	-2.59237749579384
+"cation transmembrane transporter activity"	GO:0022890;GO:0008324	4	Sym_102695_c0_g1	-3.05487563243148
+"cation transmembrane transporter activity"	GO:0022890;GO:0008324	4	Sym_128149_c1_g1	-6.10195290902533
+"cation transmembrane transporter activity"	GO:0022890;GO:0008324	4	Sym_141362_c0_g3	-8.55870309974308
+"cation transmembrane transporter activity"	GO:0022890;GO:0008324	4	Sym_101543_c0_g2	-11.641997577127
+"cation transmembrane transporter activity"	GO:0022890;GO:0008324	4	Sym_102471_c7_g1	6.59475468682448
+"cation transmembrane transporter activity"	GO:0022890;GO:0008324	4	Sym_101543_c0_g3	-4.18470600370284
+"cation transmembrane transporter activity"	GO:0022890;GO:0008324	4	Sym_112513_c2_g1	-2.04640972740444
+"cation transmembrane transporter activity"	GO:0022890;GO:0008324	4	Sym_120676_c2_g1	-3.88496000417377
+"oxidoreductase activity, acting on the CH-CH group of donors"	GO:0016627	2	Sym_103259_c1_g4	-0.825291320902697
+"oxidoreductase activity, acting on the CH-CH group of donors"	GO:0016627	2	Sym_101757_c0_g1	1.31081086711162
+"oxidoreductase activity, acting on the CH-CH group of donors"	GO:0016627	2	Sym_157791_c0_g1	-0.389253468273023
+"oxidoreductase activity, acting on the CH-CH group of donors"	GO:0016627	2	Sym_83072_c0_g2	-3.33768150548055
+"oxidoreductase activity, acting on the CH-CH group of donors"	GO:0016627	2	Sym_94893_c0_g4	12.2191146141344
+"iron ion binding"	GO:0005506	2	Sym_109253_c1_g2	-3.18823559922317
+"iron ion binding"	GO:0005506	2	Sym_103301_c0_g1	-0.212719206089223
+"iron ion binding"	GO:0005506	2	Sym_117960_c0_g3	30.521553601231
+"iron ion binding"	GO:0005506	2	Sym_109253_c1_g1	2.62267283527118
+"iron ion binding"	GO:0005506	2	Sym_271368_c0_g1	56.566702737137
+"iron ion binding"	GO:0005506	2	Sym_148542_c0_g2	-5.70353039641758
+"iron ion binding"	GO:0005506	2	Sym_117960_c0_g2	2.29349408252029
+"electron transfer activity"	GO:0009055	2	Sym_101880_c0_g1	12.8411290588854
+"electron transfer activity"	GO:0009055	2	Sym_103301_c0_g1	-0.212719206089223
+"electron transfer activity"	GO:0009055	2	Sym_102471_c7_g1	6.59475468682448
+"electron transfer activity"	GO:0009055	2	Sym_83072_c0_g2	-3.33768150548055
+"electron transfer activity"	GO:0009055	2	Sym_107300_c1_g1	-0.238383179736213
+"proton transmembrane transporter activity"	GO:0015078	5	Sym_105819_c0_g1	-2.59237749579384
+"proton transmembrane transporter activity"	GO:0015078	5	Sym_102695_c0_g1	-3.05487563243148
+"proton transmembrane transporter activity"	GO:0015078	5	Sym_101543_c0_g2	-11.641997577127
+"proton transmembrane transporter activity"	GO:0015078	5	Sym_102471_c7_g1	6.59475468682448
+"proton transmembrane transporter activity"	GO:0015078	5	Sym_101543_c0_g3	-4.18470600370284
+"proton transmembrane transporter activity"	GO:0015078	5	Sym_120676_c2_g1	-3.88496000417377
+"guanyl nucleotide binding"	GO:0005525;GO:0032550;GO:0032561;GO:0001883;GO:0032549;GO:0019001;GO:0001882	5	Sym_101851_c0_g1	-10.091883938072
+"guanyl nucleotide binding"	GO:0005525;GO:0032550;GO:0032561;GO:0001883;GO:0032549;GO:0019001;GO:0001882	5	Sym_113215_c4_g5	0.982735665340704
+"guanyl nucleotide binding"	GO:0005525;GO:0032550;GO:0032561;GO:0001883;GO:0032549;GO:0019001;GO:0001882	5	Sym_136948_c0_g1	0.634800851378193
+"guanyl nucleotide binding"	GO:0005525;GO:0032550;GO:0032561;GO:0001883;GO:0032549;GO:0019001;GO:0001882	5	Sym_121495_c10_g2	2.9988455062437
+"guanyl nucleotide binding"	GO:0005525;GO:0032550;GO:0032561;GO:0001883;GO:0032549;GO:0019001;GO:0001882	5	Sym_114907_c3_g1	-0.0697766529812665
+"guanyl nucleotide binding"	GO:0005525;GO:0032550;GO:0032561;GO:0001883;GO:0032549;GO:0019001;GO:0001882	5	Sym_114907_c2_g1	-0.404862580310303
+"guanyl nucleotide binding"	GO:0005525;GO:0032550;GO:0032561;GO:0001883;GO:0032549;GO:0019001;GO:0001882	5	Sym_114907_c1_g1	2.5337278598466
+"guanyl nucleotide binding"	GO:0005525;GO:0032550;GO:0032561;GO:0001883;GO:0032549;GO:0019001;GO:0001882	5	Sym_114907_c3_g2	-1.62180366821137
+"chlorophyll binding"	GO:0016168	3	Sym_104246_c5_g1	1.47109272196235
+"chlorophyll binding"	GO:0016168	3	Sym_110573_c3_g1	0.368036373526872
+"chlorophyll binding"	GO:0016168	3	Sym_134584_c0_g1	-0.0256769232962354
+"chlorophyll binding"	GO:0016168	3	Sym_131189_c6_g1	0.811880676222691
+"chlorophyll binding"	GO:0016168	3	Sym_110573_c2_g1	1.7465555303935
+"chlorophyll binding"	GO:0016168	3	Sym_119017_c0_g5	-0.202965749782389
+"chlorophyll binding"	GO:0016168	3	Sym_118341_c1_g2	0.364166987313996
+"chlorophyll binding"	GO:0016168	3	Sym_124087_c4_g1	-0.828875871065666
+"DNA binding"	GO:0003677	2	Sym_105077_c3_g2	0.16672037239358
+"DNA binding"	GO:0003677	2	Sym_121495_c10_g3	-1.40680302329553
+"DNA binding"	GO:0003677	2	Sym_311128_c0_g1	3.14915168358391
+"DNA binding"	GO:0003677	2	Sym_104762_c1_g5	-4.9838319181547
+"DNA binding"	GO:0003677	2	Sym_100230_c0_g1	10.9742358658258
+"DNA binding"	GO:0003677	2	Sym_136909_c0_g1	-30.0300570307398
+"DNA binding"	GO:0003677	2	Sym_102539_c1_g5	1.54538178969012
+"DNA binding"	GO:0003677	2	Sym_152309_c0_g2	-8.17769129630268
+"nucleoside-triphosphatase activity"	GO:0017111;GO:0016462;GO:0016818;GO:0016817	6	Sym_101851_c0_g1	-10.091883938072
+"nucleoside-triphosphatase activity"	GO:0017111;GO:0016462;GO:0016818;GO:0016817	6	Sym_113215_c4_g5	0.982735665340704
+"nucleoside-triphosphatase activity"	GO:0017111;GO:0016462;GO:0016818;GO:0016817	6	Sym_136948_c0_g1	0.634800851378193
+"nucleoside-triphosphatase activity"	GO:0017111;GO:0016462;GO:0016818;GO:0016817	6	Sym_100230_c0_g1	10.9742358658258
+"nucleoside-triphosphatase activity"	GO:0017111;GO:0016462;GO:0016818;GO:0016817	6	Sym_136070_c2_g1	0.0860295552373349
+"nucleoside-triphosphatase activity"	GO:0017111;GO:0016462;GO:0016818;GO:0016817	6	Sym_120913_c7_g2	-1.60887445975445
+"translation regulator activity, nucleic acid binding"	GO:0090079;GO:0045182	2	Sym_113764_c0_g1	11.6235593485947
+"translation regulator activity, nucleic acid binding"	GO:0090079;GO:0045182	2	Sym_136948_c0_g1	0.634800851378193
+"translation regulator activity, nucleic acid binding"	GO:0090079;GO:0045182	2	Sym_111423_c4_g1	1.14702593099352
+"translation regulator activity, nucleic acid binding"	GO:0090079;GO:0045182	2	Sym_121495_c10_g2	2.9988455062437
+"translation regulator activity, nucleic acid binding"	GO:0090079;GO:0045182	2	Sym_84654_c0_g1	-1.9968968671406
+"peptidase activity"	GO:0008233	3	Sym_93418_c0_g1	0.845092272156403
+"peptidase activity"	GO:0008233	3	Sym_101592_c0_g2	-60.8102967060435
+"peptidase activity"	GO:0008233	3	Sym_107783_c2_g1	1.69390393099432
+"peptidase activity"	GO:0008233	3	Sym_101592_c0_g3	5.94164444411934
+"peptidase activity"	GO:0008233	3	Sym_101138_c0_g1	2.32758176150982
+"peptidase activity"	GO:0008233	3	Sym_244110_c0_g1	-14.9166905040006
+"peptidase activity"	GO:0008233	3	Sym_107369_c2_g3	-4.88485167487327
+"RNA binding"	GO:0003723	2	Sym_105077_c3_g2	0.16672037239358
+"RNA binding"	GO:0003723	2	Sym_113764_c0_g1	11.6235593485947
+"RNA binding"	GO:0003723	2	Sym_136948_c0_g1	0.634800851378193
+"RNA binding"	GO:0003723	2	Sym_111423_c4_g1	1.14702593099352
+"RNA binding"	GO:0003723	2	Sym_121495_c10_g2	2.9988455062437
+"RNA binding"	GO:0003723	2	Sym_92614_c0_g2	1.2852974434725
+"RNA binding"	GO:0003723	2	Sym_104762_c1_g5	-4.9838319181547
+"RNA binding"	GO:0003723	2	Sym_101501_c0_g1	6.45889952202724
+"RNA binding"	GO:0003723	2	Sym_84654_c0_g1	-1.9968968671406

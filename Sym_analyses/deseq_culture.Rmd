@@ -242,6 +242,38 @@ DESeq2::plotMA(res_cold_culture, main = "Cold vs Control, Culture")
 ```
 
 
+## Get RLDPVAL table
+```{r, cache=TRUE, fig.align='center'}
+#get pvals
+valcold=cbind(res_cold_culture$pvalue, res_cold_culture$padj)
+head(valcold)
+colnames(valcold)=c("pval.cold.culture", "padj.cold.culture")
+length(valcold[,1])
+table(complete.cases(valcold))
+
+valhot=cbind(res_hot_culture$pvalue, res_hot_culture$padj)
+head(valhot)
+colnames(valhot)=c("pval.hot.culture", "padj.hot.culture")
+length(valhot[,1])
+table(complete.cases(valhot))
+
+#make rlog data and pvals table
+rld=assay(rlogged)
+head(rld)
+length(rld[,1])
+
+rldpvals=cbind(rld,valcold, valhot)
+head(rldpvals)
+dim(rldpvals)
+# [1] 28265    24
+table(complete.cases(rldpvals))
+# FALSE  TRUE 
+# 8768 19497
+
+write.csv(rldpvals, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Culture_RLDandPVALS.csv", quote=F)
+
+```
+
 ##Heatmaps
 ***
 <br> <br> 
@@ -523,7 +555,7 @@ plast_boxplot <- ggplot(plast_nocontrol, aes(x = treatment, y = dist)) +
   theme(axis.title.x = element_blank())
 plast_boxplot
 
-ggsave(plast_boxplot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_boxplot_syminculture.pdf", width=2.8, height=3, units=c("in"), useDingbats=FALSE)
+ggsave(plast_boxplot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_boxplot_syminculture.pdf", width=2.5, height=4, units=c("in"), useDingbats=FALSE)
 
 ```
 

@@ -197,12 +197,12 @@ summary(results)
 plotDispEsts(dds)
 
 # # try pre-filtering to remove low count orthologs
-# keep = rowSums(counts(dds) >= 5) >= 30 # at least 30 samples with a count of 5 or higher
-# dds.corr = dds[keep,] 
-# dds.corr = DESeq2::DESeq(dds.corr)
-# results.corr = results(dds.corr)
-# summary(results.corr)
-# plotDispEsts(dds.corr)
+keep = rowSums(counts(dds) >= 5) >= 30 # at least 30 samples with a count of 5 or higher
+dds.corr = dds[keep,] 
+dds.corr = DESeq2::DESeq(dds.corr)
+results.corr = results(dds.corr)
+summary(results.corr)
+plotDispEsts(dds.corr)
 
 ```
 
@@ -210,13 +210,13 @@ plotDispEsts(dds)
 Let's check to see if we set up our contrast correctly. We should have the treatment condition first and the control second in the log2 fold change (MLE) output. 
 
 ```{r, cache=TRUE}
-head(results)
-resultsNames(dds)
+head(results.corr)
+resultsNames(dds.corr)
 ```
 
 
 ```{r echo=FALSE, cache=TRUE}
-norm.counts.ortho = counts(dds, normalized = TRUE) # these are the counts DESeq uses
+norm.counts.ortho = counts(dds.corr, normalized = TRUE) # these are the counts DESeq uses
 write.csv(norm.counts.ortho, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_ortho.csv") #these are all counts, not considering treatment comparisons
               
 norm.counts.stats = data.frame(
@@ -240,8 +240,8 @@ barplot(norm.counts.corr.sum, col=expDesign$temp_type, ylab="counts", main = "Oc
 Lets do a rlogged and vst transformation, which is useful various unsupervised clustering analyses. Be sure the include blind = TRUE as it doesn't normalize the data with any priors from our experimental design. 
 
 ```{r, cache=TRUE}
-rlogged = rlogTransformation(dds, blind = TRUE)
-vst = varianceStabilizingTransformation(dds, blind = TRUE)
+rlogged = rlogTransformation(dds.corr, blind = TRUE)
+vst = varianceStabilizingTransformation(dds.corr, blind = TRUE)
 ```
 
 #Expression Comparisons
@@ -538,7 +538,7 @@ deg_barplot = ggplot(ortho_combined_degs, aes(x = temperature, y = number, fill=
   geom_bar(stat = "identity", position = position_stack(), color = "black") +
   scale_fill_manual(values = deg_cols) +
   xlab("Temperature Treatment") +
-  ylab("Differentially expressed genes") +
+  ylab("Differentially expressed orthologs") +
   theme_bw() +
   theme(legend.position = "none") +
   facet_grid(. ~ type) +

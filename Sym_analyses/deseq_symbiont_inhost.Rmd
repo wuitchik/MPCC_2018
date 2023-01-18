@@ -250,6 +250,40 @@ DESeq2::plotMA(res_cold_sym, main = "Cold vs Control, Symbiont in Host")
 ```
 
 
+## Get RLDPVAL table
+```{r, cache=TRUE, fig.align='center'}
+#get pvals
+
+valcold=cbind(res_cold_sym$pvalue, res_cold_sym$padj)
+head(valcold)
+colnames(valcold)=c("pval.cold.syminhost", "padj.cold.syminhost")
+length(valcold[,1])
+table(complete.cases(valcold))
+
+valhot=cbind(res_hot_sym$pvalue, res_hot_sym$padj)
+head(valhot)
+colnames(valhot)=c("pval.hot.syminhost", "padj.hot.syminhost")
+length(valhot[,1])
+table(complete.cases(valhot))
+
+
+#make rlog data and pvals table
+rld=assay(rlogged)
+head(rld)
+length(rld[,1])
+
+rldpvals=cbind(rld,valcold, valhot)
+head(rldpvals)
+dim(rldpvals)
+# [1] 20191    25
+table(complete.cases(rldpvals))
+# FALSE  TRUE 
+# 17402  2789
+
+write.csv(rldpvals, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/SymInHost_RLDandPVALS.csv", quote=F)
+
+```
+
 ##Heatmaps
 ***
 <br> <br> 

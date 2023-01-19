@@ -915,7 +915,6 @@ ggplot(res_combined_cold, aes(x = abs(log2FoldChange), group = type, color = typ
   xlab("|log-fold change relative to control|") +
   theme_cowplot()
 
-
 # do stats on the absolute value of log2fold change
 summarySE(res_combined)
 
@@ -927,6 +926,85 @@ lm1 = lm(abs_log2foldchange~type, data=res_combined)
 summary(lm1)
 ```
 
+### Log2 Fold Change Correlation Plots
+
+```{r}
+library(plotly)
+
+# make lfc combined matrix to plot lfc in host vs. in culture
+# start with heat datasets first
+
+culture_hot_res_merge = culture_hot_res %>%
+  select(log2FoldChange) %>%
+  rownames_to_column(var = "gene")
+
+host_hot_res_merge = host_hot_res %>%
+  select(log2FoldChange) %>%
+  rownames_to_column(var = "gene")
+
+hot_res_merged = left_join(culture_hot_res_merge, host_hot_res_merge, by = "gene")
+
+# combine in host and in culture df's for lfc
+hot_res_merged = hot_res_merged %>%
+  dplyr::rename(log2FoldChange.inculture = log2FoldChange.x) %>%
+  dplyr::rename(log2FoldChange.inhost = log2FoldChange.y)
+
+# add gene name to this df - trim down names and add to photo_genes
+iso2gene = read.delim("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/References/B_psygmophilum_transcriptome/B_psygmophilum_isogroup_to_genename.tab", sep = "\t", header = FALSE) %>%
+  dplyr::rename("gene" = "V1") %>%
+  dplyr::rename("gene_name" = "V2")
+
+iso2gene$gene_name = gsub("OS=.*", "", iso2gene$gene_name)
+head(iso2gene)
+
+# combine with lfc merged dataframe
+hot_res_merged_anno = hot_res_merged %>%
+  left_join(iso2gene, by = "gene")
+head(hot_res_merged_anno)
+
+# look for most correlated categories
+# can id delta ranks using this plotly:
+heat_plotly = ggplot(hot_res_merged_anno, aes(x = log2FoldChange.inculture, y = log2FoldChange.inhost)) +
+  geom_point(aes(text = paste("Gene:", gene_name)), size = 2) +
+  geom_hline(yintercept = 0, lty = 2) +
+  geom_vline(xintercept = 0, lty = 2) +
+  ggtitle("Heat Challenge")
+ggplotly(heat_plotly)
+
+
+# now repeat with cold challenge data
+
+culture_cold_res_merge = culture_cold_res %>%
+  select(log2FoldChange) %>%
+  rownames_to_column(var = "gene")
+
+host_cold_res_merge = host_cold_res %>%
+  select(log2FoldChange) %>%
+  rownames_to_column(var = "gene")
+
+cold_res_merged = left_join(culture_cold_res_merge, host_cold_res_merge, by = "gene")
+
+# combine in host and in culture df's for lfc
+cold_res_merged = cold_res_merged %>%
+  dplyr::rename(log2FoldChange.inculture = log2FoldChange.x) %>%
+  dplyr::rename(log2FoldChange.inhost = log2FoldChange.y)
+
+# add gene name to this df - trim down names and add to photo_genes
+# combine with lfc merged dataframe
+cold_res_merged_anno = cold_res_merged %>%
+  left_join(iso2gene, by = "gene")
+head(cold_res_merged_anno)
+
+# look for most correlated categories
+# can id delta ranks using this plotly:
+cold_plotly = ggplot(cold_res_merged_anno, aes(x = log2FoldChange.inculture, y = log2FoldChange.inhost)) +
+  geom_point(aes(text = paste("Gene:", gene_name)), size = 2) +
+  geom_hline(yintercept = 0, lty = 2) +
+  geom_vline(xintercept = 0, lty = 2) +
+  ggtitle("Cold Challenge")
+ggplotly(cold_plotly)
+
+```
 
 
 ### Venn Diagrams

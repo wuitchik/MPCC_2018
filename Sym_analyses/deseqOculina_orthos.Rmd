@@ -60,7 +60,7 @@ library(sva)
 
 Read in Oculina host and symbiont counts files. Each only include brown hosts
 ```{r,cache=TRUE, echo=FALSE}
-countData <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/OrthoCounts_deseq.txt")
+countData <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/OrthoCounts_deseq.txt") # clones are already removed from this dataset
 ```
 
 
@@ -152,20 +152,7 @@ Do not need to remove any outliers for the Oculina host or symbiont.
 ***
 
 
-# Batch Effects
 
-Only necessary to do this batch effect correction here if including the B. psygmophilum in culture data, since those were sequenced at different times. 
-
-```{r warning=FALSE, cache=TRUE}
-# Use ComBat_seq to perform batch correction
-# counts is the matrix of gene expression raw counts, converting to a matrix here using as.matrix()
-# batch is the batch effect you are worried about (here, whether in culture or in host, because this corresponds to samples being sequenced at different times on different platforms, and with different library prep methods)
-# group is the biological treatment of interest(here, temperature treatment)
-
-# ComBat-seq needs raw, unnormalized, unlogged counts as an input. Do not apply any rarification before running the batch effects. 
-
-corrected_data = ComBat_seq(counts = as.matrix(countData), batch = expDesign$batch, group = expDesign$temp)
-```
 
 Look at total counts across symbiont samples in the host and in culture
 ```{r, fig.align='center', cache=TRUE}
@@ -179,15 +166,6 @@ max(totalCounts.corr) #38713
 
 #Differential Expression
 
-***
-Check on different effect sizes.
-```{r, fig.align='center', cache=TRUE}
-totalCounts=colSums(countData)
-barplot(totalCounts, col=expDesign$treat_type, ylab="raw counts", main = "Oculina total counts - Batch corrected")
-
-min(totalCounts) #740
-max(totalCounts) #36181
-```
 
 ```{r warning=FALSE, cache=TRUE}
 dds<-DESeqDataSetFromMatrix(countData=countData, colData=expDesign, design=~temp_type) #can only test for the main effects of treatment
@@ -196,27 +174,19 @@ results = results(dds)
 summary(results)
 plotDispEsts(dds)
 
-# # try pre-filtering to remove low count orthologs
-keep = rowSums(counts(dds) >= 5) >= 30 # at least 30 samples with a count of 5 or higher
-dds.corr = dds[keep,] 
-dds.corr = DESeq2::DESeq(dds.corr)
-results.corr = results(dds.corr)
-summary(results.corr)
-plotDispEsts(dds.corr)
-
 ```
 
 
 Let's check to see if we set up our contrast correctly. We should have the treatment condition first and the control second in the log2 fold change (MLE) output. 
 
 ```{r, cache=TRUE}
-head(results.corr)
-resultsNames(dds.corr)
+head(results)
+resultsNames(dds)
 ```
 
 
 ```{r echo=FALSE, cache=TRUE}
-norm.counts.ortho = counts(dds.corr, normalized = TRUE) # these are the counts DESeq uses
+norm.counts.ortho = counts(dds, normalized = TRUE) # these are the counts DESeq uses
 write.csv(norm.counts.ortho, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_ortho.csv") #these are all counts, not considering treatment comparisons
               
 norm.counts.stats = data.frame(
@@ -231,17 +201,17 @@ norm.counts.stats = data.frame(
 kable(norm.counts.stats) %>%
   kable_styling(bootstrap_options = "striped", full_width = F)
 
-# do another bar plot with 
-norm.counts.corr.sum = colSums(norm.counts.ortho)
-barplot(norm.counts.corr.sum, col=expDesign$temp_type, ylab="counts", main = "Oculina Normalized Counts - Batch Corrected")
+# do a bar plot to make sure there is no consistent difference in counts by sample type
+norm.counts.sum = colSums(norm.counts.ortho)
+barplot(norm.counts.sum, col=expDesign$temp_type, ylab="counts", main = "Oculina Normalized Counts - Batch Corrected")
 
 ```
 
 Lets do a rlogged and vst transformation, which is useful various unsupervised clustering analyses. Be sure the include blind = TRUE as it doesn't normalize the data with any priors from our experimental design. 
 
 ```{r, cache=TRUE}
-rlogged = rlogTransformation(dds.corr, blind = TRUE)
-vst = varianceStabilizingTransformation(dds.corr, blind = TRUE)
+rlogged = rlogTransformation(dds, blind = TRUE)
+vst = varianceStabilizingTransformation(dds, blind = TRUE)
 ```
 
 #Expression Comparisons
@@ -249,14 +219,14 @@ vst = varianceStabilizingTransformation(dds.corr, blind = TRUE)
 Hot versus control expression comparison - Brown Host
 ```{r Brown Host Hot vs control}
 ##second term is the "control"
-resBrownHostH.BrownHostC=results(dds.corr, contrast=c("temp_type","heat_brown_host","control_brown_host"), independentFiltering = F)
+resBrownHostH.BrownHostC=results(dds, contrast=c("temp_type","heat_brown_host","control_brown_host"), independentFiltering = F)
 head(resBrownHostH.BrownHostC)
 table(resBrownHostH.BrownHostC$pvalue<0.05)
 #FALSE  TRUE 
-#105    32 
+#151    34
 table(resBrownHostH.BrownHostC$padj<0.05)
-#0.1=18
-#0.05=13
+#0.1=14
+#0.05=8
 #0.01=5
 summary(resBrownHostH.BrownHostC)
 write.table(resBrownHostH.BrownHostC, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/brown_host_hot_orthos_results.txt", quote=F, sep="\t")
@@ -272,15 +242,15 @@ DESeq2::plotMA(resBrownHostH.BrownHostC, main = "Hot vs Control, Brown Host Orth
 Cold versus control expression comparison - Brown Host
 ```{r Brown Host Freezing vs Control}
 #compare host freezing to host control
-resBrownHostF.BrownHostC=results(dds.corr, contrast=c("temp_type","cold_brown_host","control_brown_host"), independentFiltering = F)
+resBrownHostF.BrownHostC=results(dds, contrast=c("temp_type","cold_brown_host","control_brown_host"), independentFiltering = F)
 head(resBrownHostF.BrownHostC)
 table(resBrownHostF.BrownHostC$pvalue<0.05)
 #FALSE  TRUE 
-#79    58
-table(resBrownHostF.BrownHostC$padj<0.05)
-#0.1=56
-#0.05=43
-#0.01=37
+#114    71
+table(resBrownHostF.BrownHostC$padj<0.01)
+#0.1=70
+#0.05=56
+#0.01=44
 summary(resBrownHostF.BrownHostC)
 
 write.table(resBrownHostF.BrownHostC, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/brown_host_cold_orthos_results.txt", quote=F, sep="\t")
@@ -295,12 +265,12 @@ DESeq2::plotMA(resBrownHostF.BrownHostC, main = "Freezing vs Control, Brown Host
 Hot versus control expression comparison - White Host
 ```{r White Host Hot vs Control}
 ##second term is the "control"
-resWhiteHostH.WhiteHostC=results(dds.corr, contrast=c("temp_type","heat_white_host","control_white_host"), independentFiltering = F)
+resWhiteHostH.WhiteHostC=results(dds, contrast=c("temp_type","heat_white_host","control_white_host"), independentFiltering = F)
 head(resWhiteHostH.WhiteHostC)
 table(resWhiteHostH.WhiteHostC$pvalue<0.05)
 #FALSE  TRUE 
-#124    13 
-table(resWhiteHostH.WhiteHostC$padj<0.01)
+#170    15 
+table(resWhiteHostH.WhiteHostC$padj<0.05)
 #0.1=7
 #0.05=7
 #0.01=3
@@ -317,15 +287,15 @@ DESeq2::plotMA(resWhiteHostH.WhiteHostC, main = "Hot vs Control, White Host Orth
 Cold versus control expression comparison - White Host
 ```{r  White Host Freezing vs Control}
 #compare host freezing to host control
-resWhiteHostF.WhiteHostC=results(dds.corr, contrast=c("temp_type","cold_white_host","control_white_host"), independentFiltering = F)
+resWhiteHostF.WhiteHostC=results(dds, contrast=c("temp_type","cold_white_host","control_white_host"), independentFiltering = F)
 head(resWhiteHostF.WhiteHostC)
 table(resWhiteHostF.WhiteHostC$pvalue<0.05)
 #FALSE  TRUE 
-#92    45
-table(resWhiteHostF.WhiteHostC$padj<0.01)
-#0.1=42
-#0.05=36
-#0.01=27
+#132    53
+table(resWhiteHostF.WhiteHostC$padj<0.05)
+#0.1=45
+#0.05=40
+#0.01=30
 summary(resWhiteHostF.WhiteHostC)
 
 write.table(resWhiteHostF.WhiteHostC, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/white_host_cold_orthos_results.txt", quote=F, sep="\t")
@@ -340,15 +310,15 @@ DESeq2::plotMA(resWhiteHostF.WhiteHostC, main = "Freezing vs Control, Brown Host
 Hot versus control expression comparison - Symbiont In Host
 ```{r Sym in Host Hot vs Control}
 ##second term is the "control"
-resSymInHostH.SymInHostC=results(dds.corr, contrast=c("temp_type","heat_sym_inhost","control_sym_inhost"), independentFiltering = F)
+resSymInHostH.SymInHostC=results(dds, contrast=c("temp_type","heat_sym_inhost","control_sym_inhost"), independentFiltering = F)
 head(resSymInHostH.SymInHostC)
 table(resSymInHostH.SymInHostC$pvalue<0.05)
 #FALSE  TRUE 
-#117   20
-table(resSymInHostH.SymInHostC$padj<0.05)
+#162   23
+table(resSymInHostH.SymInHostC$padj<0.01)
 #0.1=7
-#0.05=5
-#0.01=1
+#0.05=6
+#0.01=0
 summary(resSymInHostH.SymInHostC)
 write.table(resSymInHostH.SymInHostC, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/sym_inhost_hot_orthos_results.txt", quote=F, sep="\t")
 ```
@@ -361,12 +331,12 @@ DESeq2::plotMA(resSymInHostH.SymInHostC, main = "Hot vs Control, Sym In Host Ort
 Cold versus control expression comparison - Symbiont In Host
 ```{r Sym in Host Freezing vs Control}
 ##second term is the "control"
-resSymInHostF.SymInHostC=results(dds.corr, contrast=c("temp_type","cold_sym_inhost","control_sym_inhost"), independentFiltering = F)
+resSymInHostF.SymInHostC=results(dds, contrast=c("temp_type","cold_sym_inhost","control_sym_inhost"), independentFiltering = F)
 head(resSymInHostF.SymInHostC)
 table(resSymInHostF.SymInHostC$pvalue<0.05)
 #FALSE  TRUE 
-#126   11
-table(resSymInHostF.SymInHostC$padj<0.05)
+#173    12
+table(resSymInHostF.SymInHostC$padj<0.01)
 #0.1=5
 #0.05=4
 #0.01=3
@@ -380,108 +350,21 @@ MA plot, red dots indicate genes significantly differentially expressed at FDR <
 DESeq2::plotMA(resSymInHostF.SymInHostC, main = "Freezing vs Control, Sym In Host Ortholog")
 ```
 
-Hot versus control expression comparison - Symbiont In Culture - SKIP 
-```{r Sym in Culture Hot vs Control, eval=FALSE, include=FALSE}
-##second term is the "control"
-resSymCultureH.SymCultureC=results(dds.corr, contrast=c("temp_type","heat_culture","control_culture"), independentFiltering = F)
-head(resSymCultureH.SymCultureC)
-table(resSymCultureH.SymCultureC$pvalue<0.05)
-#FALSE  TRUE 
-#136   36
-table(resSymCultureH.SymCultureC$padj<0.01)
-#0.1=21
-#0.05=15
-#0.01=12
-summary(resSymCultureH.SymCultureC)
-write.table(resSymCultureH.SymCultureC, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/sym_culture_hot_orthos_results.txt", quote=F, sep="\t")
-```
-
-MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
-
-```{r eval=FALSE, fig.align='center', cache=TRUE, include=FALSE}
-DESeq2::plotMA(resSymCultureH.SymCultureC, main = "Hot vs Control, Sym In Culture Ortholog")
-```
-
-Cold versus control expression comparison - Symbiont In Culture - SKIP
-```{r Sym in Culture Freezing vs Control, eval=FALSE, include=FALSE}
-##second term is the "control"
-resSymCultureF.SymCultureC=results(dds.corr, contrast=c("temp_type","cold_culture","control_culture"), independentFiltering = F)
-head(resSymCultureF.SymCultureC)
-table(resSymCultureF.SymCultureC$pvalue<0.05)
-#FALSE  TRUE 
-#139   33
-table(resSymCultureF.SymCultureC$padj<0.05)
-#0.1=20
-#0.05=18
-#0.01=11
-summary(resSymCultureF.SymCultureC)
-write.table(resSymCultureF.SymCultureC, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/sym_culture_cold_orthos_results.txt", quote=F, sep="\t")
-```
-
-MA plot, red dots indicate genes significantly differentially expressed at FDR < 0.1 
-
-```{r eval=FALSE, fig.align='center', cache=TRUE, include=FALSE}
-DESeq2::plotMA(resSymCultureF.SymCultureC, main = "Freezing vs Control, Sym In Culture Ortholog")
-```
-##Heatmaps
-***
-<br> <br> 
-
-Overall expression, sample by distance. 
-
-```{r, cache=TRUE, fig.align="center"}
-sampleDists <- as.matrix(dist(t(assay(rlogged))))
-heatmap.2(as.matrix(sampleDists), key=F, trace="none",
-          col=colorpanel(100, "black", "white"),
-          margin=c(10, 10))
-```
-
-<br><br>
-<b>Individual genes heatmap </b> 
-<br> 
-Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this. Upregulation indicated by warmer colors, downregulation indicated by cooler colors.
-
-First for heat vs. control comparison - Brown Host
-```{r, cache=TRUE, fig.align='center'}
-norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_ortho.csv")
-hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/brown_host_hot_orthos_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
-  filter(padj < 0.1) %>% # only want the most DEGs
-  select(X) %>%
-  merge(norm_counts, by.x = "X", by.y = "X")  # turn into a countdatafile
-  row.names(hm) = hm$X
-  hm$X = NULL
-
-## Turning into z-score table
-hm.z = data.matrix(hm)
-hm.z = sweep(hm.z, 1L, rowMeans(hm.z), check.margin = FALSE)
-hm.z.sx = apply(hm.z, 1L, sd)
-hm.z = sweep(hm.z, 1L, hm.z.sx, "/", check.margin = FALSE)
-hm.z = data.matrix(hm.z)
-
-colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
-heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
-          dendrogram = "both",
-          trace = "none", 
-          margin = c(5,15))
-```
-
-Could do these same heatmaps for all comparisons - skipping for now since we aren't including heatmaps in the manuscript.
-
 
 ## Make a barplot of differentially expressed genes
 ```{r, cache=TRUE, fig.align='center'}
 summary(resBrownHostH.BrownHostC)
-# up = 4
-# down = 14
+# up = 3
+# down = 11
 summary(resBrownHostF.BrownHostC)
-# up = 34
-# down = 22
+# up = 39
+# down = 31
 summary(resWhiteHostH.WhiteHostC)
 # up = 5
 # down = 2
 summary(resWhiteHostF.WhiteHostC)
-# up = 31
-# down = 11
+# up = 30
+# down = 15
 summary(resSymInHostH.SymInHostC)
 # up = 1
 # down = 6
@@ -505,8 +388,8 @@ ortho_combined_degs = data.frame(
                                         "apo_host_cold_up","apo_host_cold_down",
                                         "sym_inhost_heat_up","sym_inhost_heat_down",
                                         "sym_inhost_cold_up","sym_inhost_cold_down")),
-  number = c(4, -14, 34, -22, 
-             5, -2, 31, -11,
+  number = c(3, -11, 39, -31, 
+             5, -2, 30, -15,
              1, -6, 3, -2)
 )
 
@@ -552,17 +435,17 @@ ggsave(deg_barplot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/M
 ##Test for differences in DE orthologs
 ```{r, cache=TRUE, fig.align='center'}
 summary(resBrownHostH.BrownHostC)
-# up = 4
-# down = 14
+# up = 3
+# down = 11
 summary(resBrownHostF.BrownHostC)
-# up = 34
-# down = 22
+# up = 39
+# down = 31
 summary(resWhiteHostH.WhiteHostC)
 # up = 5
 # down = 2
 summary(resWhiteHostF.WhiteHostC)
-# up = 31
-# down = 11
+# up = 30
+# down = 15
 summary(resSymInHostH.SymInHostC)
 # up = 1
 # down = 6
@@ -570,51 +453,72 @@ summary(resSymInHostF.SymInHostC)
 # up = 3
 # down = 2
 
-# These results are out of 137 nonzero read counts
+# These results are out of 185 nonzero read counts
+res.brownhost_v_whitehost_heat <- prop.test(x = c(14, 7), n = c(185, 185), alternative = 'greater')
+res.brownhost_v_whitehost_heat 
+# data:  c(14, 7) out of c(185, 185)
+# X-squared = 1.8174, df = 1, p-value = 0.08881
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  -0.007006065  1.000000000
+# sample estimates:
+#     prop 1     prop 2 
+# 0.07567568 0.03783784 
 
-res.brownhost_v_syminhost_heat <- prop.test(x = c(18, 7), n = c(137, 137), alternative = 'greater')
+res.brownhost_v_whitehost_cold <- prop.test(x = c(70, 45), n = c(185, 185), alternative = 'greater')
+res.brownhost_v_whitehost_cold 
+# data:  c(70, 45) out of c(185, 185)
+# X-squared = 7.2675, df = 1, p-value = 0.003511
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.05142363 1.00000000
+# sample estimates:
+#    prop 1    prop 2 
+# 0.3783784 0.2432432 
+
+res.brownhost_v_syminhost_heat <- prop.test(x = c(14, 7), n = c(185, 185), alternative = 'greater')
 res.brownhost_v_syminhost_heat 
-# data:  c(18, 7) out of c(137, 137)
-# X-squared = 4.4016, df = 1, p-value = 0.01795
+# data:  c(14, 7) out of c(185, 185)
+# X-squared = 1.8174, df = 1, p-value = 0.08881
 # alternative hypothesis: greater
 # 95 percent confidence interval:
-#  0.0163246 1.0000000
+#  -0.007006065  1.000000000
 # sample estimates:
 #     prop 1     prop 2 
-# 0.13138686 0.05109489 
+# 0.07567568 0.03783784 
 
-res.brownhost_v_syminhost_cold <- prop.test(x = c(56, 5), n = c(137, 137), alternative = 'greater')
+res.brownhost_v_syminhost_cold <- prop.test(x = c(70, 5), n = c(185, 185), alternative = 'greater')
 res.brownhost_v_syminhost_cold
-# data:  c(56, 5) out of c(137, 137)
-# X-squared = 52.721, df = 1, p-value = 1.923e-13
+# data:  c(70, 5) out of c(185, 185)
+# X-squared = 68.498, df = 1, p-value < 2.2e-16
 # alternative hypothesis: greater
 # 95 percent confidence interval:
-#  0.2910232 1.0000000
+#  0.2841043 1.0000000
 # sample estimates:
 #     prop 1     prop 2 
-# 0.40875912 0.03649635 
+# 0.37837838 0.02702703 
 
-res.whitehost_v_syminhost_heat <- prop.test(x = c(7, 7), n = c(137, 137), alternative = 'greater')
+res.whitehost_v_syminhost_heat <- prop.test(x = c(7, 7), n = c(185, 185), alternative = 'greater')
 res.whitehost_v_syminhost_heat 
-# data:  c(7, 7) out of c(137, 137)
+# data:  c(7, 7) out of c(185, 185)
 # X-squared = 0, df = 1, p-value = 0.5
 # alternative hypothesis: greater
 # 95 percent confidence interval:
-#  -0.04376048  1.00000000
+#  -0.032632  1.000000
 # sample estimates:
 #     prop 1     prop 2 
-# 0.05109489 0.05109489 
+# 0.03783784 0.03783784 
 
-res.whitehost_v_syminhost_cold <- prop.test(x = c(42, 5), n = c(137, 137), alternative = 'greater')
+res.whitehost_v_syminhost_cold <- prop.test(x = c(45, 5), n = c(185, 185), alternative = 'greater')
 res.whitehost_v_syminhost_cold
-# data:  c(42, 5) out of c(137, 137)
-# X-squared = 33.284, df = 1, p-value = 3.982e-09
+# data:  c(45, 5) out of c(185, 185)
+# X-squared = 35.173, df = 1, p-value = 1.508e-09
 # alternative hypothesis: greater
 # 95 percent confidence interval:
-#  0.1928261 1.0000000
+#  0.1553437 1.0000000
 # sample estimates:
 #     prop 1     prop 2 
-# 0.30656934 0.03649635 
+# 0.24324324 0.02702703 
 
 ```
 
@@ -880,6 +784,50 @@ plast_boxplot
 
 ggsave(plast_boxplot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_boxplot_orthos.pdf", width=4.5, height=3, units=c("in"), useDingbats=FALSE)
 ```
+
+##Heatmaps
+***
+<br> <br> 
+
+Overall expression, sample by distance. 
+
+```{r, cache=TRUE, fig.align="center"}
+sampleDists <- as.matrix(dist(t(assay(rlogged))))
+heatmap.2(as.matrix(sampleDists), key=F, trace="none",
+          col=colorpanel(100, "black", "white"),
+          margin=c(10, 10))
+```
+
+<br><br>
+<b>Individual genes heatmap </b> 
+<br> 
+Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this. Upregulation indicated by warmer colors, downregulation indicated by cooler colors.
+
+First for heat vs. control comparison - Brown Host
+```{r, cache=TRUE, fig.align='center'}
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_ortho.csv")
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/brown_host_hot_orthos_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts, by.x = "X", by.y = "X")  # turn into a countdatafile
+  row.names(hm) = hm$X
+  hm$X = NULL
+
+## Turning into z-score table
+hm.z = data.matrix(hm)
+hm.z = sweep(hm.z, 1L, rowMeans(hm.z), check.margin = FALSE)
+hm.z.sx = apply(hm.z, 1L, sd)
+hm.z = sweep(hm.z, 1L, hm.z.sx, "/", check.margin = FALSE)
+hm.z = data.matrix(hm.z)
+
+colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
+```
+
+Could do these same heatmaps for all comparisons - skipping for now since we aren't including heatmaps in the manuscript.
 
 ##Venn Diagrams
 

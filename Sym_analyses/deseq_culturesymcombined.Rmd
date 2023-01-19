@@ -269,7 +269,7 @@ There is still a large difference in size factors across the two batches, but we
 ```{r warning=FALSE, cache=TRUE}
 dds.corr<-DESeqDataSetFromMatrix(countData=corrected_data, colData=expDesign, design=~treat_type) #can only test for the main effects of treatment
 # pre-filtering to remove low count genes
-keep.corr = rowSums(counts(dds.corr) >= 5) >= 40 # at least 40 samples with a count of 5 or higher
+keep.corr = rowSums(counts(dds.corr) >= 5) >= 33 # at least 33 samples (80%) with a count of 5 or higher
 dds.corr = dds.corr[keep.corr,]
 
 dds.corr = DESeq2::DESeq(dds.corr)
@@ -323,10 +323,10 @@ Hot versus control expression comparison in culture
 res_hot_culture_corr <- results(dds.corr, contrast=c("treat_type","heat_culture","control_culture"))
 head(res_hot_culture_corr)
 #how many FDR < 10%?
-table(res_hot_culture_corr$padj<0.01)
-# 0.1=86
-# 0.05=71
-# 0.01=49
+table(res_hot_culture_corr$padj<0.05)
+# 0.1=265
+# 0.05=240
+# 0.01=169
 summary(res_hot_culture_corr)
 write.table(res_hot_culture_corr, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_culture_results.txt", quote=F, sep="\t")
 ```
@@ -344,10 +344,10 @@ Hot versus control expression comparison in the host
 res_hot_inhost_corr <- results(dds.corr, contrast=c("treat_type","heat_inhost","control_inhost"))
 head(res_hot_inhost_corr)
 #how many FDR < 10%?
-table(res_hot_inhost_corr$padj<0.01)
-# 0.1=39
-# 0.05=25
-# 0.01=12
+table(res_hot_inhost_corr$padj<0.05)
+# 0.1=82
+# 0.05=49
+# 0.01=25
 summary(res_hot_inhost_corr)
 write.table(res_hot_inhost_corr, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_inhost_results.txt", quote=F, sep="\t")
 ```
@@ -364,10 +364,10 @@ Cold versus control expression comparison in culture
 res_cold_culture_corr <- results(dds.corr, contrast=c("treat_type","cold_culture","control_culture"))
 head(res_cold_culture_corr)
 #how many FDR < 10%?
-table(res_cold_culture_corr$padj<0.01)
-# 0.1=66
-# 0.05=49
-# 0.01=31
+table(res_cold_culture_corr$padj<0.1)
+# 0.1=293
+# 0.05=256
+# 0.01=178
 summary(res_cold_culture_corr)
 write.table(res_cold_culture_corr, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_culture_results.txt", quote=F, sep="\t")
 ```
@@ -384,9 +384,9 @@ Cold versus control expression comparison in host
 res_cold_inhost_corr <- results(dds.corr, contrast=c("treat_type","cold_inhost","control_inhost"))
 head(res_cold_inhost_corr)
 #how many FDR < 10%?
-table(res_cold_inhost_corr$padj<0.01)
-# 0.1=2
-# 0.05=1
+table(res_cold_inhost_corr$padj<0.05)
+# 0.1=4
+# 0.05=4
 # 0.01=1
 summary(res_cold_inhost_corr)
 write.table(res_cold_inhost_corr, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_inhost_results.txt", quote=F, sep="\t")
@@ -412,24 +412,24 @@ Moving forward with batch corrected (using ComBat-seq) and rlog-transformed data
 ## Make a barplot of differentially expressed genes
 ```{r, cache=TRUE, fig.align='center'}
 summary(res_hot_culture_corr)
-# up = 37
-# down = 49
+# up = 115
+# down = 150
 summary(res_hot_inhost_corr)
-# up = 14
-# down = 25
+# up = 22
+# down = 60
 summary(res_cold_culture_corr)
-# up = 33
-# down = 33
+# up = 154
+# down = 139
 summary(res_cold_inhost_corr)
 # up = 2
-# down = 0
+# down = 2
 
 sym_combined_degs = data.frame(
   temperature = factor(c("Heat", "Heat", "Heat", "Heat", "Cold", "Cold", "Cold", "Cold")),
   type = factor(c("Sym_InCulture", "Sym_InCulture","Sym_InHost", "Sym_InHost", "Sym_InCulture", "Sym_InCulture","Sym_InHost", "Sym_InHost")),
   direction = factor(c("up","down","up","down","up","down","up","down")),
   temperature_direction = factor(c("heat_up","heat_down", "heat_up","heat_down", "cold_up","cold_down","cold_up","cold_down")),
-  number = c(37, -49, 14, -25, 33, -33, 2, 0)
+  number = c(115, -150, 22, -60, 154, -139, 2, 2)
 )
 
 annotate_text = data.frame(
@@ -452,8 +452,8 @@ deg_barplot = ggplot(sym_combined_degs, aes(x = temperature, y = number, fill=te
   theme_bw() +
   theme(legend.position = "none") +
   facet_grid(. ~ type) +
-  theme(panel.spacing = unit(0, "lines")) +
-  geom_text(data = annotate_text, aes(x = x, y = y, label = label))
+  theme(panel.spacing = unit(0, "lines")) #+
+  #geom_text(data = annotate_text, aes(x = x, y = y, label = label))
 deg_barplot
 
 ggsave(deg_barplot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/symcombined_deg_barplot.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
@@ -477,9 +477,9 @@ Using adonis from library(vegan) we can see if there are any significant differe
 ```{r cache=TRUE}
 adonis2(pca.corr.rlog$x ~ treat_type, data = pcadata.corr.rlog, method = 'eu', na.rm = TRUE)
 #            Df SumOfSqs      R2      F Pr(>F)    
-# treat_type  5   202.33 0.32977 3.7393  0.001 ***
-# Residual   38   411.22 0.67023                  
-# Total      43   613.54 1.00000                  
+# treat_type  5   484.82 0.34691 3.7183  0.001 ***
+# Residual   35   912.73 0.65309                  
+# Total      40  1397.55 1.00000                  
 
 ```
 <br><br>
@@ -634,6 +634,8 @@ pca_plast_culture <-  PCAplast(pca = pcadata.culture.plast[,c(5:ncol(pcadata.cul
 Now plot PCA plasticity, separately for host and symbiont
 ```{r}
 library(Rmisc)
+library(performance)
+
 all_plast = rbind(pca_plast_host, pca_plast_culture) # re-combine host and symbiont plasticity for plotting
 
 dist_summ = summarySE(data = all_plast, measurevar = "dist", groupvars = c("treat_type","type"))
@@ -642,37 +644,38 @@ lm = lm(dist ~ treat_type, data = all_plast)
 summary(lm)
 # Coefficients:
 #                           Estimate Std. Error t value Pr(>|t|)    
-# (Intercept)                 2.3125     0.2228  10.380 3.16e-12 ***
-# treat_typecold_inhost      -1.7002     0.2793  -6.088 5.91e-07 ***
-# treat_typecontrol_culture  -1.1850     0.2728  -4.343 0.000114 ***
-# treat_typecontrol_inhost   -1.8513     0.2793  -6.629 1.16e-07 ***
-# treat_typeheat_culture      0.3500     0.2728   1.283 0.208032    
-# treat_typeheat_inhost      -0.6721     0.2793  -2.407 0.021517 *  
+# (Intercept)                5.93505    0.47139  12.590 1.48e-14 ***
+# treat_typecold_inhost     -4.19932    0.59092  -7.106 2.79e-08 ***
+# treat_typecontrol_culture -4.12519    0.57733  -7.145 2.48e-08 ***
+# treat_typecontrol_inhost  -5.21854    0.59092  -8.831 1.97e-10 ***
+# treat_typeheat_culture    -0.09608    0.57733  -0.166 0.868779    
+# treat_typeheat_inhost     -2.57692    0.59092  -4.361 0.000109 ***
 
 aov = aov(dist ~ treat_type, data = all_plast)
+check_model(aov) # visually check assumptions
 summary(aov)
 #             Df Sum Sq Mean Sq F value   Pr(>F)    
-# treat_type   5 27.560   5.512   27.77 2.93e-11 ***
-# Residuals   35  6.948   0.199                     
+# treat_type   5 158.69   31.74   35.71 8.54e-13 ***
+# Residuals   35  31.11    0.89                     
 
 TukeyHSD(aov)
-# $treat_type
-#                                      diff        lwr        upr     p adj
-# cold_inhost-cold_culture       -1.7002207 -2.5417221 -0.8587193 0.0000084
-# control_culture-cold_culture   -1.1850361 -2.0071900 -0.3628821 0.0014851
-# control_inhost-cold_culture    -1.8513168 -2.6928182 -1.0098155 0.0000017
-# heat_culture-cold_culture       0.3499743 -0.4721797  1.1721282 0.7922376
-# heat_inhost-cold_culture       -0.6720720 -1.5135734  0.1694294 0.1817619
-# control_culture-cold_inhost     0.5151846 -0.1796623  1.2100315 0.2484358
-# control_inhost-cold_inhost     -0.1510962 -0.8687309  0.5665386 0.9875687
-# heat_culture-cold_inhost        2.0501949  1.3553481  2.7450418 0.0000000
-# heat_inhost-cold_inhost         1.0281487  0.3105139  1.7457835 0.0016006
-# control_inhost-control_culture -0.6662808 -1.3611277  0.0285661 0.0664774
-# heat_culture-control_culture    1.5350103  0.8637244  2.2062962 0.0000008
-# heat_inhost-control_culture     0.5129641 -0.1818828  1.2078109 0.2526038
-# heat_culture-control_inhost     2.2012911  1.5064442  2.8961380 0.0000000
-# heat_inhost-control_inhost      1.1792448  0.4616101  1.8968796 0.0002518
-# heat_inhost-heat_culture       -1.0220463 -1.7168932 -0.3271994 0.0011503
+#                                       diff         lwr        upr     p adj
+# cold_inhost-cold_culture       -4.19932321 -5.97992529 -2.4187211 0.0000004
+# control_culture-cold_culture   -4.12518973 -5.86485295 -2.3855265 0.0000004
+# control_inhost-cold_culture    -5.21854136 -6.99914344 -3.4379393 0.0000000
+# heat_culture-cold_culture      -0.09608386 -1.83574708  1.6435794 0.9999805
+# heat_inhost-cold_culture       -2.57692299 -4.35752506 -0.7963209 0.0014121
+# control_culture-cold_inhost     0.07413348 -1.39615030  1.5444173 0.9999876
+# control_inhost-cold_inhost     -1.01921815 -2.53772070  0.4992844 0.3506328
+# heat_culture-cold_inhost        4.10323935  2.63295557  5.5735231 0.0000000
+# heat_inhost-cold_inhost         1.62240022  0.10389767  3.1409028 0.0304938
+# control_inhost-control_culture -1.09335163 -2.56363541  0.3769321 0.2455979
+# heat_culture-control_culture    4.02910587  2.60867679  5.4495349 0.0000000
+# heat_inhost-control_culture     1.54826674  0.07798297  3.0185505 0.0341507
+# heat_culture-control_inhost     5.12245750  3.65217372  6.5927413 0.0000000
+# heat_inhost-control_inhost      2.64161837  1.12311582  4.1601209 0.0001061
+# heat_inhost-heat_culture       -2.48083913 -3.95112290 -1.0105554 0.0001698
+
 
 cols_sym = c("#a6611a","#a6611a", "#74c476","#74c476", "#fd8d3c", "#fd8d3c")
 
@@ -772,7 +775,7 @@ go_input_cold_culture = oc_cold_culture_res %>%
   select(isogroup, mutated_p_updown) %>%
   na.omit()
 
-nrow(go_input_cold_culture) #200
+nrow(go_input_cold_culture) #630
 head(go_input_cold_culture)
 colnames(go_input_cold_culture) <- c("gene", "pval")
 head(go_input_cold_culture)
@@ -795,75 +798,7 @@ head(go_input_cold_inhost)
 write.csv(go_input_cold_inhost, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/Oculina_GO_Analyses/oculina_cold_symcombined_inhost_GO.csv", quote=F, row.names=FALSE)
 ```
 
-### Heatmaps
-***
-<br> <br> 
 
-Overall expression, sample by distance. 
-
-```{r fig.align="center", cache=TRUE}
-sampleDists <- as.matrix(dist(t(assay(rlogged.corr))))
-heatmap.2(as.matrix(sampleDists), key=F, trace="none",
-          col=colorpanel(100, "black", "white"),
-          margin=c(10, 10))
-```
-
-<br><br>
-<b>Individual genes heatmap </b> 
-<br> 
-Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this. Upregulation indicated by warmer colors, downregulation indicated by cooler colors.
-
-First for heat vs. control comparison in culture
-```{r, cache=TRUE, fig.align='center'}
-norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/normalized_counts_symscombined_batchcorr.csv") 
-
-hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_culture_results.txt", header=TRUE) %>%
-  rownames_to_column("X") %>%
-  filter(padj < 0.1) %>% # only want the most DEGs
-  select(X) %>%
-  merge(norm_counts, by.x = "X", by.y = "X") %>% # turn into a countdatafile
-  column_to_rownames(var = "X")
-
-## Turning into z-score table
-hm.z = data.matrix(hm)
-hm.z = sweep(hm.z, 1L, rowMeans(hm.z), check.margin = FALSE)
-hm.z.sx = apply(hm.z, 1L, sd)
-hm.z = sweep(hm.z, 1L, hm.z.sx, "/", check.margin = FALSE)
-hm.z = data.matrix(hm.z)
-
-colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
-heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
-          dendrogram = "both",
-          trace = "none", 
-          margin = c(5,15))
-```
-
-Now for cold vs. control comparison in culture
-```{r, cache=TRUE, fig.align='center'}
-norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/normalized_counts_symscombined_batchcorr.csv") 
-
-hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_culture_results.txt", header=TRUE) %>%
-  rownames_to_column("X") %>%
-  filter(padj < 0.1) %>% # only want the most DEGs
-  select(X) %>%
-  merge(norm_counts, by.x = "X", by.y = "X") %>% # turn into a countdatafile
-  column_to_rownames(var = "X")
-
-## Turning into z-score table
-hm.z = data.matrix(hm)
-hm.z = sweep(hm.z, 1L, rowMeans(hm.z), check.margin = FALSE)
-hm.z.sx = apply(hm.z, 1L, sd)
-hm.z = sweep(hm.z, 1L, hm.z.sx, "/", check.margin = FALSE)
-hm.z = data.matrix(hm.z)
-
-colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
-heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
-          dendrogram = "both",
-          trace = "none", 
-          margin = c(5,15))
-```
-
-Could repeat for in host heatmaps but skipping for now
 
 ### Log2 Fold Change Density Plots
 
@@ -1005,6 +940,77 @@ cold_plotly = ggplot(cold_res_merged_anno, aes(x = log2FoldChange.inculture, y =
 ggplotly(cold_plotly)
 
 ```
+
+
+### Heatmaps
+***
+<br> <br> 
+
+Overall expression, sample by distance. 
+
+```{r fig.align="center", cache=TRUE}
+sampleDists <- as.matrix(dist(t(assay(rlogged.corr))))
+heatmap.2(as.matrix(sampleDists), key=F, trace="none",
+          col=colorpanel(100, "black", "white"),
+          margin=c(10, 10))
+```
+
+<br><br>
+<b>Individual genes heatmap </b> 
+<br> 
+Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this. Upregulation indicated by warmer colors, downregulation indicated by cooler colors.
+
+First for heat vs. control comparison in culture
+```{r, cache=TRUE, fig.align='center'}
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/normalized_counts_symscombined_batchcorr.csv") 
+
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_culture_results.txt", header=TRUE) %>%
+  rownames_to_column("X") %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts, by.x = "X", by.y = "X") %>% # turn into a countdatafile
+  column_to_rownames(var = "X")
+
+## Turning into z-score table
+hm.z = data.matrix(hm)
+hm.z = sweep(hm.z, 1L, rowMeans(hm.z), check.margin = FALSE)
+hm.z.sx = apply(hm.z, 1L, sd)
+hm.z = sweep(hm.z, 1L, hm.z.sx, "/", check.margin = FALSE)
+hm.z = data.matrix(hm.z)
+
+colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
+```
+
+Now for cold vs. control comparison in culture
+```{r, cache=TRUE, fig.align='center'}
+norm_counts = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/normalized_counts_symscombined_batchcorr.csv") 
+
+hm = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_culture_results.txt", header=TRUE) %>%
+  rownames_to_column("X") %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts, by.x = "X", by.y = "X") %>% # turn into a countdatafile
+  column_to_rownames(var = "X")
+
+## Turning into z-score table
+hm.z = data.matrix(hm)
+hm.z = sweep(hm.z, 1L, rowMeans(hm.z), check.margin = FALSE)
+hm.z.sx = apply(hm.z, 1L, sd)
+hm.z = sweep(hm.z, 1L, hm.z.sx, "/", check.margin = FALSE)
+hm.z = data.matrix(hm.z)
+
+colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
+```
+
+Could repeat for in host heatmaps but skipping for now
 
 
 ### Venn Diagrams

@@ -1,2 +1,0 @@
-# lolipop script
-

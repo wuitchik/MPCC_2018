@@ -63,6 +63,7 @@ culture.plot = culture_exp %>%
   scale_x_discrete(labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15"))+
   geom_hline(yintercept = 32, linetype = "dashed", color = "#fd8d3c", size = 1) +
   geom_hline(yintercept = 6, linetype = "dashed", color = "#74c476", size = 1) +
+  #geom_hline(yintercept = 18, linetype = "dashed", color = "#a6611a", size = 1) +
   ggtitle("B. Culture Experiment") +
   theme(legend.position = c(.1, .2), legend.background = element_rect(color = "black"))
 culture.plot
@@ -135,9 +136,8 @@ ribbon.plot = ggplot(data = temps_combined, aes(x = Day, y = TempC_mean, color =
   geom_ribbon(aes(ymin = TempC_mean - TempC_sd, ymax = TempC_mean + TempC_sd, fill = treat_type), alpha = 0.3, colour = NA)+
   geom_line()+
   theme_bw() +
-  scale_color_manual(name = "Treatment", values = combined.colors)
-  
-xlab("Day") +
+  scale_color_manual(name = "Treatment", values = combined.colors) +
+  xlab("Day") +
   scale_y_continuous(name = "Temperature (°C)", breaks = seq(2,32,4)) +
   scale_x_discrete(labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15"))+
   geom_hline(yintercept = 32, linetype = "dashed", color = "#fd8d3c", size = 1) +
@@ -164,10 +164,14 @@ min(host_exp$temp_C)
 # take a look at salinity
 host_exp_sal = host_exp %>%
   drop_na(salinity)
-host_sal = summarySE(data = host_exp_sal, measurevar = "salinity")
+host_sal = summarySE(data = host_exp_sal, measurevar = "salinity", groupvars = "treatment")
 # .id   N salinity        sd         se         ci
 # 1 <NA> 243 33.98724 0.2279123 0.01462058 0.02879984
 
+# treatment  N salinity        sd         se         ci
+# 1      cold 81 33.86667 0.1313393 0.01459325 0.02904149
+# 2   control 81 33.94321 0.2246877 0.02496530 0.04968253
+# 3       hot 81 34.15185 0.2127858 0.02364286 0.04705079
 
 str(culture_exp)
 culture_temps = summarySE(data = culture_exp, measurevar = "TempC", groupvars = c("Incubator","Date"))

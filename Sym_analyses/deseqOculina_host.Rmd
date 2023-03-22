@@ -405,111 +405,6 @@ res.brownhost_v_apohost_cold
 
 
 ```
-##Heatmaps
-***
-<br> <br> 
-
-Overall expression, sample by distance. 
-
-```{r, cache=TRUE, fig.align="center"}
-sampleDists <- as.matrix(dist(t(assay(rlogged))))
-heatmap.2(as.matrix(sampleDists), key=F, trace="none",
-          col=colorpanel(100, "black", "white"),
-          margin=c(10, 10))
-```
-
-<br><br>
-<b>Individual genes heatmap </b> 
-<br> 
-Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this. Upregulation indicated by warmer colors, downregulation indicated by cooler colors.
-
-First for heat vs. control comparison
-```{r, cache=TRUE, fig.align='center'}
-norm_counts_host = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_host.csv")
-hm_brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
-  filter(padj < 0.1) %>% # only want the most DEGs
-  select(X) %>%
-  merge(norm_counts_host, by.x = "X", by.y = "X")  # turn into a countdatafile
-  row.names(hm_brown) = hm_brown$X
-  hm_brown$X = NULL
-
-## Turning into z-score table
-hm_brown.z = data.matrix(hm_brown)
-hm_brown.z = sweep(hm_brown.z, 1L, rowMeans(hm_brown.z), check.margin = FALSE)
-hm_brown.z.sx = apply(hm_brown.z, 1L, sd)
-hm_brown.z = sweep(hm_brown.z, 1L, hm_brown.z.sx, "/", check.margin = FALSE)
-hm_brown.z = data.matrix(hm_brown.z)
-
-colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
-heatmap.2(hm_brown.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
-          dendrogram = "both",
-          trace = "none", 
-          margin = c(5,15))
-
-
-hm_white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_white_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
-  filter(padj < 0.1) %>% # only want the most DEGs
-  select(X) %>%
-  merge(norm_counts_host, by.x = "X", by.y = "X")  # turn into a countdatafile
-  row.names(hm_white) = hm_white$X
-  hm_white$X = NULL
-
-## Turning into z-score table
-hm_white.z = data.matrix(hm_white)
-hm_white.z = sweep(hm_white.z, 1L, rowMeans(hm_white.z), check.margin = FALSE)
-hm_white.z.sx = apply(hm_white.z, 1L, sd)
-hm_white.z = sweep(hm_white.z, 1L, hm_white.z.sx, "/", check.margin = FALSE)
-hm_white.z = data.matrix(hm_white.z)
-
-heatmap.2(hm_white.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
-          dendrogram = "both",
-          trace = "none", 
-          margin = c(5,15))
-```
-
-Now for cold vs. control comparison
-```{r, cache=TRUE, fig.align='center'}
-norm_counts_host = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_host.csv")
-hm_brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
-  filter(padj < 0.1) %>% # only want the most DEGs
-  select(X) %>%
-  merge(norm_counts_host, by.x = "X", by.y = "X")  # turn into a countdatafile
-  row.names(hm_brown) = hm_brown$X
-  hm_brown$X = NULL
-
-## Turning into z-score table
-hm_brown.z = data.matrix(hm_brown)
-hm_brown.z = sweep(hm_brown.z, 1L, rowMeans(hm_brown.z), check.margin = FALSE)
-hm_brown.z.sx = apply(hm_brown.z, 1L, sd)
-hm_brown.z = sweep(hm_brown.z, 1L, hm_brown.z.sx, "/", check.margin = FALSE)
-hm_brown.z = data.matrix(hm_brown.z)
-
-colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
-heatmap.2(hm_brown.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
-          dendrogram = "both",
-          trace = "none", 
-          margin = c(5,15))
-
-
-hm_white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_white_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
-  filter(padj < 0.1) %>% # only want the most DEGs
-  select(X) %>%
-  merge(norm_counts_host, by.x = "X", by.y = "X")  # turn into a countdatafile
-  row.names(hm_white) = hm_white$X
-  hm_white$X = NULL
-
-## Turning into z-score table
-hm_white.z = data.matrix(hm_white)
-hm_white.z = sweep(hm_white.z, 1L, rowMeans(hm_white.z), check.margin = FALSE)
-hm_white.z.sx = apply(hm_white.z, 1L, sd)
-hm_white.z = sweep(hm_white.z, 1L, hm_white.z.sx, "/", check.margin = FALSE)
-hm_white.z = data.matrix(hm_white.z)
-
-heatmap.2(hm_white.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
-          dendrogram = "both",
-          trace = "none", 
-          margin = c(5,15))
-```
 ##Principal Component Analyses 
 
 <br>
@@ -648,6 +543,8 @@ pca_plast_apo <-  PCAplast(pca = pcadata.apo.plast[,c(5:ncol(pcadata.apo.plast))
 Now plot PCA plasticity, separately for host and symbiont
 ```{r}
 library(Rmisc)
+library(performance)
+
 all_plast = rbind(pca_plast_sym, pca_plast_apo) # re-combine host and symbiont plasticity for plotting
 
 dist_summ = summarySE(data = all_plast, measurevar = "dist", groupvars = c("treat_type","sym_state"))
@@ -664,6 +561,8 @@ summary(lm)
 # treat_typeheat_sym     -13.103      2.792  -4.693 6.95e-05 ***
 
 aov = aov(dist ~ treat_type, data = all_plast)
+check_model(aov) # check assumptions visually
+
 summary(aov)
 #            Df Sum Sq Mean Sq F value   Pr(>F)    
 # treat_type   5 2140.2   428.0   21.57 1.16e-08 ***
@@ -736,6 +635,114 @@ plast_boxplot
 
 ggsave(plast_boxplot, filename = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/PCA_plasticity_boxplot_host.pdf", width=2.5, height=4, units=c("in"), useDingbats=FALSE)
 
+```
+
+
+
+##Heatmaps
+***
+<br> <br> 
+
+Overall expression, sample by distance. 
+
+```{r, cache=TRUE, fig.align="center"}
+sampleDists <- as.matrix(dist(t(assay(rlogged))))
+heatmap.2(as.matrix(sampleDists), key=F, trace="none",
+          col=colorpanel(100, "black", "white"),
+          margin=c(10, 10))
+```
+
+<br><br>
+<b>Individual genes heatmap </b> 
+<br> 
+Now plotting the z scores, as heatmap2 creates nice clean clusters by doing this. Upregulation indicated by warmer colors, downregulation indicated by cooler colors.
+
+First for heat vs. control comparison
+```{r, cache=TRUE, fig.align='center'}
+norm_counts_host = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_host.csv")
+hm_brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_brown_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts_host, by.x = "X", by.y = "X")  # turn into a countdatafile
+  row.names(hm_brown) = hm_brown$X
+  hm_brown$X = NULL
+
+## Turning into z-score table
+hm_brown.z = data.matrix(hm_brown)
+hm_brown.z = sweep(hm_brown.z, 1L, rowMeans(hm_brown.z), check.margin = FALSE)
+hm_brown.z.sx = apply(hm_brown.z, 1L, sd)
+hm_brown.z = sweep(hm_brown.z, 1L, hm_brown.z.sx, "/", check.margin = FALSE)
+hm_brown.z = data.matrix(hm_brown.z)
+
+colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+heatmap.2(hm_brown.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
+
+
+hm_white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_white_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts_host, by.x = "X", by.y = "X")  # turn into a countdatafile
+  row.names(hm_white) = hm_white$X
+  hm_white$X = NULL
+
+## Turning into z-score table
+hm_white.z = data.matrix(hm_white)
+hm_white.z = sweep(hm_white.z, 1L, rowMeans(hm_white.z), check.margin = FALSE)
+hm_white.z.sx = apply(hm_white.z, 1L, sd)
+hm_white.z = sweep(hm_white.z, 1L, hm_white.z.sx, "/", check.margin = FALSE)
+hm_white.z = data.matrix(hm_white.z)
+
+heatmap.2(hm_white.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
+```
+
+Now for cold vs. control comparison
+```{r, cache=TRUE, fig.align='center'}
+norm_counts_host = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_host.csv")
+hm_brown = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_brown_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts_host, by.x = "X", by.y = "X")  # turn into a countdatafile
+  row.names(hm_brown) = hm_brown$X
+  hm_brown$X = NULL
+
+## Turning into z-score table
+hm_brown.z = data.matrix(hm_brown)
+hm_brown.z = sweep(hm_brown.z, 1L, rowMeans(hm_brown.z), check.margin = FALSE)
+hm_brown.z.sx = apply(hm_brown.z, 1L, sd)
+hm_brown.z = sweep(hm_brown.z, 1L, hm_brown.z.sx, "/", check.margin = FALSE)
+hm_brown.z = data.matrix(hm_brown.z)
+
+colour = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+heatmap.2(hm_brown.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
+
+
+hm_white = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_white_host_results.txt", header=TRUE, col.names=c("X", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue","padj")) %>% as_tibble() %>%
+  filter(padj < 0.1) %>% # only want the most DEGs
+  select(X) %>%
+  merge(norm_counts_host, by.x = "X", by.y = "X")  # turn into a countdatafile
+  row.names(hm_white) = hm_white$X
+  hm_white$X = NULL
+
+## Turning into z-score table
+hm_white.z = data.matrix(hm_white)
+hm_white.z = sweep(hm_white.z, 1L, rowMeans(hm_white.z), check.margin = FALSE)
+hm_white.z.sx = apply(hm_white.z, 1L, sd)
+hm_white.z = sweep(hm_white.z, 1L, hm_white.z.sx, "/", check.margin = FALSE)
+hm_white.z = data.matrix(hm_white.z)
+
+heatmap.2(hm_white.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row", 
+          dendrogram = "both",
+          trace = "none", 
+          margin = c(5,15))
 ```
 
 

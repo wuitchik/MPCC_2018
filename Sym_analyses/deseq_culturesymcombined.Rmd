@@ -269,7 +269,7 @@ There is still a large difference in size factors across the two batches, but we
 ```{r warning=FALSE, cache=TRUE}
 dds.corr<-DESeqDataSetFromMatrix(countData=corrected_data, colData=expDesign, design=~treat_type) #can only test for the main effects of treatment
 # pre-filtering to remove low count genes
-keep.corr = rowSums(counts(dds.corr) >= 5) >= 40 # at least 40 samples with a count of 5 or higher
+keep.corr = rowSums(counts(dds.corr) >= 2) >= 33 # at least 33 samples (80%) with a count of 5 or higher
 dds.corr = dds.corr[keep.corr,]
 
 dds.corr = DESeq2::DESeq(dds.corr)
@@ -324,9 +324,9 @@ res_hot_culture_corr <- results(dds.corr, contrast=c("treat_type","heat_culture"
 head(res_hot_culture_corr)
 #how many FDR < 10%?
 table(res_hot_culture_corr$padj<0.01)
-# 0.1=86
-# 0.05=71
-# 0.01=49
+# 0.1=747
+# 0.05=646
+# 0.01=486
 summary(res_hot_culture_corr)
 write.table(res_hot_culture_corr, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_culture_results.txt", quote=F, sep="\t")
 ```
@@ -345,9 +345,9 @@ res_hot_inhost_corr <- results(dds.corr, contrast=c("treat_type","heat_inhost","
 head(res_hot_inhost_corr)
 #how many FDR < 10%?
 table(res_hot_inhost_corr$padj<0.01)
-# 0.1=39
-# 0.05=25
-# 0.01=12
+# 0.1=123
+# 0.05=61
+# 0.01=24
 summary(res_hot_inhost_corr)
 write.table(res_hot_inhost_corr, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_inhost_results.txt", quote=F, sep="\t")
 ```
@@ -365,9 +365,9 @@ res_cold_culture_corr <- results(dds.corr, contrast=c("treat_type","cold_culture
 head(res_cold_culture_corr)
 #how many FDR < 10%?
 table(res_cold_culture_corr$padj<0.01)
-# 0.1=66
-# 0.05=49
-# 0.01=31
+# 0.1=913
+# 0.05=704
+# 0.01=592
 summary(res_cold_culture_corr)
 write.table(res_cold_culture_corr, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_culture_results.txt", quote=F, sep="\t")
 ```
@@ -385,8 +385,8 @@ res_cold_inhost_corr <- results(dds.corr, contrast=c("treat_type","cold_inhost",
 head(res_cold_inhost_corr)
 #how many FDR < 10%?
 table(res_cold_inhost_corr$padj<0.01)
-# 0.1=2
-# 0.05=1
+# 0.1=7
+# 0.05=4
 # 0.01=1
 summary(res_cold_inhost_corr)
 write.table(res_cold_inhost_corr, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_inhost_results.txt", quote=F, sep="\t")
@@ -412,24 +412,24 @@ Moving forward with batch corrected (using ComBat-seq) and rlog-transformed data
 ## Make a barplot of differentially expressed genes
 ```{r, cache=TRUE, fig.align='center'}
 summary(res_hot_culture_corr)
-# up = 37
-# down = 49
+# up = 365
+# down = 382
 summary(res_hot_inhost_corr)
-# up = 14
-# down = 25
+# up = 45
+# down = 78
 summary(res_cold_culture_corr)
-# up = 33
-# down = 33
+# up = 562
+# down = 351
 summary(res_cold_inhost_corr)
 # up = 2
-# down = 0
+# down = 5
 
 sym_combined_degs = data.frame(
   temperature = factor(c("Heat", "Heat", "Heat", "Heat", "Cold", "Cold", "Cold", "Cold")),
   type = factor(c("Sym_InCulture", "Sym_InCulture","Sym_InHost", "Sym_InHost", "Sym_InCulture", "Sym_InCulture","Sym_InHost", "Sym_InHost")),
   direction = factor(c("up","down","up","down","up","down","up","down")),
   temperature_direction = factor(c("heat_up","heat_down", "heat_up","heat_down", "cold_up","cold_down","cold_up","cold_down")),
-  number = c(37, -49, 14, -25, 33, -33, 2, 0)
+  number = c(365, -382, 45, -78, 562, -351, 2, 5)
 )
 
 annotate_text = data.frame(
@@ -452,8 +452,8 @@ deg_barplot = ggplot(sym_combined_degs, aes(x = temperature, y = number, fill=te
   theme_bw() +
   theme(legend.position = "none") +
   facet_grid(. ~ type) +
-  theme(panel.spacing = unit(0, "lines")) +
-  geom_text(data = annotate_text, aes(x = x, y = y, label = label))
+  theme(panel.spacing = unit(0, "lines")) #+
+  #geom_text(data = annotate_text, aes(x = x, y = y, label = label))
 deg_barplot
 
 ggsave(deg_barplot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/symcombined_deg_barplot.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
@@ -477,9 +477,9 @@ Using adonis from library(vegan) we can see if there are any significant differe
 ```{r cache=TRUE}
 adonis2(pca.corr.rlog$x ~ treat_type, data = pcadata.corr.rlog, method = 'eu', na.rm = TRUE)
 #            Df SumOfSqs      R2      F Pr(>F)    
-# treat_type  5   202.33 0.32977 3.7393  0.001 ***
-# Residual   38   411.22 0.67023                  
-# Total      43   613.54 1.00000                  
+# treat_type  5   2840.2 0.31189 3.1728  0.001 ***
+# Residual   35   6266.3 0.68811                  
+# Total      40   9106.5 1.00000                  
 
 ```
 <br><br>
@@ -634,6 +634,8 @@ pca_plast_culture <-  PCAplast(pca = pcadata.culture.plast[,c(5:ncol(pcadata.cul
 Now plot PCA plasticity, separately for host and symbiont
 ```{r}
 library(Rmisc)
+library(performance)
+
 all_plast = rbind(pca_plast_host, pca_plast_culture) # re-combine host and symbiont plasticity for plotting
 
 dist_summ = summarySE(data = all_plast, measurevar = "dist", groupvars = c("treat_type","type"))
@@ -642,37 +644,39 @@ lm = lm(dist ~ treat_type, data = all_plast)
 summary(lm)
 # Coefficients:
 #                           Estimate Std. Error t value Pr(>|t|)    
-# (Intercept)                 2.3125     0.2228  10.380 3.16e-12 ***
-# treat_typecold_inhost      -1.7002     0.2793  -6.088 5.91e-07 ***
-# treat_typecontrol_culture  -1.1850     0.2728  -4.343 0.000114 ***
-# treat_typecontrol_inhost   -1.8513     0.2793  -6.629 1.16e-07 ***
-# treat_typeheat_culture      0.3500     0.2728   1.283 0.208032    
-# treat_typeheat_inhost      -0.6721     0.2793  -2.407 0.021517 *  
+# (Intercept)                 9.6858     0.8418  11.507 1.91e-13 ***
+# treat_typecold_inhost      -6.6346     1.0552  -6.288 3.23e-07 ***
+# treat_typecontrol_culture  -7.4290     1.0309  -7.206 2.08e-08 ***
+# treat_typecontrol_inhost   -8.3250     1.0552  -7.890 2.82e-09 ***
+# treat_typeheat_culture      0.5999     1.0309   0.582  0.56436    
+# treat_typeheat_inhost      -3.9449     1.0552  -3.739  0.00066 ***
 
 aov = aov(dist ~ treat_type, data = all_plast)
+check_model(aov) # visually check assumptions
 summary(aov)
 #             Df Sum Sq Mean Sq F value   Pr(>F)    
-# treat_type   5 27.560   5.512   27.77 2.93e-11 ***
-# Residuals   35  6.948   0.199                     
+# treat_type   5  494.0   98.80   34.86 1.21e-12 ***
+# Residuals   35   99.2    2.83                     
 
 TukeyHSD(aov)
 # $treat_type
-#                                      diff        lwr        upr     p adj
-# cold_inhost-cold_culture       -1.7002207 -2.5417221 -0.8587193 0.0000084
-# control_culture-cold_culture   -1.1850361 -2.0071900 -0.3628821 0.0014851
-# control_inhost-cold_culture    -1.8513168 -2.6928182 -1.0098155 0.0000017
-# heat_culture-cold_culture       0.3499743 -0.4721797  1.1721282 0.7922376
-# heat_inhost-cold_culture       -0.6720720 -1.5135734  0.1694294 0.1817619
-# control_culture-cold_inhost     0.5151846 -0.1796623  1.2100315 0.2484358
-# control_inhost-cold_inhost     -0.1510962 -0.8687309  0.5665386 0.9875687
-# heat_culture-cold_inhost        2.0501949  1.3553481  2.7450418 0.0000000
-# heat_inhost-cold_inhost         1.0281487  0.3105139  1.7457835 0.0016006
-# control_inhost-control_culture -0.6662808 -1.3611277  0.0285661 0.0664774
-# heat_culture-control_culture    1.5350103  0.8637244  2.2062962 0.0000008
-# heat_inhost-control_culture     0.5129641 -0.1818828  1.2078109 0.2526038
-# heat_culture-control_inhost     2.2012911  1.5064442  2.8961380 0.0000000
-# heat_inhost-control_inhost      1.1792448  0.4616101  1.8968796 0.0002518
-# heat_inhost-heat_culture       -1.0220463 -1.7168932 -0.3271994 0.0011503
+#                                      diff          lwr        upr     p adj
+# cold_inhost-cold_culture       -6.6345519  -9.81412786 -3.4549759 0.0000046
+# control_culture-cold_culture   -7.4289791 -10.53545160 -4.3225066 0.0000003
+# control_inhost-cold_culture    -8.3250417 -11.50461773 -5.1454658 0.0000000
+# heat_culture-cold_culture       0.5999001  -2.50657241  3.7063726 0.9916110
+# heat_inhost-cold_culture       -3.9448919  -7.12446785 -0.7653159 0.0079927
+# control_culture-cold_inhost    -0.7944272  -3.41987567  1.8310213 0.9408758
+# control_inhost-cold_inhost     -1.6904899  -4.40204137  1.0210616 0.4315824
+# heat_culture-cold_inhost        7.2344520   4.60900352  9.8599004 0.0000000
+# heat_inhost-cold_inhost         2.6896600  -0.02189149  5.4012115 0.0529169
+# control_inhost-control_culture -0.8960627  -3.52151112  1.7293858 0.9051376
+# heat_culture-control_culture    8.0288792   5.49245500 10.5653034 0.0000000
+# heat_inhost-control_culture     3.4840872   0.85863876  6.1095357 0.0039253
+# heat_culture-control_inhost     8.9249418   6.29949338 11.5503903 0.0000000
+# heat_inhost-control_inhost      4.3801499   1.66859837  7.0917014 0.0003227
+# heat_inhost-heat_culture       -4.5447920  -7.17024042 -1.9193435 0.0001146
+
 
 cols_sym = c("#a6611a","#a6611a", "#74c476","#74c476", "#fd8d3c", "#fd8d3c")
 
@@ -772,7 +776,7 @@ go_input_cold_culture = oc_cold_culture_res %>%
   select(isogroup, mutated_p_updown) %>%
   na.omit()
 
-nrow(go_input_cold_culture) #200
+nrow(go_input_cold_culture) #630
 head(go_input_cold_culture)
 colnames(go_input_cold_culture) <- c("gene", "pval")
 head(go_input_cold_culture)
@@ -794,6 +798,203 @@ colnames(go_input_cold_inhost) <- c("gene", "pval")
 head(go_input_cold_inhost)
 write.csv(go_input_cold_inhost, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/Oculina_GO_Analyses/oculina_cold_symcombined_inhost_GO.csv", quote=F, row.names=FALSE)
 ```
+
+
+
+### Log2 Fold Change Density Plots
+
+```{r}
+culture_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_culture_results.txt", header=TRUE) %>%
+  mutate(type = "culture_cold")
+culture_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_culture_results.txt", header=TRUE) %>%
+  mutate(type = "culture_hot")
+host_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_inhost_results.txt", header=TRUE) %>%
+  mutate(type = "host_cold")
+host_hot_res= read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_inhost_results.txt", header=TRUE) %>%
+  mutate(type = "host_hot")
+
+# all types combined
+res_combined = rbind(culture_cold_res, culture_hot_res, host_cold_res, host_hot_res) %>%
+  mutate(abs_log2foldchange = abs(log2FoldChange))
+res_combined$type = as.factor(res_combined$type)
+
+res_cols = c("#2166ac", "#b2182b", "#67a9cf", "#ef8a62")
+
+# plot the absolute value of log 2 fold change as a density plot, color by group
+ggplot(res_combined, aes(x = abs(log2FoldChange), group = type, color = type))+
+  geom_density(lwd = 1.5) +
+  scale_color_manual(values = res_cols) +
+  xlab("|log-fold change relative to control|") +
+  theme_cowplot()
+
+# hot treatments separate
+res_combined_hot = rbind(culture_hot_res, host_hot_res)
+res_combined_hot$type = as.factor(res_combined_hot$type)
+
+res_cols_hot = c("#b2182b", "#ef8a62")
+
+ggplot(res_combined_hot, aes(x = abs(log2FoldChange), group = type, color = type))+
+  geom_density(lwd = 1.5) +
+  scale_color_manual(values = res_cols_hot) +
+  xlab("|log-fold change relative to control|") +
+  theme_cowplot()
+
+# cold treatments separate
+res_combined_cold = rbind(culture_cold_res, host_cold_res)
+res_combined_cold$type = as.factor(res_combined_cold$type)
+
+res_cols_cold = c("#2166ac", "#67a9cf")
+
+ggplot(res_combined_cold, aes(x = abs(log2FoldChange), group = type, color = type))+
+  geom_density(lwd = 1.5) +
+  scale_color_manual(values = res_cols_cold) +
+  xlab("|log-fold change relative to control|") +
+  theme_cowplot()
+
+# do stats on the absolute value of log2fold change
+summarySE(res_combined)
+
+aov1 = aov(abs_log2foldchange~type, data=res_combined)
+summary(aov1)
+TukeyHSD(aov1)
+# $type
+#                                  diff         lwr         upr     p adj
+# culture_hot-culture_cold -0.059999658 -0.09816988 -0.02182944 0.0003195
+# host_cold-culture_cold   -0.057166253 -0.09533647 -0.01899603 0.0006984
+# host_hot-culture_cold     0.012994448 -0.02517577  0.05116467 0.8177370
+# host_cold-culture_hot     0.002833406 -0.03533682  0.04100363 0.9975372
+# host_hot-culture_hot      0.072994107  0.03482389  0.11116433 0.0000056
+# host_hot-host_cold        0.070160701  0.03199048  0.10833092 0.0000144
+
+
+lm1 = lm(abs_log2foldchange~type, data=res_combined)
+summary(lm1)
+
+# try splitting up into up- and down-regulated genes
+res_combined_pos = res_combined %>%
+  filter(log2FoldChange > 0)
+
+aov_pos = aov(abs_log2foldchange~type, data=res_combined_pos)
+summary(aov_pos)
+TukeyHSD(aov_pos)
+
+res_combined_neg = res_combined %>%
+  filter(log2FoldChange < 0)
+
+aov_neg = aov(abs_log2foldchange~type, data=res_combined_neg)
+summary(aov_neg)
+TukeyHSD(aov_neg)
+
+```
+
+### Log2 Fold Change Correlation Plots
+
+```{r}
+library(plotly)
+
+# make lfc combined matrix to plot lfc in host vs. in culture
+# start with heat datasets first
+
+culture_hot_res_merge = culture_hot_res %>%
+  select(log2FoldChange) %>%
+  rownames_to_column(var = "gene")
+
+host_hot_res_merge = host_hot_res %>%
+  select(log2FoldChange) %>%
+  rownames_to_column(var = "gene")
+
+hot_res_merged = left_join(culture_hot_res_merge, host_hot_res_merge, by = "gene")
+
+# combine in host and in culture df's for lfc
+hot_res_merged = hot_res_merged %>%
+  dplyr::rename(log2FoldChange.inculture = log2FoldChange.x) %>%
+  dplyr::rename(log2FoldChange.inhost = log2FoldChange.y)
+
+# add gene name to this df - trim down names and add to photo_genes
+iso2gene = read.delim("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_TagSeq/References/B_psygmophilum_transcriptome/B_psygmophilum_isogroup_to_genename.tab", sep = "\t", header = FALSE) %>%
+  dplyr::rename("gene" = "V1") %>%
+  dplyr::rename("gene_name" = "V2")
+
+iso2gene$gene_name = gsub("OS=.*", "", iso2gene$gene_name)
+head(iso2gene)
+
+# combine with lfc merged dataframe
+hot_res_merged_anno = hot_res_merged %>%
+  left_join(iso2gene, by = "gene")
+head(hot_res_merged_anno)
+
+# look for most correlated categories
+# can id delta ranks using this plotly:
+heat_plotly = ggplot(hot_res_merged_anno, aes(x = log2FoldChange.inculture, y = log2FoldChange.inhost)) +
+  geom_point(aes(text = paste("Gene:", gene_name)), size = 2) +
+  geom_smooth(method='lm') +
+  xlim(-1.5, 1.5) +
+  ylim(-1.5, 1.5) +
+  geom_hline(yintercept = 0, lty = 2) +
+  geom_vline(xintercept = 0, lty = 2) +
+  ggtitle("Heat Challenge")
+ggplotly(heat_plotly)
+
+# what is the relationship of this line:
+lm_heat <- lm(log2FoldChange.inhost ~ log2FoldChange.inculture, hot_res_merged_anno) 
+summary(lm_heat)
+my_equation_heat <- paste("y =",        # Extract equation of model
+                     coef(lm_heat)[[1]],
+                     "+",
+                     coef(lm_heat)[[2]],
+                     "* x")
+my_equation_heat   # Print equation of model
+
+# [1] "y = -0.0532470628552914 + 0.608385970135619 * x"
+
+# now repeat with cold challenge data
+
+culture_cold_res_merge = culture_cold_res %>%
+  select(log2FoldChange) %>%
+  rownames_to_column(var = "gene")
+
+host_cold_res_merge = host_cold_res %>%
+  select(log2FoldChange) %>%
+  rownames_to_column(var = "gene")
+
+cold_res_merged = left_join(culture_cold_res_merge, host_cold_res_merge, by = "gene")
+
+# combine in host and in culture df's for lfc
+cold_res_merged = cold_res_merged %>%
+  dplyr::rename(log2FoldChange.inculture = log2FoldChange.x) %>%
+  dplyr::rename(log2FoldChange.inhost = log2FoldChange.y)
+
+# add gene name to this df - trim down names and add to photo_genes
+# combine with lfc merged dataframe
+cold_res_merged_anno = cold_res_merged %>%
+  left_join(iso2gene, by = "gene")
+head(cold_res_merged_anno)
+
+# look for most correlated categories
+# can id delta ranks using this plotly:
+cold_plotly = ggplot(cold_res_merged_anno, aes(x = log2FoldChange.inculture, y = log2FoldChange.inhost)) +
+  geom_point(aes(text = paste("Gene:", gene_name)), size = 2) +
+  geom_smooth(method='lm') +
+  xlim(-1.5, 1.5) +
+  ylim(-1.5, 1.5) +
+  geom_hline(yintercept = 0, lty = 2) +
+  geom_vline(xintercept = 0, lty = 2) +
+  ggtitle("Cold Challenge")
+ggplotly(cold_plotly)
+
+# what is the relationship of this line:
+lm_cold <- lm(log2FoldChange.inhost ~ log2FoldChange.inculture, cold_res_merged_anno) 
+summary(lm_cold)
+my_equation_cold <- paste("y =",        # Extract equation of model
+                     coef(lm_cold)[[1]],
+                     "+",
+                     coef(lm_cold)[[2]],
+                     "* x")
+my_equation_cold   # Print equation of mode```
+e4# [1] "y = -0.0194476898444039 + 0.336978917947459 * x"
+
+```
+
 
 ### Heatmaps
 ***
@@ -864,69 +1065,6 @@ heatmap.2(hm.z, col = colour, Rowv = TRUE, Colv = TRUE, scale = "row",
 ```
 
 Could repeat for in host heatmaps but skipping for now
-
-### Log2 Fold Change Density Plots
-
-```{r}
-culture_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_culture_results.txt", header=TRUE) %>%
-  mutate(type = "culture_cold")
-culture_hot_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_culture_results.txt", header=TRUE) %>%
-  mutate(type = "culture_hot")
-host_cold_res = read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_cold_symcombined_inhost_results.txt", header=TRUE) %>%
-  mutate(type = "host_cold")
-host_hot_res= read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_hot_symcombined_inhost_results.txt", header=TRUE) %>%
-  mutate(type = "host_hot")
-
-# all types combined
-res_combined = rbind(culture_cold_res, culture_hot_res, host_cold_res, host_hot_res) %>%
-  mutate(abs_log2foldchange = abs(log2FoldChange))
-res_combined$type = as.factor(res_combined$type)
-
-res_cols = c("#2166ac", "#b2182b", "#67a9cf", "#ef8a62")
-
-# plot the absolute value of log 2 fold change as a density plot, color by group
-ggplot(res_combined, aes(x = abs(log2FoldChange), group = type, color = type))+
-  geom_density(lwd = 1.5) +
-  scale_color_manual(values = res_cols) +
-  xlab("|log-fold change relative to control|") +
-  theme_cowplot()
-
-# hot treatments separate
-res_combined_hot = rbind(culture_hot_res, host_hot_res)
-res_combined_hot$type = as.factor(res_combined_hot$type)
-
-res_cols_hot = c("#b2182b", "#ef8a62")
-
-ggplot(res_combined_hot, aes(x = abs(log2FoldChange), group = type, color = type))+
-  geom_density(lwd = 1.5) +
-  scale_color_manual(values = res_cols_hot) +
-  xlab("|log-fold change relative to control|") +
-  theme_cowplot()
-
-# cold treatments separate
-res_combined_cold = rbind(culture_cold_res, host_cold_res)
-res_combined_cold$type = as.factor(res_combined_cold$type)
-
-res_cols_cold = c("#2166ac", "#67a9cf")
-
-ggplot(res_combined_cold, aes(x = abs(log2FoldChange), group = type, color = type))+
-  geom_density(lwd = 1.5) +
-  scale_color_manual(values = res_cols_cold) +
-  xlab("|log-fold change relative to control|") +
-  theme_cowplot()
-
-
-# do stats on the absolute value of log2fold change
-summarySE(res_combined)
-
-aov1 = aov(abs_log2foldchange~type, data=res_combined)
-summary(aov1)
-TukeyHSD(aov1)
-
-lm1 = lm(abs_log2foldchange~type, data=res_combined)
-summary(lm1)
-```
-
 
 
 ### Venn Diagrams

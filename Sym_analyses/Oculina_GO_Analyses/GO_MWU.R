@@ -771,7 +771,7 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
            #	Module=TRUE # un-remark this if you are analyzing an UNSIGNED WGCNA module 
 )
 # do not continue if the printout shows that no GO terms pass 10% FDR.
-# 5 GO terms at 10% FDR
+# 8 GO terms at 10% FDR
 
 quartz()
 mf_cold_inculture_results=gomwuPlot(input,goAnnotations,goDivision,
@@ -798,8 +798,25 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
            smallest=5,   
            clusterCutHeight=0.25 
 )
-# 1 GO terms at 10% FDR
-# can't make the GO tree because there is only one term
+# 11 GO terms at 10% FDR
+
+quartz()
+bp_cold_inculture_results=gomwuPlot(input,goAnnotations,goDivision,
+                                    absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                                    #absValue=1, # un-remark this if you are using log2-fold changes
+                                    level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                                    level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                                    level3=0.001, # FDR cutoff to print in large bold font.
+                                    txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                                    treeHeight=0.5, # height of the hierarchical clustering tree
+                                    #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+# text representation of results, with actual adjusted p-values
+bp_cold_inculture_results[[1]]
+write.csv(bp_cold_inculture_results, "bp_cold_symcombined_inculture_results.csv")
 
 goDivision="CC" 
 gomwuStats(input, goDatabase, goAnnotations, goDivision,
@@ -808,8 +825,24 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
            smallest=5,   
            clusterCutHeight=0.25 
 )
-# 3 GO terms at 10% FDR
-# can't make the GO tree because not enough terms
+# 8 GO terms at 10% FDR
+
+cc_cold_inculture_results=gomwuPlot(input,goAnnotations,goDivision,
+                                    absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". This setting is for signed log-pvalues. Specify absValue=0.001 if you are doing Fisher's exact test for standard GO enrichment or analyzing a WGCNA module (all non-zero genes = "good genes").
+                                    #absValue=1, # un-remark this if you are using log2-fold changes
+                                    level1=0.05, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+                                    level2=0.01, # FDR cutoff to print in regular (not italic) font.
+                                    level3=0.001, # FDR cutoff to print in large bold font.
+                                    txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+                                    treeHeight=0.5, # height of the hierarchical clustering tree
+                                    #	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral") # these are default colors, un-remar and change if needed
+)
+# manually rescale the plot so the tree matches the text 
+# if there are too many categories displayed, try make it more stringent with level1=0.05,level2=0.01,level3=0.001.  
+
+# text representation of results, with actual adjusted p-values
+cc_cold_inculture_results[[1]]
+write.csv(cc_cold_inculture_results, "cc_cold_symcombined_inculture_results.csv")
 
 #### Symbionts Combined Analysis - In Culture Heat GO Terms ####
 goAnnotations="B_psygmophilum_isogroup_to_GOterm.tab" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
@@ -887,7 +920,7 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
            smallest=5,   
            clusterCutHeight=0.25 
 )
-# 0 GO terms at 10% FDR
+# 1 GO terms at 10% FDR
 # can't make the GO tree because not enough terms
 
 #### Symbionts Combined Analysis - In Host Heat GO Terms ####

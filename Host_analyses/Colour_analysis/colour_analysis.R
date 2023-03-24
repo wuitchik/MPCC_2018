@@ -1,6 +1,8 @@
 # Colour analysis
 library(tidyverse)
 library(performance)
+library(cowplot)
+library(ggpubr)
 
 # load data
 colour_data = read.csv("astrangia_relative_counts.csv")
@@ -57,5 +59,9 @@ summary(gaussian_sqrt_transform)
 report(gaussian_sqrt_transform)
 
 # plot it
+cols = c("White" = "grey", "Brown" = "orange4")
+ggplot(data = data, aes(Phenotype, sqrt(Sym.Percent), fill = Phenotype)) +
+  geom_boxplot() +
+  scale_fill_manual(values = cols) +
+  theme_cowplot()
 
-plot = ggplot()

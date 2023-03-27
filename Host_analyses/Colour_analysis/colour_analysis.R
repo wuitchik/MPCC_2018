@@ -3,6 +3,7 @@ library(tidyverse)
 library(performance)
 library(cowplot)
 library(ggpubr)
+library(report)
 
 # load data
 colour_data = read.csv("astrangia_relative_counts.csv")
@@ -64,4 +65,30 @@ ggplot(data = data, aes(Phenotype, sqrt(Sym.Percent), fill = Phenotype)) +
   geom_boxplot() +
   scale_fill_manual(values = cols) +
   theme_cowplot()
+
+# link with carlos's colour analysis
+carlos_data = read.csv("Astrangia_color.csv") %>%
+  select(-Phenotype) %>%
+  right_join(data, by = c("Sample")) 
+
+# build linear model 
+color_lm = lm(sqrt(Sym.Percent) ~ Random, data = carlos_data)
+check_normality(color_lm) #OK: residuals appear as normally distributed (p = 0.546).
+check_heteroscedasticity(color_lm) # OK: Error variance appears to be homoscedastic (p = 0.464).
+
+check_model(color_lm)
+summary(color_lm)
+
+report(color_lm)
+
+
+ggplot(data = carlos_data, aes(Random, sqrt(Sym.Percent))) +
+  geom_point(aes(color = "black", )) +
+  geom_point(aes(color = Phenotype)) +
+  geom_smooth(method = "lm", color = "black") +
+  scale_color_manual(values = cols) +
+  theme_cowplot()
+
+
+
 

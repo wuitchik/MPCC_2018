@@ -4,6 +4,8 @@ library(performance)
 library(cowplot)
 library(ggpubr)
 library(report)
+library(ggpubr)
+
 
 # load data
 colour_data = read.csv("astrangia_relative_counts.csv")
@@ -61,9 +63,15 @@ report(gaussian_sqrt_transform)
 
 # plot it
 cols = c("White" = "grey", "Brown" = "orange4")
-ggplot(data = data, aes(Phenotype, sqrt(Sym.Percent), fill = Phenotype)) +
-  geom_boxplot() +
+
+phenotype_plot = ggplot(data = data, aes(Phenotype, sqrt(Sym.Percent), fill = Phenotype)) +
+  geom_jitter(aes(color = Phenotype), size = 2.5) +
+  geom_boxplot(alpha = 0.8) +
+  labs(x = "Phenotype",
+       y = expression(sqrt(paste("% Symbiont Reads"))))+
+  annotate("text", x = 1, y = 0.25, label = expression(P[paste("phenotype")] < 0.001)) +
   scale_fill_manual(values = cols) +
+  scale_color_manual(values = cols) +
   theme_cowplot()
 
 # link with carlos's colour analysis
@@ -81,14 +89,23 @@ summary(color_lm)
 
 report(color_lm)
 
-
-ggplot(data = carlos_data, aes(Random, sqrt(Sym.Percent))) +
-  geom_point(aes(color = "black", )) +
-  geom_point(aes(color = Phenotype)) +
+# plot it
+correlation_plot = 
+  ggplot(data = carlos_data, aes(Random, sqrt(Sym.Percent))) +
+  geom_point(aes(color = Phenotype), size = 2.5) +
   geom_smooth(method = "lm", color = "black") +
+  stat_cor(label.y = 2.3, label.x = 100,
+           aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~"))) +
+  stat_regline_equation(label.y = 2.19, label.x = 100) +
+  labs(x = "Red Channel Intensity (au)",
+       y = expression(sqrt(paste("% Symbiont Reads"))))+
   scale_color_manual(values = cols) +
   theme_cowplot()
 
+# combine plots
 
+combined = phenotype_plot + rremove("legend") + correlation_plot + rremove("legend") 
+ggsave("color_fig.pdf", combined, width = 8, height = 4, units = "in")
+ggsave("color_fig.jpg", combined, width = 8, height = 4, units = "in")
 
 

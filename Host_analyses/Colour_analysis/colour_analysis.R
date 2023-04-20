@@ -66,7 +66,7 @@ cols = c("White" = "grey", "Brown" = "orange4")
 
 phenotype_plot = ggplot(data = data, aes(Phenotype, sqrt(Sym.Percent), fill = Phenotype)) +
   geom_jitter(aes(color = Phenotype), size = 2.5) +
-  geom_boxplot(alpha = 0.8) +
+  geom_boxplot(alpha = 0.5) +
   labs(x = "Phenotype",
        y = expression(sqrt(paste("% Symbiont Reads"))))+
   annotate("text", x = 1, y = 0.25, label = expression(P[paste("phenotype")] < 0.001)) +
@@ -92,8 +92,8 @@ report(color_lm)
 # plot it
 correlation_plot = 
   ggplot(data = carlos_data, aes(Random, sqrt(Sym.Percent))) +
-  geom_point(aes(color = Phenotype), size = 2.5) +
   geom_smooth(method = "lm", color = "black") +
+  geom_point(aes(color = Phenotype), size = 2.5) +
   stat_cor(label.y = 2.3, label.x = 100,
            aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~"))) +
   stat_regline_equation(label.y = 2.19, label.x = 100) +

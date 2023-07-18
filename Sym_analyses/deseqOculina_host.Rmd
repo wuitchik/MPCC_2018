@@ -59,7 +59,7 @@ library(VennDiagram)
 ### Counts file and experimental design
 Read in Oculina host counts file. 
 ```{r CountsFile,cache=TRUE, echo=FALSE}
-countDataHost <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_counts_newref_host.txt")
+countDataHost <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_counts_newref_host.txt")
 ```
 
 
@@ -511,7 +511,7 @@ plotPCA_allPCs <- function (object, intgroup = "condition", ntop = 500, returnDa
 
 ```{r eval=FALSE, include=FALSE}
 # source the script Colleen wrote with the different functions to calculate plasticity
-source("/Users/hannahaichelman/Documents/BU/Host_Buffering/CombinedHostSymAnalyses/PlasticityCustomFunctions_means.R")
+source("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/CombinedHostSymAnalyses/PlasticityCustomFunctions_means.R")
 
 # use modified plotPCA function to give you all PCs
 pcadata.plast = plotPCA_allPCs(rlogged, intgroup = c("treat_type","sym_state"), returnData = TRUE)
@@ -546,6 +546,7 @@ library(Rmisc)
 library(performance)
 
 all_plast = rbind(pca_plast_sym, pca_plast_apo) # re-combine host and symbiont plasticity for plotting
+#write.csv(all_plast, file = "~/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/GE_Plasticity/host_plasticity.csv")
 
 dist_summ = summarySE(data = all_plast, measurevar = "dist", groupvars = c("treat_type","sym_state"))
 

@@ -64,17 +64,17 @@ library(adegenet)
 
 Read in Oculina symbiont counts files, separately for in host and in culture data.  
 ```{r,cache=TRUE, echo=FALSE}
-countDataSym <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_Counts_newref_sym.txt")
+countDataSym <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_Counts_newref_sym.txt")
 
-countDataCulture <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/B_psygmophilum_counts.txt")
+countDataCulture <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/B_psygmophilum_counts.txt")
 ```
 
 Read in counts files in a way so that we can merge them, as we don't want the contig names to be rows here, but a column that we can merge on.
 ```{r,cache=TRUE, echo=FALSE}
-countDataSym_tomerge <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_Counts_newref_sym.txt", row.names = NULL)
+countDataSym_tomerge <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_Counts_newref_sym.txt", row.names = NULL)
 colnames(countDataSym_tomerge)[1] = "contig"
 
-countDataCulture_tomerge <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/B_psygmophilum_counts.txt", row.names = NULL)
+countDataCulture_tomerge <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/B_psygmophilum_counts.txt", row.names = NULL)
 colnames(countDataCulture_tomerge)[1] = "contig"
 
 # create a combined counts file for the symbionts in hospite and in culture
@@ -604,7 +604,7 @@ plotPCA_allPCs <- function (object, intgroup = "condition", ntop = 500, returnDa
 
 ```{r eval=FALSE, include=FALSE}
 # source the script Colleen wrote with the different functions to calculate plasticity
-source("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GE_Plasticity/PlasticityCustomFunctions_means.R")
+source("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/GE_Plasticity/PlasticityCustomFunctions_means.R")
 
 # use modified plotPCA function to give you all PCs
 pcadata.plast = plotPCA_allPCs(rlogged.corr, intgroup = c("treat_type", "type"), returnData = TRUE)
@@ -631,12 +631,14 @@ pca_plast_culture <-  PCAplast(pca = pcadata.culture.plast[,c(5:ncol(pcadata.cul
                 control_lvl = "control_culture") # control level of the treatment 
 
 ```
+
 Now plot PCA plasticity, separately for host and symbiont
 ```{r}
 library(Rmisc)
 library(performance)
 
 all_plast = rbind(pca_plast_host, pca_plast_culture) # re-combine host and symbiont plasticity for plotting
+#write.csv(all_plast, file = "~/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/GE_Plasticity/culturesymcombined_plasticity.csv")
 
 dist_summ = summarySE(data = all_plast, measurevar = "dist", groupvars = c("treat_type","type"))
 

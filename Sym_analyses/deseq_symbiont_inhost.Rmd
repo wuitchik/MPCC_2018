@@ -61,7 +61,7 @@ library(VennDiagram)
 
 Read in Oculina symbiont counts file
 ```{r,cache=TRUE, echo=FALSE}
-countDataSym <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_Counts_newref_sym.txt")
+countDataSym <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_Counts_newref_sym.txt")
 ```
 
 
@@ -450,7 +450,7 @@ plotPCA_allPCs <- function (object, intgroup = "condition", ntop = 500, returnDa
 
 ```{r eval=FALSE, include=FALSE}
 # source the script Colleen wrote with the different functions to calculate plasticity
-source("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/GE_Plasticity/PlasticityCustomFunctions_means.R")
+source("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/GE_Plasticity/PlasticityCustomFunctions_means.R")
 
 # use modified plotPCA function to give you all PCs
 pcadata.plast = plotPCA_allPCs(rlogged, intgroup = c("treatment"), returnData = TRUE)
@@ -462,6 +462,7 @@ pca_plast <-  PCAplast(pca = pcadata.plast[,c(4:ncol(pcadata.plast))], # PCA dat
                 num_pca = "2", # number of PCs to include in measure (default is 'all' if left blank)
                 control_col = "treatment", # name of 'treatment' column
                 control_lvl = "control") # control level of the treatment 
+#write.csv(pca_plast, file = "~/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/GE_Plasticity/symbiont_inhost_plasticity.csv")
 ```
 
 Now plot PCA plasticity, separately for host and symbiont

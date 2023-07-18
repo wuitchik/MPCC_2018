@@ -69,6 +69,28 @@ dapc1 = dapc(t(dat_rlog), clus$grp)
 scatter(dapc1, bg = "white", scree.da = FALSE, legend = TRUE, solid = .4)
 
 
+
+## convert vsd to matrix
+rlog.corr.ge.matrix <- t(assay(rlogged.corr)) 
+
+## grouping variable:
+grp_pca <- DESeq2::plotPCA(rlogged.corr, intgroup = c("treat_type", "type"), returnData = TRUE)
+
+## 
+dapc1 = dapc(rlog.corr.ge.matrix, grp_pca$treat_type)
+scatter(dapc1)
+scatter(dapc1,1,1)
+
+find.clusters(rlog.corr.ge.matrix, max.n.clust=40)
+
+## Run the treatment and type DAPC with 43 PCs and 6 DAs
+dapc2 <- dapc(rlog.corr.ge.matrix, grp_pca$treat_type, n.pca = 3, n.da = 6)
+dapc2
+summary(dapc2)
+scatter(dapc2)
+
+scatter(dapc2,1,1, cols = cols, bg = "white", scree.da = FALSE, legend = TRUE, solid = 0.6)
+
 #### Symbiont in Host Data ####
 
 countDataSym <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_Counts_newref_sym.txt")

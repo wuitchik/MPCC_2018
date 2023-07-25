@@ -35,6 +35,7 @@ expDesign_Host$treat_type = paste(expDesign_Host$treatmentHost,expDesign_Host$sy
 names(expDesign_Host) = c("sample", "treatment", "genotype", "sym_state", "type", "treat_type")
 
 colSums(countDataHost)
+
 # remove clones and outlier genotype A from experimental design and counts
 expDesign_Host_clones_removed = expDesign_Host %>%
   filter(genotype!="P") %>%
@@ -62,11 +63,13 @@ dat_vst = as.data.frame(assay(vst))
 clus = find.clusters(t(dat_rlog), max.n.clust=30) # 20 pc's and 2 clusters
 names(clus)
 clus$grp
+table(pop(dat_rlog), clus$grp)
+
 # freezing corals all in one group, heat and control in the other. lines up well with what we see in the pca 
 
 dapc1 = dapc(t(dat_rlog), clus$grp)
 
-scatter(dapc1, bg = "white", scree.da = FALSE, legend = TRUE, solid = .4)
+scatter(dapc1, bg = "white", legend = TRUE, solid = .4)
 
 
 

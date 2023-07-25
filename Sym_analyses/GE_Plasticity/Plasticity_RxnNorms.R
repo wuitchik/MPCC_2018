@@ -57,6 +57,18 @@ culturesym_plast = culturesym_plast %>%
 # plot host and sym in host data together on reaction norm of gene expression plasticity
 host_sym_plast = rbind(host_plast, syminhost_plast)
 
+host_plast_heat = host_plast %>%
+  filter(treatment == "heat")
+
+host_plast_cold = host_plast %>%
+  filter(treatment == "cold")
+
+syminhost_plast_heat = syminhost_plast %>%
+  filter(treatment == "heat")
+
+syminhost_plast_cold = syminhost_plast %>%
+  filter(treatment == "cold")
+
 host_sym_plast_heat = host_sym_plast %>%
   filter(treatment == "heat")
 
@@ -85,3 +97,17 @@ plast_combined = ggarrange(plast_plot_heat, plast_plot_cold,
                            common.legend = TRUE, legend = "right")
 plast_combined
 
+
+plot(x = host_plast_heat$dist, y = syminhost_plast_heat$dist,
+     xlab = "Host Gene Expression Plasticity",
+     ylab = "Symbiont Gene Expression Plasticity",
+     main = "Oculina Heat Challenge")
+
+plot(x = host_plast_cold$dist, y = syminhost_plast_cold$dist,
+     xlab = "Host Gene Expression Plasticity",
+     ylab = "Symbiont Gene Expression Plasticity",
+     main = "Oculina Cold Challenge")
+
+
+
+    

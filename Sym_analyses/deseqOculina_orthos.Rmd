@@ -56,29 +56,154 @@ library(reshape2)
 library(prettydoc)
 library(VennDiagram)
 library(sva)
+library(textshape)
 ```
 
-Read in Oculina host and symbiont counts files. Each only include brown hosts
+Read in Oculina counts files.
 ```{r,cache=TRUE, echo=FALSE}
-countData <- read.table("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/OrthoCounts_deseq.txt") # clones are already removed from this dataset
+# this is the original counts file used in the analysis - which was made by mapping to a referene transcriptome of only single copy orthologs
+countData <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/OrthoCounts_deseq.txt") # clones are already removed from this dataset
+dim(countData)
+# [1] 185  54
+
+# New analysis - September 2023
+# Try subsetting original host and symbiont count files for identified single copy orthologs
+# first read in host ortholog and gene names, then combine into one df
+host_ortholog_gene_names <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/O_arbuscula_ortholog_genenames.txt")
+host_original_gene_names <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/O_arbuscula_original_genenames.txt")
+dim(host_ortholog_gene_names) # [1] 57470     1
+dim(host_original_gene_names) # [1] 57470     2
+
+host_dat = cbind(host_original_gene_names,host_ortholog_gene_names)
+colnames(host_dat) = c("host_original_gene", "host_original_gene2", "host_ortholog_gene")
+host_dat = host_dat %>%
+  select(host_original_gene, host_ortholog_gene)
+
+# read in symbiont ortholog and gene names, then combine into one df
+sym_ortholog_gene_names <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/B_psygmophilum_ortholog_genenames.txt")
+sym_original_gene_names <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/B_psygmophilum_original_genenames.txt")
+dim(sym_ortholog_gene_names) # [1] 31970     1
+dim(sym_original_gene_names) # [1] 31970     2
+
+sym_dat = cbind(sym_original_gene_names, sym_ortholog_gene_names)
+colnames(sym_dat) = c("sym_original_gene", "sym_original_gene2", "sym_ortholog_gene")
+sym_dat = sym_dat %>%
+  select(sym_original_gene, sym_ortholog_gene)
+
+# read in single copy ortholog names 
+single_copy_orthos <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/singleCopyOrthos.txt")
+
+# subset host gene and ortholog name dataframe to include only single copy orthologs 
+host_data_sco = host_dat %>%
+  filter(host_ortholog_gene %in% single_copy_orthos$V2)
+# subset symbiont gene and ortholog name dataframe to include only single copy orthologs 
+sym_data_sco = sym_dat %>%
+  filter(sym_ortholog_gene %in% single_copy_orthos$V2)
+
+# Need to extract only single copy orthologs from the counts files used in the host and symbiont individual gene expression analyses
+# First read in the counts files for those analyses
+countDataHost <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_counts_newref_host.txt")
+dim(countDataHost)
+countDataSym <- read.table("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/CountsFiles/Oculina_Counts_newref_sym.txt")
+dim(countDataSym)
+
+# subset host count data to include only single copy orthologs
+countDataHost_sco = countDataHost[rownames(countDataHost) %in% host_data_sco$host_original_gene, ]
+head(countDataHost_sco)
+dim(countDataHost_sco)
+# change rownames to be single copy ortholog id's instead of original gene names
+rownames(countDataHost_sco) = host_data_sco$host_ortholog_gene[match(rownames(countDataHost_sco), host_data_sco$host_original_gene)]
+rownames(countDataHost_sco) = single_copy_orthos$V1[match(rownames(countDataHost_sco), single_copy_orthos$V2)]
+
+# subset symbiont count data to include only single copy orthologs
+countDataSym_sco = countDataSym[rownames(countDataSym) %in% sym_data_sco$sym_original_gene, ]
+head(countDataSym_sco)
+dim(countDataSym_sco)
+# change rownames to be single copy ortholog id's instead of original gene names
+rownames(countDataSym_sco) = sym_data_sco$sym_ortholog_gene[match(rownames(countDataSym_sco), sym_data_sco$sym_original_gene)]
+rownames(countDataSym_sco) = single_copy_orthos$V1[match(rownames(countDataSym_sco), single_copy_orthos$V2)]
+
+rownames(countDataSym_sco) %in% rownames(countDataHost_sco)
+
+names(countDataHost_sco) = c("OA4_C_W.host", "OA5_F_W.host", "OA6_H_W.host", 
+                        "OC4_F_B.host",	"OC5_H_B.host",	"OC9_C_B.host",	
+                        "OD4_C_B.host",	"OD5_F_B.host",	"OD6_H_B.host",
+                        "OE10_F_W.host", "OE11_C_W.host", "OE3_H_W.host",
+                        "OF7_C_B.host",	"OF8_F_B.host",	"OF9_H_B.host",
+                        "OH11_F_W.host", "OH15_H_W.host", "OH1_C_W.host",
+                        "OI1_C_B.host",	"OI2_F_B.host",	"OI3_H_B.host",	
+                        "OJ13_C_B.host",	"OJ14_F_B.host",	"OJ15_H_B.host",	
+                        "OK1_C_W.host", "OK2_F_W.host", "OK3_H_W.host",
+                        "OL6_C_B.host",	"OL7_F_B.host",	"OL8_H_B.host",	
+                        "OM1_C_B.host",	"OM2_F_B.host",	"OM3_H_B.host",
+                        "ON4_C_W.host", "ON5_F_W.host", "ON6_H_W.host",
+                        "OO1_C_W.host", "OO2_F_W.host",
+                        "OP1_C_W.host", "OP2_F_W.host", "OP3_H_W.host",
+                        "OQ11_H_W.host", "OQ1_C_W.host", "OQ4_F_W.host",
+                        "OR7_C_B.host",	"OR8_F_B.host",	"OR9_H_B.host")
+
+names(countDataSym_sco) = c("OA4.sym", "OA5.sym", "OA6.sym", 
+                        "OC4_F_B.sym",	"OC5_H_B.sym",	"OC9_C_B.sym",	
+                        "OD4_C_B.sym",	"OD5_F_B.sym",	"OD6_H_B.sym",
+                        "OE10.sym", "OE11.sym", "OE3.sym",
+                        "OF7_C_B.sym",	"OF8_F_B.sym",	"OF9_H_B.sym",
+                        "OH11.sym", "OH15.sym", "OH1.sym",
+                        "OI1_C_B.sym",	"OI2_F_B.sym",	"OI3_H_B.sym",	
+                        "OJ13_C_B.sym",	"OJ14_F_B.sym",	"OJ15_H_B.sym",	
+                        "OK1.sym", "OK2.sym", "OK3.sym",
+                        "OL6_C_B.sym",	"OL7_F_B.sym",	"OL8_H_B.sym",	
+                        "OM1_C_B.sym",	"OM2_F_B.sym",	"OM3_H_B.sym",
+                        "ON4.sym", "ON5.sym", "ON6.sym",
+                        "OO1.sym", "OO2.sym",
+                        "OP1.sym", "OP2.sym", "OP3.sym",
+                        "OQ11.sym", "OQ1.sym", "OQ4.sym",
+                        "OR7_C_B.sym",	"OR8_F_B.sym",	"OR9_H_B.sym")
+
+# this is the final merged dataframe that we will use to try 
+orthoCounts = merge(countDataHost_sco, countDataSym_sco, by = 0)
+dim(orthoCounts)
+#[1] 1176   95
 ```
 
 
 Set up experimental design matrix
 ```{r,cache=TRUE}
-expDesign = read.csv("/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/ExpDesign_orthos_noculture.csv")
-expDesign$temp = as.factor(expDesign$temp)
-expDesign$type = as.factor(expDesign$type)
-expDesign$batch = as.factor(expDesign$batch)
+expDesign_old = read.csv("/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/ExpDesign_orthos_noculture.csv")
+expDesign_old$temp = as.factor(expDesign_old$temp)
+expDesign_old$type = as.factor(expDesign_old$type)
+expDesign_old$batch = as.factor(expDesign_old$batch)
 
-expDesign$temp_type = paste(expDesign$temp,expDesign$type, sep = "_")
-expDesign$temp_type = as.factor(expDesign$temp_type)
-expDesign$temp_type = factor(expDesign$temp_type, 
+expDesign_old$treat_type = paste(expDesign_old$temp,expDesign_old$type, sep = "_")
+expDesign_old$treat_type = as.factor(expDesign_old$treat_type)
+expDesign_old$treat_type = factor(expDesign_old$treat_type, 
                              levels = c("control_brown_host", "cold_brown_host", "heat_brown_host",
                                         "control_white_host", "cold_white_host", "heat_white_host",
                                         "control_sym_inhost", "cold_sym_inhost", "heat_sym_inhost"))
 
-str(expDesign)
+str(expDesign_old)
+
+# Create a new experimental design matrix with updated counts file
+# First remove clones and symbiont counts from aposymbiotic corals, following the same samples removed from the individual host and symbiont datasets
+orthoCounts_noclones = orthoCounts %>%
+  select(-c(OA4.sym, OA5.sym, OA6.sym, OE10.sym, OE11.sym, OE3.sym, OH11.sym, OH15.sym, OH1.sym, OK1.sym, OK2.sym, OK3.sym, ON4.sym, ON5.sym, ON6.sym, OO1.sym, OO2.sym, OP1.sym, OP2.sym, OP3.sym, OQ11.sym, OQ1.sym, OQ4.sym)) %>% # remove sym counts in aposymbiotic corals
+  select(-c(OL6_C_B.sym,  OL7_F_B.sym,  OL8_H_B.sym)) %>% # remove clone pair
+  select(-c(OP1_C_W.host, OP2_F_W.host, OP3_H_W.host, OO1_C_W.host, OO2_F_W.host, OL6_C_B.host, OL7_F_B.host, OL8_H_B.host, OK1_C_W.host, OK2_F_W.host, OK3_H_W.host, OA4_C_W.host, OA5_F_W.host, OA6_H_W.host)) %>% # remove clones and outlier genotype A from hosts
+  column_to_rownames("Row.names")
+
+# Build in identifying info from the samples
+treatment = as.factor(sapply(strsplit(colnames(orthoCounts_noclones), split = "_"), "[[", 2)) %>%
+  revalue(c("C" = "control", "F" = "cold", "H" = "heat"))
+genotype  = as.factor(sapply(strsplit(colnames(orthoCounts_noclones), split = ""), "[[", 2))
+type  = as.factor(sapply(strsplit(colnames(orthoCounts_noclones), split = "_"), "[[", 3))
+
+expDesign = data.frame(colnames(orthoCounts_noclones), treatment, genotype, type)
+expDesign$temp_type = as.factor(paste(expDesign$treatment,expDesign$type, sep = "_"))
+
+levels(expDesign$temp_type) = c("cold_brown_host", "cold_sym_inhost", "cold_white_host",
+                                "control_brown_host", "control_sym_inhost", "control_white_host",
+                                "heat_brown_host", "heat_sym_inhost", "heat_white_host")
+
+names(expDesign) = c("sample", "treatment", "genotype", "type", "treat_type")
 ```
 
 Experimental Design key with sample names 
@@ -97,7 +222,21 @@ stats.per.sample = data.frame(t(do.call(cbind, lapply(countData, summary))))
       stats.per.sample$perc95 = apply(countData, 2, quantile, 0.95)
       stats.per.sample$zeros = apply(countData==0, 2, sum)
       stats.per.sample$percent.zeros = 100*stats.per.sample$zeros/nrow(countData)
-write.csv(stats.per.sample, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_orthos_summary_table.csv", quote = FALSE)
+write.csv(stats.per.sample, file = "/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_orthos_oldcounts_summary_table.csv", quote = FALSE)
+      
+kable(stats.per.sample) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+# new counts file
+stats.per.sample = data.frame(t(do.call(cbind, lapply(orthoCounts_noclones, summary))))
+      stats.per.sample$libsum = apply(orthoCounts_noclones, 2, sum) ## libsum
+      stats.per.sample$perc05 = apply(orthoCounts_noclones, 2, quantile, 0.05)
+      stats.per.sample$perc10 = apply(orthoCounts_noclones, 2, quantile, 0.10)
+      stats.per.sample$perc90 = apply(orthoCounts_noclones, 2, quantile, 0.90)
+      stats.per.sample$perc95 = apply(orthoCounts_noclones, 2, quantile, 0.95)
+      stats.per.sample$zeros = apply(orthoCounts_noclones==0, 2, sum)
+      stats.per.sample$percent.zeros = 100*stats.per.sample$zeros/nrow(orthoCounts_noclones)
+write.csv(stats.per.sample, file = "/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/oculina_orthos_newcounts_summary_table.csv", quote = FALSE)
       
 kable(stats.per.sample) %>%
   kable_styling(bootstrap_options = "striped", full_width = F)
@@ -168,12 +307,18 @@ max(totalCounts.corr) #38713
 
 
 ```{r warning=FALSE, cache=TRUE}
-dds<-DESeqDataSetFromMatrix(countData=countData, colData=expDesign, design=~temp_type) #can only test for the main effects of treatment
+dds.old<-DESeqDataSetFromMatrix(countData=countData, colData=expDesign_old, design=~treat_type) #can only test for the main effects of treatment
+dds.old = DESeq2::DESeq(dds.old)
+results.old = results(dds.old)
+summary(results.old)
+plotDispEsts(dds.old)
+
+# new counts file
+dds<-DESeqDataSetFromMatrix(countData=orthoCounts_noclones, colData=expDesign, design=~treat_type) #can only test for the main effects of treatment
 dds = DESeq2::DESeq(dds)
 results = results(dds)
 summary(results)
 plotDispEsts(dds)
-
 ```
 
 
@@ -186,7 +331,8 @@ resultsNames(dds)
 
 
 ```{r echo=FALSE, cache=TRUE}
-norm.counts.ortho = counts(dds, normalized = TRUE) # these are the counts DESeq uses
+norm.counts.ortho.old = counts(dds.old, normalized = TRUE) # these are the counts DESeq uses
+norm.counts.ortho.new = counts(dds, normalized = TRUE) # these are the counts DESeq uses
 write.csv(norm.counts.ortho, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/Oculina_normalized_counts_ortho.csv") #these are all counts, not considering treatment comparisons
               
 norm.counts.stats = data.frame(
@@ -202,8 +348,11 @@ kable(norm.counts.stats) %>%
   kable_styling(bootstrap_options = "striped", full_width = F)
 
 # do a bar plot to make sure there is no consistent difference in counts by sample type
-norm.counts.sum = colSums(norm.counts.ortho)
-barplot(norm.counts.sum, col=expDesign$temp_type, ylab="counts", main = "Oculina Normalized Counts - Batch Corrected")
+norm.counts.sum.old = colSums(norm.counts.ortho.old)
+barplot(norm.counts.sum.old, col=expDesign_old$treat_type, ylab="counts", main = "Oculina Normalized Counts - Old Counts")
+
+norm.counts.sum.new = colSums(norm.counts.ortho.new)
+barplot(norm.counts.sum.new, col=expDesign$treat_type, ylab="counts", main = "Oculina Normalized Counts - New Counts")
 
 ```
 
@@ -219,15 +368,18 @@ vst = varianceStabilizingTransformation(dds, blind = TRUE)
 Hot versus control expression comparison - Brown Host
 ```{r Brown Host Hot vs control}
 ##second term is the "control"
-resBrownHostH.BrownHostC=results(dds, contrast=c("temp_type","heat_brown_host","control_brown_host"), independentFiltering = F)
+resBrownHostH.BrownHostC=results(dds, contrast=c("treat_type","heat_brown_host","control_brown_host"), independentFiltering = F)
 head(resBrownHostH.BrownHostC)
 table(resBrownHostH.BrownHostC$pvalue<0.05)
 #FALSE  TRUE 
 #151    34
-table(resBrownHostH.BrownHostC$padj<0.05)
-#0.1=14
-#0.05=8
-#0.01=5
+# new counts file
+#FALSE  TRUE 
+# 1065   110 
+table(resBrownHostH.BrownHostC$padj<0.01)
+#0.1=14, 23
+#0.05=8, 14
+#0.01=5, 10
 summary(resBrownHostH.BrownHostC)
 write.table(resBrownHostH.BrownHostC, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/brown_host_hot_orthos_results.txt", quote=F, sep="\t")
 ```
@@ -242,15 +394,18 @@ DESeq2::plotMA(resBrownHostH.BrownHostC, main = "Hot vs Control, Brown Host Orth
 Cold versus control expression comparison - Brown Host
 ```{r Brown Host Freezing vs Control}
 #compare host freezing to host control
-resBrownHostF.BrownHostC=results(dds, contrast=c("temp_type","cold_brown_host","control_brown_host"), independentFiltering = F)
+resBrownHostF.BrownHostC=results(dds, contrast=c("treat_type","cold_brown_host","control_brown_host"), independentFiltering = F)
 head(resBrownHostF.BrownHostC)
 table(resBrownHostF.BrownHostC$pvalue<0.05)
 #FALSE  TRUE 
 #114    71
+#FALSE  TRUE 
+#  870   305 
+
 table(resBrownHostF.BrownHostC$padj<0.01)
-#0.1=70
-#0.05=56
-#0.01=44
+#0.1=70, 236
+#0.05=56, 200
+#0.01=44, 148
 summary(resBrownHostF.BrownHostC)
 
 write.table(resBrownHostF.BrownHostC, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/brown_host_cold_orthos_results.txt", quote=F, sep="\t")
@@ -265,15 +420,18 @@ DESeq2::plotMA(resBrownHostF.BrownHostC, main = "Freezing vs Control, Brown Host
 Hot versus control expression comparison - White Host
 ```{r White Host Hot vs Control}
 ##second term is the "control"
-resWhiteHostH.WhiteHostC=results(dds, contrast=c("temp_type","heat_white_host","control_white_host"), independentFiltering = F)
+resWhiteHostH.WhiteHostC=results(dds, contrast=c("treat_type","heat_white_host","control_white_host"), independentFiltering = F)
 head(resWhiteHostH.WhiteHostC)
 table(resWhiteHostH.WhiteHostC$pvalue<0.05)
 #FALSE  TRUE 
 #170    15 
-table(resWhiteHostH.WhiteHostC$padj<0.05)
-#0.1=7
-#0.05=7
-#0.01=3
+#FALSE  TRUE 
+# 1112    63 
+
+table(resWhiteHostH.WhiteHostC$padj<0.1)
+#0.1=7, 12
+#0.05=7, 8
+#0.01=3, 0
 summary(resWhiteHostH.WhiteHostC)
 write.table(resWhiteHostH.WhiteHostC, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/white_host_hot_orthos_results.txt", quote=F, sep="\t")
 ```
@@ -287,15 +445,18 @@ DESeq2::plotMA(resWhiteHostH.WhiteHostC, main = "Hot vs Control, White Host Orth
 Cold versus control expression comparison - White Host
 ```{r  White Host Freezing vs Control}
 #compare host freezing to host control
-resWhiteHostF.WhiteHostC=results(dds, contrast=c("temp_type","cold_white_host","control_white_host"), independentFiltering = F)
+resWhiteHostF.WhiteHostC=results(dds, contrast=c("treat_type","cold_white_host","control_white_host"), independentFiltering = F)
 head(resWhiteHostF.WhiteHostC)
 table(resWhiteHostF.WhiteHostC$pvalue<0.05)
 #FALSE  TRUE 
 #132    53
-table(resWhiteHostF.WhiteHostC$padj<0.05)
-#0.1=45
-#0.05=40
-#0.01=30
+#FALSE  TRUE 
+#  947   228 
+
+table(resWhiteHostF.WhiteHostC$padj<0.01)
+#0.1=45, 143
+#0.05=40, 110
+#0.01=30, 61
 summary(resWhiteHostF.WhiteHostC)
 
 write.table(resWhiteHostF.WhiteHostC, "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/white_host_cold_orthos_results.txt", quote=F, sep="\t")
@@ -310,15 +471,18 @@ DESeq2::plotMA(resWhiteHostF.WhiteHostC, main = "Freezing vs Control, Brown Host
 Hot versus control expression comparison - Symbiont In Host
 ```{r Sym in Host Hot vs Control}
 ##second term is the "control"
-resSymInHostH.SymInHostC=results(dds, contrast=c("temp_type","heat_sym_inhost","control_sym_inhost"), independentFiltering = F)
+resSymInHostH.SymInHostC=results(dds, contrast=c("treat_type","heat_sym_inhost","control_sym_inhost"), independentFiltering = F)
 head(resSymInHostH.SymInHostC)
 table(resSymInHostH.SymInHostC$pvalue<0.05)
 #FALSE  TRUE 
 #162   23
-table(resSymInHostH.SymInHostC$padj<0.01)
-#0.1=7
-#0.05=6
-#0.01=0
+#FALSE  TRUE 
+# 1129    46 
+
+table(resSymInHostH.SymInHostC$padj<0.05)
+#0.1=7, 4
+#0.05=6, 1
+#0.01=0, 1
 summary(resSymInHostH.SymInHostC)
 write.table(resSymInHostH.SymInHostC, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/sym_inhost_hot_orthos_results.txt", quote=F, sep="\t")
 ```
@@ -331,15 +495,18 @@ DESeq2::plotMA(resSymInHostH.SymInHostC, main = "Hot vs Control, Sym In Host Ort
 Cold versus control expression comparison - Symbiont In Host
 ```{r Sym in Host Freezing vs Control}
 ##second term is the "control"
-resSymInHostF.SymInHostC=results(dds, contrast=c("temp_type","cold_sym_inhost","control_sym_inhost"), independentFiltering = F)
+resSymInHostF.SymInHostC=results(dds, contrast=c("treat_type","cold_sym_inhost","control_sym_inhost"), independentFiltering = F)
 head(resSymInHostF.SymInHostC)
 table(resSymInHostF.SymInHostC$pvalue<0.05)
 #FALSE  TRUE 
 #173    12
-table(resSymInHostF.SymInHostC$padj<0.01)
-#0.1=5
-#0.05=4
-#0.01=3
+#FALSE  TRUE 
+# 1142    33 
+
+table(resSymInHostF.SymInHostC$padj<0.05)
+#0.1=5, 4
+#0.05=4, 4
+#0.01=3, 3
 summary(resSymInHostF.SymInHostC)
 write.table(resSymInHostF.SymInHostC, file="/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/tables/sym_inhost_cold_orthos_results.txt", quote=F, sep="\t")
 ```
@@ -356,21 +523,33 @@ DESeq2::plotMA(resSymInHostF.SymInHostC, main = "Freezing vs Control, Sym In Hos
 summary(resBrownHostH.BrownHostC)
 # up = 3
 # down = 11
+# up new counts = 3
+# down new counts = 20
 summary(resBrownHostF.BrownHostC)
 # up = 39
 # down = 31
+# up new counts = 116
+# down new counts = 120
 summary(resWhiteHostH.WhiteHostC)
 # up = 5
 # down = 2
+# up new counts = 4
+# down new counts = 8
 summary(resWhiteHostF.WhiteHostC)
 # up = 30
 # down = 15
+# up new counts = 77
+# down new counts = 66
 summary(resSymInHostH.SymInHostC)
 # up = 1
 # down = 6
+# up new counts = 1
+# down new counts = 3
 summary(resSymInHostF.SymInHostC)
 # up = 3
 # down = 2
+# up new counts = 1
+# down new counts = 3
 
 ortho_combined_degs = data.frame(
   temperature = factor(c("Heat","Heat","Cold", "Cold",
@@ -388,9 +567,13 @@ ortho_combined_degs = data.frame(
                                         "apo_host_cold_up","apo_host_cold_down",
                                         "sym_inhost_heat_up","sym_inhost_heat_down",
                                         "sym_inhost_cold_up","sym_inhost_cold_down")),
-  number = c(3, -11, 39, -31, 
-             5, -2, 30, -15,
-             1, -6, 3, -2)
+  #number = c(3, -11, 39, -31, 
+  #           5, -2, 30, -15,
+  #           1, -6, 3, -2),
+  number = c(3, -20, 116, -120, 
+             4, -8, 77, -66,
+             1, -3, 1, -3)
+
 )
 
 annotate_text = data.frame(
@@ -429,7 +612,7 @@ deg_barplot = ggplot(ortho_combined_degs, aes(x = temperature, y = number, fill=
   #geom_text(data = annotate_text, aes(x = x, y = y, label = label))
 deg_barplot
 
-ggsave(deg_barplot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/orthos_deg_barplot.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
+ggsave(deg_barplot, file = "/Users/hannahaichelman/Dropbox/BU/Host_Buffering/MPCC_2018/Sym_analyses/plots/orthos_deg_barplot_newcounts.pdf", width=5, height=4, units=c("in"), useDingbats=FALSE)
 ```
 
 ##Test for differences in DE orthologs
@@ -437,24 +620,39 @@ ggsave(deg_barplot, file = "/Users/hannahaichelman/Documents/BU/Host_Buffering/M
 summary(resBrownHostH.BrownHostC)
 # up = 3
 # down = 11
+# up new counts = 3
+# down new counts = 20
 summary(resBrownHostF.BrownHostC)
 # up = 39
 # down = 31
+# up new counts = 116
+# down new counts = 120
 summary(resWhiteHostH.WhiteHostC)
 # up = 5
 # down = 2
+# up new counts = 4
+# down new counts = 8
 summary(resWhiteHostF.WhiteHostC)
 # up = 30
 # down = 15
+# up new counts = 77
+# down new counts = 66
 summary(resSymInHostH.SymInHostC)
 # up = 1
 # down = 6
+# up new counts = 1
+# down new counts = 3
 summary(resSymInHostF.SymInHostC)
 # up = 3
 # down = 2
+# up new counts = 1
+# down new counts = 3
 
 # These results are out of 185 nonzero read counts
 res.brownhost_v_whitehost_heat <- prop.test(x = c(14, 7), n = c(185, 185), alternative = 'greater')
+# Out of 1174 nonzero total read counts for new counts file
+res.brownhost_v_whitehost_heat <- prop.test(x = c(23, 12), n = c(1174, 1174), alternative = 'greater')
+
 res.brownhost_v_whitehost_heat 
 # data:  c(14, 7) out of c(185, 185)
 # X-squared = 1.8174, df = 1, p-value = 0.08881
@@ -465,7 +663,18 @@ res.brownhost_v_whitehost_heat
 #     prop 1     prop 2 
 # 0.07567568 0.03783784 
 
+# data:  c(23, 12) out of c(1174, 1174)
+# X-squared = 2.9004, df = 1, p-value = 0.04428
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.0002972188 1.0000000000
+# sample estimates:
+#     prop 1     prop 2 
+# 0.01959114 0.01022147 
+
 res.brownhost_v_whitehost_cold <- prop.test(x = c(70, 45), n = c(185, 185), alternative = 'greater')
+res.brownhost_v_whitehost_cold <- prop.test(x = c(236, 143), n = c(1174, 1174), alternative = 'greater')
+
 res.brownhost_v_whitehost_cold 
 # data:  c(70, 45) out of c(185, 185)
 # X-squared = 7.2675, df = 1, p-value = 0.003511
@@ -476,7 +685,18 @@ res.brownhost_v_whitehost_cold
 #    prop 1    prop 2 
 # 0.3783784 0.2432432 
 
+# data:  c(236, 143) out of c(1174, 1174)
+# X-squared = 26.631, df = 1, p-value = 1.231e-07
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.05353202 1.00000000
+# sample estimates:
+#    prop 1    prop 2 
+# 0.2010221 0.1218058 
+
 res.brownhost_v_syminhost_heat <- prop.test(x = c(14, 7), n = c(185, 185), alternative = 'greater')
+res.brownhost_v_syminhost_heat <- prop.test(x = c(14, 4), n = c(1174, 1174), alternative = 'greater')
+
 res.brownhost_v_syminhost_heat 
 # data:  c(14, 7) out of c(185, 185)
 # X-squared = 1.8174, df = 1, p-value = 0.08881
@@ -487,7 +707,18 @@ res.brownhost_v_syminhost_heat
 #     prop 1     prop 2 
 # 0.07567568 0.03783784 
 
+# data:  c(14, 4) out of c(1174, 1174)
+# X-squared = 4.5348, df = 1, p-value = 0.01661
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.001751763 1.000000000
+# sample estimates:
+#      prop 1      prop 2 
+# 0.011925043 0.003407155 
+
 res.brownhost_v_syminhost_cold <- prop.test(x = c(70, 5), n = c(185, 185), alternative = 'greater')
+res.brownhost_v_syminhost_cold <- prop.test(x = c(236, 4), n = c(1174, 1174), alternative = 'greater')
+
 res.brownhost_v_syminhost_cold
 # data:  c(70, 5) out of c(185, 185)
 # X-squared = 68.498, df = 1, p-value < 2.2e-16
@@ -498,7 +729,18 @@ res.brownhost_v_syminhost_cold
 #     prop 1     prop 2 
 # 0.37837838 0.02702703 
 
+# data:  c(236, 4) out of c(1174, 1174)
+# X-squared = 247.65, df = 1, p-value < 2.2e-16
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.1773219 1.0000000
+# sample estimates:
+#      prop 1      prop 2 
+# 0.201022147 0.003407155 
+
 res.whitehost_v_syminhost_heat <- prop.test(x = c(7, 7), n = c(185, 185), alternative = 'greater')
+res.whitehost_v_syminhost_heat <- prop.test(x = c(12, 4), n = c(1174, 1174), alternative = 'greater')
+
 res.whitehost_v_syminhost_heat 
 # data:  c(7, 7) out of c(185, 185)
 # X-squared = 0, df = 1, p-value = 0.5
@@ -509,7 +751,18 @@ res.whitehost_v_syminhost_heat
 #     prop 1     prop 2 
 # 0.03783784 0.03783784 
 
+# data:  c(12, 4) out of c(1174, 1174)
+# X-squared = 3.0835, df = 1, p-value = 0.03954
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.0003821693 1.0000000000
+# sample estimates:
+#      prop 1      prop 2 
+# 0.010221465 0.003407155 
+
 res.whitehost_v_syminhost_cold <- prop.test(x = c(45, 5), n = c(185, 185), alternative = 'greater')
+res.whitehost_v_syminhost_cold <- prop.test(x = c(143, 4), n = c(1174, 1174), alternative = 'greater')
+
 res.whitehost_v_syminhost_cold
 # data:  c(45, 5) out of c(185, 185)
 # X-squared = 35.173, df = 1, p-value = 1.508e-09
@@ -519,6 +772,15 @@ res.whitehost_v_syminhost_cold
 # sample estimates:
 #     prop 1     prop 2 
 # 0.24324324 0.02702703 
+
+# data:  c(143, 4) out of c(1174, 1174)
+# X-squared = 138.2, df = 1, p-value < 2.2e-16
+# alternative hypothesis: greater
+# 95 percent confidence interval:
+#  0.1015988 1.0000000
+# sample estimates:
+#      prop 1      prop 2 
+# 0.121805792 0.003407155 
 
 ```
 
